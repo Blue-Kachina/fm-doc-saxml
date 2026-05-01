@@ -1,0 +1,36 @@
+---
+docId: {{ entity.doc_id }}
+entityType: customFunction
+name: {{ entity.name }}
+source: {{ source_file }}
+---
+
+# Custom Function: {{ entity.name }}
+
+## Metadata
+
+| Name | Value |
+|---|---|
+| FMP ID | {{ entity.fmp_id }} |
+| Parameters | {{ entity.parameters | join(", ") if entity.parameters else "_None_" }} |
+
+## Calculation
+
+{% if entity.calculation %}
+```
+{{ entity.calculation }}
+```
+{% else %}
+_None._
+{% endif %}
+
+{% set bl = backlinks(entity.doc_id) %}
+{% if bl %}
+## Called By
+
+| Source | Type |
+|---|---|
+{% for b in bl %}
+| {{ link(b.sourceDocId) }} | {{ b.sourceEntityType }} |
+{% endfor %}
+{% endif %}

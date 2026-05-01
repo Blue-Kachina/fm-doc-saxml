@@ -1,0 +1,41 @@
+---
+title: Summary Report
+---
+
+# Summary
+
+_Generated {{ generated_at }}_
+
+## Entity Counts
+
+| Entity Type | Count |
+|---|---:|
+| Tables | {{ counts.tables }} |
+| Fields | {{ counts.fields }} |
+| Table Occurrences | {{ counts.table_occurrences }} |
+| Relationships | {{ counts.relationships }} |
+| Layouts | {{ counts.layouts }} |
+| Scripts | {{ counts.scripts }} |
+| Script Steps | {{ counts.script_steps }} |
+| Custom Functions | {{ counts.custom_functions }} |
+| Value Lists | {{ counts.value_lists }} |
+| Privilege Sets | {{ counts.privilege_sets }} |
+
+## References
+
+| Category | Count |
+|---|---:|
+| Total References | {{ total_references }} |
+| Exact References | {{ exact_references }} |
+| Parsed References | {{ parsed_references }} |
+| Unresolved References | {{ unresolved_references }} |
+
+## Warnings
+
+| Code | Count |
+|---|---:|
+{% for code, count in warning_counts.items() %}
+| {{ code }} | {{ count }} |
+{% endfor %}
+
+_See [warnings.md](warnings.md) for full list._

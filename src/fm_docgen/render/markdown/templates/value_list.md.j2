@@ -1,0 +1,26 @@
+---
+docId: {{ entity.doc_id }}
+entityType: valueList
+name: {{ entity.name }}
+source: {{ source_file }}
+---
+
+# Value List: {{ entity.name }}
+
+## Metadata
+
+| Name | Value |
+|---|---|
+| FMP ID | {{ entity.fmp_id }} |
+| Type | {{ entity.list_type }} |
+{% if entity.source_field_doc_id %}| Source Field | {{ link(entity.source_field_doc_id) }} |
+{% endif %}{% if entity.second_field_doc_id %}| Second Field | {{ link(entity.second_field_doc_id) }} |
+{% endif %}
+
+{% if entity.values %}
+## Values
+
+{% for val in entity.values %}
+- {{ val }}
+{% endfor %}
+{% endif %}

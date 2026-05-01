@@ -1,0 +1,17 @@
+---
+title: Unresolved References
+---
+
+# Unresolved References
+
+_{{ refs | length }} unresolved reference(s)_
+
+{% if refs %}
+| Source | Target | Raw Text |
+|---|---|---|
+{% for r in refs %}
+| `{{ r.source_doc_id }}` | `{{ r.target_doc_id }}` | {{ (r.raw_text or "") | truncate(80) }} |
+{% endfor %}
+{% else %}
+_No unresolved references._
+{% endif %}

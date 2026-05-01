@@ -1,0 +1,203 @@
+"""Pydantic entity models for the normalized FileMaker documentation model."""
+
+from __future__ import annotations
+
+from typing import Any, Optional
+from pydantic import BaseModel, Field, ConfigDict
+
+
+class SourceXmlInfo(BaseModel):
+    """Trace back to the originating XML location for debugging."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    path: str
+    line: Optional[int] = None
+
+
+class StorageOptions(BaseModel):
+    global_storage: bool = Field(False, alias="global")
+    indexed: bool = False
+    max_repeat: int = Field(1, alias="maxRepeat")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class AutoEnterOptions(BaseModel):
+    type: str = "none"  # none, serial, data, calculation, lookup, modification
+    value: Optional[str] = None
+    calculation: Optional[str] = None
+    no_modify_auto_enter: bool = False
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class ValidationOptions(BaseModel):
+    required: bool = False
+    not_empty: bool = False
+    unique: bool = False
+    max_characters: Optional[int] = None
+    message: Optional[str] = None
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class TableEntity(BaseModel):
+    doc_id: str = Field(alias="docId")
+    entity_type: str = Field("table", alias="entityType")
+    name: str
+    fmp_id: str = Field(alias="fmpId")
+    uuid: Optional[str] = None
+    fields: list[str] = []           # field docIds
+    table_occurrences: list[str] = Field([], alias="tableOccurrences")  # TO docIds
+    source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class FieldEntity(BaseModel):
+    doc_id: str = Field(alias="docId")
+    entity_type: str = Field("field", alias="entityType")
+    name: str
+    qualified_name: str = Field(alias="qualifiedName")
+    base_table_doc_id: str = Field(alias="baseTableDocId")
+    data_type: str = Field(alias="dataType")
+    field_type: str = Field(alias="fieldType")
+    fmp_id: str = Field(alias="fmpId")
+    uuid: Optional[str] = None
+    calculation: Optional[str] = None
+    auto_enter: Optional[AutoEnterOptions] = Field(None, alias="autoEnter")
+    validation: Optional[ValidationOptions] = None
+    storage: StorageOptions = Field(default_factory=StorageOptions)
+    source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class TableOccurrenceEntity(BaseModel):
+    doc_id: str = Field(alias="docId")
+    entity_type: str = Field("tableOccurrence", alias="entityType")
+    name: str
+    base_table_doc_id: str = Field(alias="baseTableDocId")
+    fmp_id: str = Field(alias="fmpId")
+    uuid: Optional[str] = None
+    relationships: list[str] = []    # relationship docIds
+    source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class RelationshipPredicate(BaseModel):
+    left_field_doc_id: str = Field(alias="leftFieldDocId")
+    operator: str = "="
+    right_field_doc_id: str = Field(alias="rightFieldDocId")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class RelationshipOptions(BaseModel):
+    allow_create_related: bool = Field(False, alias="allowCreateRelated")
+    delete_related: bool = Field(False, alias="deleteRelated")
+    sort_related: bool = Field(False, alias="sortRelated")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class RelationshipEntity(BaseModel):
+    doc_id: str = Field(alias="docId")
+    entity_type: str = Field("relationship", alias="entityType")
+    name: str
+    fmp_id: str = Field(alias="fmpId")
+    left_table_occurrence_doc_id: str = Field(alias="leftTableOccurrenceDocId")
+    right_table_occurrence_doc_id: str = Field(alias="rightTableOccurrenceDocId")
+    predicates: list[RelationshipPredicate] = []
+    options: RelationshipOptions = Field(default_factory=RelationshipOptions)
+    source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class LayoutEntity(BaseModel):
+    doc_id: str = Field(alias="docId")
+    entity_type: str = Field("layout", alias="entityType")
+    name: str
+    fmp_id: str = Field(alias="fmpId")
+    uuid: Optional[str] = None
+    base_table_occurrence_doc_id: Optional[str] = Field(None, alias="baseTableOccurrenceDocId")
+    theme: Optional[str] = None
+    referenced_fields: list[str] = Field([], alias="referencedFields")
+    source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class ScriptStepEntity(BaseModel):
+    doc_id: str = Field(alias="docId")
+    entity_type: str = Field("scriptStep", alias="entityType")
+    script_doc_id: str = Field(alias="scriptDocId")
+    index: int
+    step_id: str = Field(alias="stepId")   # FileMaker's built-in step type ID
+    name: str
+    enabled: bool = True
+    raw_text: Optional[str] = Field(None, alias="rawText")
+    parameters: dict[str, Any] = {}
+    references: list[dict[str, str]] = []
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class ScriptEntity(BaseModel):
+    doc_id: str = Field(alias="docId")
+    entity_type: str = Field("script", alias="entityType")
+    name: str
+    fmp_id: str = Field(alias="fmpId")
+    uuid: Optional[str] = None
+    folder_path: Optional[str] = Field(None, alias="folderPath")
+    steps: list[str] = []            # scriptStep docIds
+    referenced_fields: list[str] = Field([], alias="referencedFields")
+    referenced_layouts: list[str] = Field([], alias="referencedLayouts")
+    referenced_scripts: list[str] = Field([], alias="referencedScripts")
+    warnings: list[str] = []
+    source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class CustomFunctionEntity(BaseModel):
+    doc_id: str = Field(alias="docId")
+    entity_type: str = Field("customFunction", alias="entityType")
+    name: str
+    fmp_id: str = Field(alias="fmpId")
+    uuid: Optional[str] = None
+    parameters: list[str] = []
+    calculation: Optional[str] = None
+    references: list[str] = []
+    source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class ValueListEntity(BaseModel):
+    doc_id: str = Field(alias="docId")
+    entity_type: str = Field("valueList", alias="entityType")
+    name: str
+    fmp_id: str = Field(alias="fmpId")
+    uuid: Optional[str] = None
+    list_type: str = Field("customValues", alias="listType")  # customValues, field, related
+    values: list[str] = []
+    source_field_doc_id: Optional[str] = Field(None, alias="sourceFieldDocId")
+    second_field_doc_id: Optional[str] = Field(None, alias="secondFieldDocId")
+    source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class PrivilegeSetEntity(BaseModel):
+    doc_id: str = Field(alias="docId")
+    entity_type: str = Field("privilegeSet", alias="entityType")
+    name: str
+    fmp_id: str = Field(alias="fmpId")
+    description: Optional[str] = None
+    source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
+
+    model_config = ConfigDict(populate_by_name=True)

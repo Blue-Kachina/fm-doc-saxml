@@ -1,0 +1,104 @@
+---
+docId: {{ entity.doc_id }}
+entityType: field
+name: {{ entity.name }}
+qualifiedName: {{ entity.qualified_name }}
+source: {{ source_file }}
+---
+
+# Field: {{ entity.qualified_name }}
+
+## Metadata
+
+| Name | Value |
+|---|---|
+| FMP ID | {{ entity.fmp_id }} |
+| Base Table | {{ link(entity.base_table_doc_id) }} |
+| Field Name | {{ entity.name }} |
+| Field Type | {{ entity.field_type }} |
+| Data Type | {{ entity.data_type }} |
+
+## Storage Options
+
+| Name | Value |
+|---|---|
+| Global | {{ "Yes" if entity.storage.global_storage else "No" }} |
+| Indexed | {{ "Yes" if entity.storage.indexed else "No" }} |
+| Max Repetitions | {{ entity.storage.max_repeat }} |
+
+## Calculation
+
+{% if entity.calculation %}
+```
+{{ entity.calculation }}
+```
+{% else %}
+_None._
+{% endif %}
+
+## Auto-enter
+
+{% if entity.auto_enter and entity.auto_enter.type != 'none' %}
+| Name | Value |
+|---|---|
+| Type | {{ entity.auto_enter.type }} |
+{% if entity.auto_enter.value %}| Value | `{{ entity.auto_enter.value }}` |
+{% endif %}{% if entity.auto_enter.calculation %}| Calculation | `{{ entity.auto_enter.calculation[:200] }}` |
+{% endif %}
+{% else %}
+_None._
+{% endif %}
+
+## Validation
+
+{% if entity.validation %}
+| Rule | Enabled |
+|---|---|
+| Required | {{ "Yes" if entity.validation.required else "No" }} |
+| Not Empty | {{ "Yes" if entity.validation.not_empty else "No" }} |
+| Unique | {{ "Yes" if entity.validation.unique else "No" }} |
+{% if entity.validation.max_characters %}| Max Characters | {{ entity.validation.max_characters }} |
+{% endif %}{% if entity.validation.message %}| Message | {{ entity.validation.message }} |
+{% endif %}
+{% else %}
+_None._
+{% endif %}
+
+{% set bl = backlinks(entity.doc_id) %}
+{% if bl %}
+## Used By
+
+{% set script_bl = bl | selectattr('sourceEntityType', 'equalto', 'scriptStep') | list %}
+{% set layout_bl = bl | selectattr('sourceEntityType', 'equalto', 'layout') | list %}
+{% set rel_bl = bl | selectattr('sourceEntityType', 'equalto', 'relationship') | list %}
+
+{% if script_bl %}
+### Scripts
+
+| Script Step | Relationship |
+|---|---|
+{% for b in script_bl %}
+| {{ link(b.sourceDocId) }} | {{ b.relationshipType }} |
+{% endfor %}
+{% endif %}
+
+{% if layout_bl %}
+### Layouts
+
+| Layout | Relationship |
+|---|---|
+{% for b in layout_bl %}
+| {{ link(b.sourceDocId) }} | {{ b.relationshipType }} |
+{% endfor %}
+{% endif %}
+
+{% if rel_bl %}
+### Relationships
+
+| Relationship | Role |
+|---|---|
+{% for b in rel_bl %}
+| {{ link(b.sourceDocId) }} | {{ b.role or b.relationshipType }} |
+{% endfor %}
+{% endif %}
+{% endif %}

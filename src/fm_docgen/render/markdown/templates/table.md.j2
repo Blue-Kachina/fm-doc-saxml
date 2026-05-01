@@ -1,0 +1,52 @@
+---
+docId: {{ entity.doc_id }}
+entityType: table
+name: {{ entity.name }}
+source: {{ source_file }}
+---
+
+# Table: {{ entity.name }}
+
+## Metadata
+
+| Name | Value |
+|---|---|
+| FMP ID | {{ entity.fmp_id }} |
+{% if entity.uuid %}| UUID | {{ entity.uuid }} |
+{% endif %}| Field Count | {{ entity.fields | length }} |
+| Table Occurrence Count | {{ entity.table_occurrences | length }} |
+
+## Fields
+
+{% if entity.fields %}
+| Field | Data Type | Field Type |
+|---|---|---|
+{% for field_doc_id in entity.fields %}{% set field = get_entity(field_doc_id) %}{% if field %}
+| {{ link(field_doc_id) }} | {{ field.data_type }} | {{ field.field_type }} |
+{% endif %}{% endfor %}
+{% else %}
+_No fields found._
+{% endif %}
+
+## Table Occurrences
+
+{% if entity.table_occurrences %}
+| Table Occurrence |
+|---|
+{% for to_doc_id in entity.table_occurrences %}
+| {{ link(to_doc_id) }} |
+{% endfor %}
+{% else %}
+_No table occurrences found._
+{% endif %}
+
+{% set bl = backlinks(entity.doc_id) %}
+{% if bl %}
+## Referenced By
+
+| Source | Type | Relationship |
+|---|---|---|
+{% for b in bl %}
+| {{ link(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.relationshipType }} |
+{% endfor %}
+{% endif %}
