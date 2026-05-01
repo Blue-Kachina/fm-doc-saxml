@@ -1,0 +1,38 @@
+---
+docId: {{ entity.doc_id }}
+entityType: tableOccurrence
+name: {{ entity.name }}
+source: {{ source_file }}
+---
+
+# Table Occurrence: {{ entity.name }}
+
+## Metadata
+
+| Name | Value |
+|---|---|
+| FMP ID | {{ entity.fmp_id }} |
+| Base Table | {{ link(entity.base_table_doc_id) }} |
+
+## Relationships
+
+{% if entity.relationships %}
+| Relationship |
+|---|
+{% for rd in entity.relationships %}
+| {{ link(rd) }} |
+{% endfor %}
+{% else %}
+_No relationships found._
+{% endif %}
+
+{% set bl = backlinks(entity.doc_id) %}
+{% if bl %}
+## Referenced By
+
+| Source | Type | Relationship |
+|---|---|---|
+{% for b in bl %}
+| {{ link(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.relationshipType }} |
+{% endfor %}
+{% endif %}

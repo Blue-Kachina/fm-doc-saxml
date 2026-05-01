@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML Version="1.0">
+  <Product Build="19.6.4.402" Name="FileMaker" Version="19.6.4.402"/>
+  <File id="1" name="SampleSolution">
+    <Database name="SampleSolution">
+
+      <!-- Base Tables and Fields -->
+      <TableCatalog>
+        <BaseTable id="1" name="Customer" uuid="A1B2C3D4-0001-0001-0001-000000000001">
+          <FieldCatalog>
+            <Field dataType="Text" fieldType="Normal" id="1" name="CustomerID" uuid="A1B2C3D4-0001-0001-0001-000000000101">
+              <AutoEnter allowEditing="False" serial="True" value=""/>
+              <Validation message="" type="None">
+                <NotEmpty value="False"/>
+                <Required value="False"/>
+                <Unique value="True"/>
+              </Validation>
+              <Storage autoIndex="True" global="False" index="All" maxRepeat="1"/>
+            </Field>
+            <Field dataType="Text" fieldType="Normal" id="2" name="FirstName" uuid="A1B2C3D4-0001-0001-0001-000000000102">
+              <AutoEnter allowEditing="True" serial="False" value=""/>
+              <Validation message="" type="None">
+                <NotEmpty value="False"/>
+                <Required value="False"/>
+                <Unique value="False"/>
+              </Validation>
+              <Storage autoIndex="True" global="False" index="All" maxRepeat="1"/>
+            </Field>
+            <Field dataType="Text" fieldType="Normal" id="3" name="LastName" uuid="A1B2C3D4-0001-0001-0001-000000000103">
+              <AutoEnter allowEditing="True" serial="False" value=""/>
+              <Validation message="" type="None">
+                <NotEmpty value="True"/>
+                <Required value="False"/>
+                <Unique value="False"/>
+              </Validation>
+              <Storage autoIndex="True" global="False" index="All" maxRepeat="1"/>
+            </Field>
+            <Field dataType="Text" fieldType="Calculation" id="4" name="FullName" uuid="A1B2C3D4-0001-0001-0001-000000000104">
+              <Storage autoIndex="True" global="False" index="All" maxRepeat="1"/>
+              <Calculation dataType="Text">Customer::FirstName &amp; " " &amp; Customer::LastName</Calculation>
+            </Field>
+            <Field dataType="Text" fieldType="Normal" id="5" name="Status" uuid="A1B2C3D4-0001-0001-0001-000000000105">
+              <AutoEnter allowEditing="True" constant="Active" serial="False" value="Active"/>
+              <Storage autoIndex="True" global="False" index="All" maxRepeat="1"/>
+            </Field>
+          </FieldCatalog>
+        </BaseTable>
+        <BaseTable id="2" name="Invoice" uuid="A1B2C3D4-0002-0002-0002-000000000002">
+          <FieldCatalog>
+            <Field dataType="Text" fieldType="Normal" id="1" name="InvoiceID" uuid="A1B2C3D4-0002-0002-0002-000000000201">
+              <AutoEnter allowEditing="False" serial="True" value=""/>
+              <Storage autoIndex="True" global="False" index="All" maxRepeat="1"/>
+            </Field>
+            <Field dataType="Text" fieldType="Normal" id="2" name="CustomerFK" uuid="A1B2C3D4-0002-0002-0002-000000000202">
+              <Storage autoIndex="True" global="False" index="All" maxRepeat="1"/>
+            </Field>
+            <Field dataType="Number" fieldType="Normal" id="3" name="Amount" uuid="A1B2C3D4-0002-0002-0002-000000000203">
+              <Storage autoIndex="False" global="False" index="None" maxRepeat="1"/>
+            </Field>
+            <Field dataType="Date" fieldType="Normal" id="4" name="InvoiceDate" uuid="A1B2C3D4-0002-0002-0002-000000000204">
+              <AutoEnter allowEditing="True" serial="False" value=""/>
+              <Storage autoIndex="True" global="False" index="All" maxRepeat="1"/>
+            </Field>
+          </FieldCatalog>
+        </BaseTable>
+      </TableCatalog>
+
+      <!-- Relationship Graph -->
+      <RelationshipGraph>
+        <TableOccurrenceCatalog>
+          <TableOccurrence baseTableID="1" id="1" name="Customer" uuid="B1B2C3D4-0001-0001-0001-000000000001"/>
+          <TableOccurrence baseTableID="2" id="2" name="Invoice" uuid="B1B2C3D4-0002-0002-0002-000000000002"/>
+          <TableOccurrence baseTableID="2" id="3" name="Invoice__Customer" uuid="B1B2C3D4-0003-0003-0003-000000000003"/>
+        </TableOccurrenceCatalog>
+        <RelationshipCatalog>
+          <Relationship id="1" name="Customer_to_Invoice">
+            <LeftTable id="1" name="Customer"/>
+            <RightTable id="2" name="Invoice"/>
+            <JoinPredicateList>
+              <JoinPredicate fieldCompareOp="0" type="1">
+                <LeftField id="1" name="CustomerID" tableID="1" tableName="Customer"/>
+                <RightField id="2" name="CustomerFK" tableID="2" tableName="Invoice"/>
+              </JoinPredicate>
+            </JoinPredicateList>
+          </Relationship>
+        </RelationshipCatalog>
+      </RelationshipGraph>
+
+      <!-- Layouts -->
+      <LayoutCatalog>
+        <Layout id="1" name="Customer List" tableOccurrenceID="1" tableOccurrenceName="Customer" uuid="C1B2C3D4-0001-0001-0001-000000000001">
+          <ObjectList>
+            <Object type="FieldObj" uuid="D1000001">
+              <FieldObj>
+                <Name field="CustomerID" table="Customer" uuid="A1B2C3D4-0001-0001-0001-000000000101"/>
+              </FieldObj>
+            </Object>
+            <Object type="FieldObj" uuid="D1000002">
+              <FieldObj>
+                <Name field="FullName" table="Customer" uuid="A1B2C3D4-0001-0001-0001-000000000104"/>
+              </FieldObj>
+            </Object>
+            <Object type="FieldObj" uuid="D1000003">
+              <FieldObj>
+                <Name field="Status" table="Customer" uuid="A1B2C3D4-0001-0001-0001-000000000105"/>
+              </FieldObj>
+            </Object>
+          </ObjectList>
+        </Layout>
+        <Layout id="2" name="Invoice Detail" tableOccurrenceID="2" tableOccurrenceName="Invoice" uuid="C1B2C3D4-0002-0002-0002-000000000002">
+          <ObjectList>
+            <Object type="FieldObj" uuid="D2000001">
+              <FieldObj>
+                <Name field="InvoiceID" table="Invoice"/>
+              </FieldObj>
+            </Object>
+            <Object type="FieldObj" uuid="D2000002">
+              <FieldObj>
+                <Name field="Amount" table="Invoice"/>
+              </FieldObj>
+            </Object>
+          </ObjectList>
+        </Layout>
+      </LayoutCatalog>
+
+      <!-- Scripts -->
+      <ScriptCatalog>
+        <ScriptFolder name="Customer Scripts">
+          <Script id="1" name="Create Customer" uuid="E1B2C3D4-0001-0001-0001-000000000001">
+            <StepList>
+              <Step enable="True" id="68" index="0" name="Go to Layout">
+                <Layout id="1" name="Customer List"/>
+              </Step>
+              <Step enable="True" id="70" index="1" name="New Record/Request"/>
+              <Step enable="True" id="76" index="2" name="Set Field">
+                <Field id="5" name="Status" table="Customer" tableID="1"/>
+                <Calculation>Active</Calculation>
+              </Step>
+            </StepList>
+          </Script>
+          <Script id="2" name="Delete Customer" uuid="E1B2C3D4-0002-0002-0002-000000000002">
+            <StepList>
+              <Step enable="True" id="28" index="0" name="Delete Record"/>
+            </StepList>
+          </Script>
+        </ScriptFolder>
+        <Script id="3" name="Post Invoice" uuid="E1B2C3D4-0003-0003-0003-000000000003">
+          <StepList>
+            <Step enable="True" id="68" index="0" name="Go to Layout">
+              <Layout id="2" name="Invoice Detail"/>
+            </Step>
+            <Step enable="True" id="89" index="1" name="Perform Script">
+              <Script id="1" name="Create Customer"/>
+            </Step>
+          </StepList>
+        </Script>
+      </ScriptCatalog>
+
+      <!-- Custom Functions -->
+      <CustomFunctionCatalog>
+        <CustomFunction id="1" name="FormatCurrency" pramaters="amount">
+          <Calculation>"$" &amp; Round ( amount ; 2 )</Calculation>
+        </CustomFunction>
+      </CustomFunctionCatalog>
+
+      <!-- Value Lists -->
+      <ValueListCatalog>
+        <ValueList id="1" name="CustomerStatus" type="Custom" uuid="F1B2C3D4-0001-0001-0001-000000000001">
+          <CustomValues>
+            <Value>Active</Value>
+            <Value>Inactive</Value>
+            <Value>Prospect</Value>
+          </CustomValues>
+        </ValueList>
+      </ValueListCatalog>
+
+    </Database>
+  </File>
+</FMSaveAsXML>

@@ -1,0 +1,13 @@
+---
+title: {{ section_title }}
+---
+
+# {{ section_title }}
+
+_{{ entities | length }} {{ entity_type_label }}(s)_
+
+| Name | {{ extra_header or "Details" }} |
+|---|---|
+{% for e in entities | sort(attribute='name') %}
+| [{{ e.name }}]({{ e._md_path_from_here }}) | {{ e._extra_col or "" }} |
+{% endfor %}

@@ -1,0 +1,17 @@
+---
+title: Warnings
+---
+
+# Warnings
+
+_{{ warnings | length }} warning(s) total_
+
+{% if warnings %}
+| Code | Entity | Message | Detail |
+|---|---|---|---|
+{% for w in warnings %}
+| `{{ w.code }}` | {{ w.entity_doc_id or "_" }} | {{ w.message | truncate(80) }} | {{ (w.detail or "") | truncate(60) }} |
+{% endfor %}
+{% else %}
+_No warnings._
+{% endif %}

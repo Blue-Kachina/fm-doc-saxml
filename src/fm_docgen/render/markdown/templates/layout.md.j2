@@ -1,0 +1,38 @@
+---
+docId: {{ entity.doc_id }}
+entityType: layout
+name: {{ entity.name }}
+source: {{ source_file }}
+---
+
+# Layout: {{ entity.name }}
+
+## Metadata
+
+| Name | Value |
+|---|---|
+| FMP ID | {{ entity.fmp_id }} |
+{% if entity.base_table_occurrence_doc_id %}| Table Occurrence | {{ link(entity.base_table_occurrence_doc_id) }} |
+{% endif %}{% if entity.theme %}| Theme | {{ entity.theme }} |
+{% endif %}| Field Count | {{ entity.referenced_fields | length }} |
+
+{% if entity.referenced_fields %}
+## Fields on Layout
+
+| Field | Data Type |
+|---|---|
+{% for fd in entity.referenced_fields %}{% set field = get_entity(fd) %}
+| {{ link(fd) }} | {{ field.data_type if field else "?" }} |
+{% endfor %}
+{% endif %}
+
+{% set bl = backlinks(entity.doc_id) %}
+{% if bl %}
+## Referenced By
+
+| Source | Type | Relationship |
+|---|---|---|
+{% for b in bl %}
+| {{ link(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.relationshipType }} |
+{% endfor %}
+{% endif %}

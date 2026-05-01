@@ -1,0 +1,36 @@
+---
+docId: {{ entity.doc_id }}
+entityType: relationship
+name: {{ entity.name }}
+source: {{ source_file }}
+---
+
+# Relationship: {{ entity.name }}
+
+## Metadata
+
+| Name | Value |
+|---|---|
+| FMP ID | {{ entity.fmp_id }} |
+| Left Table Occurrence | {{ link(entity.left_table_occurrence_doc_id) }} |
+| Right Table Occurrence | {{ link(entity.right_table_occurrence_doc_id) }} |
+
+## Predicates
+
+{% if entity.predicates %}
+| Left Field | Operator | Right Field |
+|---|---|---|
+{% for pred in entity.predicates %}
+| {{ link(pred.left_field_doc_id) }} | {{ pred.operator }} | {{ link(pred.right_field_doc_id) }} |
+{% endfor %}
+{% else %}
+_No predicates defined._
+{% endif %}
+
+## Options
+
+| Name | Value |
+|---|---|
+| Allow Create Related Records | {{ "Yes" if entity.options.allow_create_related else "No" }} |
+| Delete Related Records | {{ "Yes" if entity.options.delete_related else "No" }} |
+| Sort Related Records | {{ "Yes" if entity.options.sort_related else "No" }} |
