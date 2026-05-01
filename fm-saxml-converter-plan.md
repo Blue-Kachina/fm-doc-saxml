@@ -148,11 +148,14 @@ fm-docgen/
 │     │     ├─ table_occurrences.py
 │     │     ├─ relationships.py
 │     │     ├─ layouts.py
+│     │     ├─ layout_objects.py
 │     │     ├─ scripts.py
 │     │     ├─ script_steps.py
 │     │     ├─ custom_functions.py
 │     │     ├─ value_lists.py
-│     │     └─ privileges.py
+│     │     ├─ privileges.py
+│     │     ├─ external_data_sources.py
+│     │     └─ script_triggers.py
 │     ├─ model/
 │     │  ├─ document_model.py
 │     │  ├─ entities.py
@@ -267,11 +270,13 @@ Example top-level shape:
     "tableOccurrences": {},
     "relationships": {},
     "layouts": {},
+    "layoutObjects": {},
     "scripts": {},
     "scriptSteps": {},
     "customFunctions": {},
     "valueLists": {},
-    "privilegeSets": {}
+    "privilegeSets": {},
+    "externalDataSources": {}
   },
   "references": [],
   "backlinks": {},
@@ -328,13 +333,13 @@ Represents the whole exported FileMaker file.
 
 Suggested fields:
 
-| Field | Meaning |
-|---|---|
-| `docId` | Stable documentation ID |
-| `name` | FileMaker file / solution name |
-| `sourceFile` | XML input file |
-| `generatedAt` | Documentation generation timestamp |
-| `counts` | Counts of tables, fields, layouts, scripts, etc. |
+| Field        | Meaning                                         |
+|--------------|-------------------------------------------------|
+| `docId`      | Stable documentation ID                         |
+| `name`       | FileMaker file / solution name                  |
+| `sourceFile` | XML input file                                  |
+| `generatedAt` | Documentation generation timestamp              |
+| `counts`     | Counts of tables, fields, layouts, scripts, etc. |
 
 ### 6.2 Table
 
@@ -372,19 +377,19 @@ Important field subtypes:
 
 Suggested fields:
 
-| Field | Meaning |
-|---|---|
-| `docId` | Stable documentation ID |
-| `name` | Field name |
-| `qualifiedName` | `Table::Field` |
-| `baseTableDocId` | Parent table |
-| `dataType` | Text, Number, Date, Time, Timestamp, Container |
-| `fieldType` | Normal, Calculation, Summary |
-| `calculation` | Calculation definition if present |
-| `autoEnter` | Auto-enter calculation/data |
-| `validation` | Validation rules |
-| `storage` | Global/index/repetition settings |
-| `references` | Outbound references from calculation or options |
+| Field           | Meaning                                        |
+|-----------------|------------------------------------------------|
+| `docId`         | Stable documentation ID                        |
+| `name`          | Field name                                     |
+| `qualifiedName` | `Table::Field`                                 |
+| `baseTableDocId` | Parent table                                   |
+| `dataType`      | Text, Number, Date, Time, Timestamp, Container |
+| `fieldType`     | Normal, Calculation, Summary                   |
+| `calculation`   | Calculation definition if present              |
+| `autoEnter`     | Auto-enter calculation/data                    |
+| `validation`    | Validation rules                               |
+| `storage`       | Global/index/repetition settings               |
+| `references`    | Outbound references from calculation or options |
 
 ### 6.4 Table Occurrence
 
@@ -405,6 +410,8 @@ Represents an item on the relationship graph.
 ### 6.5 Relationship
 
 Represents a relationship graph join between two table occurrences.
+
+**Naming note:** Relationships in FileMaker's XML do not carry a standalone user-visible name the same way tables or scripts do. The conventional name used here (e.g. `Invoice__Customer`) is derived from the right-side table occurrence name. The `docId` and display name should be constructed during normalization from the left+right TO names, not read as a direct attribute.
 
 ```json
 {
@@ -451,25 +458,29 @@ Represents a layout.
 
 ### 6.7 Layout Object
 
-This may be optional for the first version.
+Layout objects are present in the `<LayoutCatalog>` section of SaveAsXML and should be extracted.
 
-Eventually, layout objects can be extremely valuable because they explain where fields appear visually.
+**FileMaker 22 note:** In FM22+, embedded images are duplicated inside every `<LayoutObject>` that uses them (rather than referenced from a shared `<LibraryCatalog>`). This inflates file sizes significantly. The parser should skip or externalize image stream data rather than storing it in the model.
 
 Suggested fields:
 
-| Field | Meaning |
-|---|---|
-| `objectType` | Field, button, portal, tab panel, popover, web viewer, text, etc. |
-| `fieldDocId` | Field shown by object, if any |
-| `scriptDocId` | Script triggered by button/action, if any |
-| `bounds` | Position and size |
-| `name` | Object name |
-| `conditionalFormatting` | Conditional formatting definitions |
-| `hideCondition` | Hide object condition |
+| Field                   | Meaning                                                           |
+|-------------------------|-------------------------------------------------------------------|
+| `objectType`            | Field, button, portal, tab panel, popover, web viewer, text, etc. |
+| `fieldDocId`            | Field shown by object, if any                                     |
+| `scriptDocId`           | Script triggered by button/action, if any                         |
+| `bounds`                | Position and size                                                 |
+| `name`                  | Object name                                                       |
+| `conditionalFormatting` | Conditional formatting definitions                                |
+| `hideCondition`         | Hide object condition                                             |
+
+Because layout objects are the source of field→layout backlinks (Section 15), they should be extracted even if they are not rendered as individual Markdown pages. Extract them, derive the references, then decide whether to emit per-object files.
 
 ### 6.8 Script
 
 Represents a FileMaker script.
+
+**Folder path note:** Script folders are stored as `<ScriptGroup>` elements in the XML that contain scripts and nested groups — the folder path is not an attribute on the script itself. The `folderPath` value must be computed during extraction by walking the group hierarchy and building the path string.
 
 ```json
 {
@@ -494,20 +505,28 @@ Each script step should be extracted as its own structured entity or as embedded
 
 For future analysis, make it an entity.
 
+Script step parameters in the XML are **structured**, not display text. The `displayLabel` shown below is reconstructed from parsed parameters during normalization — it is not extracted directly from the XML. For steps like "Go to Layout", "Perform Script", and "Set Field", the XML contains explicit target IDs which should be preferred over text parsing for reference extraction.
+
 ```json
 {
   "docId": "scriptStep:Post_Transaction:0007",
   "entityType": "scriptStep",
   "scriptDocId": "script:Post_Transaction",
   "index": 7,
+  "stepId": 76,
   "name": "Set Field",
   "enabled": true,
-  "rawText": "Set Field [ Acc_Transaction_Log::Type ; 1 ]",
+  "displayLabel": "Set Field [ Acc_Transaction_Log::Type ; 1 ]",
+  "parameters": {
+    "targetFieldId": "72",
+    "calculation": "1"
+  },
   "references": [
     {
       "kind": "field",
       "targetDocId": "field:Acc_Transaction_Log::Type",
-      "role": "target"
+      "role": "target",
+      "confidence": "exact"
     }
   ]
 }
@@ -556,6 +575,41 @@ This can be deferred until later, but it will eventually matter.
 }
 ```
 
+### 6.13 External Data Source
+
+Represents a referenced FileMaker file or ODBC/JDBC source.
+
+Essential for multi-file solutions — external TOs in the relationship graph point to these.
+
+```json
+{
+  "docId": "externalSource:Customers",
+  "entityType": "externalDataSource",
+  "name": "Customers",
+  "type": "filemaker",
+  "paths": ["filewin:/C:/FileMaker/Customers.fmp12", "filemac:/FileMaker/Customers.fmp12"]
+}
+```
+
+### 6.14 Script Trigger
+
+Script triggers appear in two places: attached to layouts (e.g. `OnRecordLoad`, `OnModeEnter`) and attached to fields (e.g. `OnModify`, `OnExit`). Both should be extracted as structured references rather than standalone entities — they are edges from a layout or field to a script.
+
+Store them as references with `relationshipType: "triggersOnEvent"` and include the event name in the reference:
+
+```json
+{
+  "sourceDocId": "layout:Transaction_Detail",
+  "sourceEntityType": "layout",
+  "targetDocId": "script:Validate_On_Load",
+  "targetEntityType": "script",
+  "relationshipType": "triggersOnEvent",
+  "role": "trigger",
+  "event": "OnRecordLoad",
+  "confidence": "exact"
+}
+```
+
 ---
 
 ## 7. Reference Model
@@ -583,22 +637,23 @@ Do not only store references inside entities. Store a flat reference list too.
 
 ### 7.1 Suggested relationship types
 
-| Type | Meaning |
-|---|---|
-| `contains` | Parent contains child |
-| `usesField` | Script/layout/calculation uses field |
-| `usesLayout` | Script step refers to layout |
-| `usesScript` | Script calls another script |
-| `usesCustomFunction` | Calculation calls custom function |
-| `usesValueList` | Field/layout object uses value list |
-| `basedOnTableOccurrence` | Layout is based on table occurrence |
-| `basedOnBaseTable` | Table occurrence is based on base table |
-| `joinsTo` | Relationship joins table occurrences |
-| `readsFrom` | Calculation/script reads from entity |
-| `writesTo` | Script writes to entity |
-| `deletesFrom` | Script may delete records from context |
-| `opensWindowOn` | Script opens layout/window |
-| `navigatesTo` | Script changes layout or mode |
+| Type                     | Meaning                                            |
+|--------------------------|----------------------------------------------------|
+| `contains`               | Parent contains child                              |
+| `usesField`              | Script/layout/calculation uses field               |
+| `usesLayout`             | Script step refers to layout                       |
+| `usesScript`             | Script calls another script                        |
+| `usesCustomFunction`     | Calculation calls custom function                  |
+| `usesValueList`          | Field/layout object uses value list                |
+| `basedOnTableOccurrence` | Layout is based on table occurrence                |
+| `basedOnBaseTable`       | Table occurrence is based on base table            |
+| `joinsTo`                | Relationship joins table occurrences               |
+| `readsFrom`              | Calculation/script reads from entity               |
+| `writesTo`               | Script writes to entity                            |
+| `deletesFrom`            | Script may delete records from context             |
+| `opensWindowOn`          | Script opens layout/window                         |
+| `navigatesTo`            | Script changes layout or mode                      |
+| `triggersOnEvent`        | Layout or field triggers a script on a named event |
 
 ### 7.2 Reference confidence
 
@@ -608,11 +663,11 @@ Others may need to be inferred from calculation text.
 
 Use confidence:
 
-| Confidence | Meaning |
-|---|---|
-| `exact` | ID or explicit XML reference found |
-| `parsed` | Parsed from calculation/script text |
-| `inferred` | Inferred from context |
+| Confidence   | Meaning                                                     |
+|--------------|-------------------------------------------------------------|
+| `exact`      | ID or explicit XML reference found                          |
+| `parsed`     | Parsed from calculation/script text                         |
+| `inferred`   | Inferred from context                                       |
 | `unresolved` | Text looks like a reference but target could not be matched |
 
 ---
@@ -719,8 +774,8 @@ name: Acc_Transaction_Log
 
 ## Metadata
 
-| Name | Value |
-|---|---|
+| Name  | Value  |
+|--- |--- |
 | FMP ID | 12 |
 | UUID | ... |
 | Field Count | 27 |
@@ -966,6 +1021,16 @@ class LinkResolver:
 
 FileMaker XML can be large. Avoid loading the whole DOM if the file can be huge.
 
+**Encoding:** SaveAsXML files are written as **UTF-16 LE**. `lxml` handles this automatically when the file is opened in binary mode (`"rb"`). Do not open the file as text with a default encoding — this will corrupt the parse.
+
+```python
+from lxml import etree
+with open(path, "rb") as f:
+    tree = etree.parse(f)  # lxml reads the XML encoding declaration
+```
+
+**FM22+ file size:** Starting with FileMaker 22, embedded layout images are duplicated inside every `<LayoutObject>` that uses them rather than stored once in `<LibraryCatalog>`. This can make already-large files substantially larger. The `extract_layouts()` extractor should skip or discard image stream data (`<StreamList>` / `<Stream>` elements inside layout objects) unless the goal is a full fidelity snapshot.
+
 Options:
 
 | Parser | Notes |
@@ -988,10 +1053,13 @@ extract_fields()
 extract_table_occurrences()
 extract_relationships()
 extract_layouts()
-extract_scripts()
+extract_layout_objects()       # LayoutCatalog → LayoutObject elements
+extract_scripts()              # walks ScriptGroup hierarchy to derive folderPath
 extract_custom_functions()
 extract_value_lists()
 extract_privilege_sets()
+extract_external_data_sources()
+extract_script_triggers()      # layout-level and field-level triggers
 ```
 
 Each extractor should return raw-ish records. Then a normalizer turns those records into the official model.
@@ -1789,10 +1857,14 @@ def build(input_xml: Path, output_dir: Path, model_out: Path):
 |---|---|
 | FileMaker XML changes between versions | Version-detect and isolate parser logic |
 | XML files are huge | Use streaming parser or staged extraction |
+| FM22+ image duplication inflates file size | Skip/discard `<StreamList>` image data in layout objects unless explicitly needed |
 | References are ambiguous | Store confidence and unresolved references |
 | Markdown links break | Centralize link resolver |
 | File names collide | Use doc IDs and collision-safe slug registry |
 | Calculations are hard to parse | Start with simple reference extraction |
+| Script step display text must be reconstructed | Use structured XML parameters as primary source; build display label during normalization |
+| Relationship names are derived, not stored | Construct from left+right TO names during normalization |
+| Script folder paths are not direct attributes | Walk `<ScriptGroup>` hierarchy to build `folderPath` during extraction |
 | Output is too noisy | Add config flags and summary/detail levels |
 | Sensitive details leak | Add redaction config |
 | AI indexing is inconsistent | Use predictable headings and front matter |
