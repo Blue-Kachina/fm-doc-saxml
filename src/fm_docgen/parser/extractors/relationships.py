@@ -20,10 +20,13 @@ _OPERATOR_MAP = {
 
 def extract_relationships(database_elem: etree._Element) -> list[dict[str, Any]]:
     """Return a list of raw relationship dicts."""
-    graph = find_child(database_elem, "RelationshipGraph")
-    if graph is None:
-        return []
-    catalog = find_child(graph, "RelationshipCatalog")
+    # v2: <RelationshipCatalog> is a direct child of the container
+    # v1: it lives under <RelationshipGraph>
+    catalog = find_child(database_elem, "RelationshipCatalog")
+    if catalog is None:
+        graph = find_child(database_elem, "RelationshipGraph")
+        if graph is not None:
+            catalog = find_child(graph, "RelationshipCatalog")
     if catalog is None:
         return []
 
@@ -48,10 +51,10 @@ def _parse_relationship(elem: etree._Element) -> dict[str, Any]:
     return {
         "id": attr(elem, "id", "ID"),
         "name": attr(elem, "name", "Name"),
-        "left_table_id": attr(left_table, "id", "ID") if left_table is not None else "",
-        "left_table_name": attr(left_table, "name", "Name") if left_table is not None else "",
-        "right_table_id": attr(right_table, "id", "ID") if right_table is not None else "",
-        "right_table_name": attr(right_table, "name", "Name") if right_table is not None else "",
+        "left_table_id": _get_to_id(left_table),
+        "left_table_name": _get_to_name(left_table),
+        "right_table_id": _get_to_id(right_table),
+        "right_table_name": _get_to_name(right_table),
         "predicates": predicates,
         "allow_create_related": attr(options_elem or elem, "allowCreateRelatedRecords", "createRelated") == "True" if options_elem is not None else False,
         "delete_related": attr(options_elem or elem, "deleteRelatedRecords", "deleteRelated") == "True" if options_elem is not None else False,
@@ -60,19 +63,81 @@ def _parse_relationship(elem: etree._Element) -> dict[str, Any]:
     }
 
 
-def _parse_predicate(elem: etree._Element) -> dict[str, Any]:
-    left_field = find_child(elem, "LeftField")
-    right_field = find_child(elem, "RightField")
+def _get_to_id(table_elem: etree._Element | None) -> str:
+    if table_elem is None:
+        return ""
+    # v1: id/name directly on <LeftTable>/<RightTable>
+    direct_id = attr(table_elem, "id", "ID")
+    if direct_id:
+        return direct_id
+    # v2: <TableOccurrenceReference id="...">
+    to_ref = find_child(table_elem, "TableOccurrenceReference")
+    return attr(to_ref, "id", "ID") if to_ref is not None else ""
 
-    op_code = attr(elem, "fieldCompareOp", "operator", "op") or "0"
-    operator = _OPERATOR_MAP.get(op_code, "=")
+
+def _get_to_name(table_elem: etree._Element | None) -> str:
+    if table_elem is None:
+        return ""
+    # v1: id/name directly on <LeftTable>/<RightTable>
+    direct_name = attr(table_elem, "name", "Name")
+    if direct_name:
+        return direct_name
+    # v2: <TableOccurrenceReference name="...">
+    to_ref = find_child(table_elem, "TableOccurrenceReference")
+    return attr(to_ref, "name", "Name") if to_ref is not None else ""
+
+
+def _parse_predicate(elem: etree._Element) -> dict[str, Any]:
+    left_field_wrapper = find_child(elem, "LeftField")
+    right_field_wrapper = find_child(elem, "RightField")
+
+    op_code = attr(elem, "fieldCompareOp", "operator", "op", "type") or "0"
+    # v2 uses type="Equal" string; v1 uses numeric codes
+    operator = _OPERATOR_MAP.get(op_code, op_code.lower() if op_code else "=")
 
     return {
-        "left_field_id": attr(left_field, "id", "ID") if left_field is not None else "",
-        "left_field_name": attr(left_field, "name", "Name") if left_field is not None else "",
-        "left_table_name": attr(left_field, "tableName", "table") if left_field is not None else "",
-        "right_field_id": attr(right_field, "id", "ID") if right_field is not None else "",
-        "right_field_name": attr(right_field, "name", "Name") if right_field is not None else "",
-        "right_table_name": attr(right_field, "tableName", "table") if right_field is not None else "",
+        "left_field_id": _field_ref_id(left_field_wrapper),
+        "left_field_name": _field_ref_name(left_field_wrapper),
+        "left_table_name": _field_ref_to_name(left_field_wrapper),
+        "right_field_id": _field_ref_id(right_field_wrapper),
+        "right_field_name": _field_ref_name(right_field_wrapper),
+        "right_table_name": _field_ref_to_name(right_field_wrapper),
         "operator": operator,
     }
+
+
+def _field_ref_id(wrapper: etree._Element | None) -> str:
+    if wrapper is None:
+        return ""
+    # v1: <LeftField id="..."> directly
+    direct = attr(wrapper, "id", "ID")
+    if direct:
+        return direct
+    # v2: <FieldReference id="..."> child
+    ref = find_child(wrapper, "FieldReference")
+    return attr(ref, "id", "ID") if ref is not None else ""
+
+
+def _field_ref_name(wrapper: etree._Element | None) -> str:
+    if wrapper is None:
+        return ""
+    direct = attr(wrapper, "name", "Name")
+    if direct:
+        return direct
+    ref = find_child(wrapper, "FieldReference")
+    return attr(ref, "name", "Name") if ref is not None else ""
+
+
+def _field_ref_to_name(wrapper: etree._Element | None) -> str:
+    if wrapper is None:
+        return ""
+    # v1: tableName on <LeftField>/<RightField>
+    direct = attr(wrapper, "tableName", "table")
+    if direct:
+        return direct
+    # v2: <FieldReference><TableOccurrenceReference name="...">
+    ref = find_child(wrapper, "FieldReference")
+    if ref is not None:
+        to_ref = find_child(ref, "TableOccurrenceReference")
+        return attr(to_ref, "name", "Name") if to_ref is not None else ""
+    return ""

@@ -1,0 +1,152 @@
+[
+  {
+    "sourceDocId": "table:EverythingBagel",
+    "sourceEntityType": "table",
+    "targetDocId": "field:EverythingBagel::textField",
+    "targetEntityType": "field",
+    "relationshipType": "contains",
+    "role": null,
+    "confidence": "exact",
+    "rawText": null
+  },
+  {
+    "sourceDocId": "table:EverythingBagel",
+    "sourceEntityType": "table",
+    "targetDocId": "field:EverythingBagel::numberField",
+    "targetEntityType": "field",
+    "relationshipType": "contains",
+    "role": null,
+    "confidence": "exact",
+    "rawText": null
+  },
+  {
+    "sourceDocId": "table:EverythingBagel",
+    "sourceEntityType": "table",
+    "targetDocId": "field:EverythingBagel::dateField",
+    "targetEntityType": "field",
+    "relationshipType": "contains",
+    "role": null,
+    "confidence": "exact",
+    "rawText": null
+  },
+  {
+    "sourceDocId": "table:EverythingBagel",
+    "sourceEntityType": "table",
+    "targetDocId": "field:EverythingBagel::timeField",
+    "targetEntityType": "field",
+    "relationshipType": "contains",
+    "role": null,
+    "confidence": "exact",
+    "rawText": null
+  },
+  {
+    "sourceDocId": "table:EverythingBagel",
+    "sourceEntityType": "table",
+    "targetDocId": "field:EverythingBagel::timestampField",
+    "targetEntityType": "field",
+    "relationshipType": "contains",
+    "role": null,
+    "confidence": "exact",
+    "rawText": null
+  },
+  {
+    "sourceDocId": "table:EverythingBagel",
+    "sourceEntityType": "table",
+    "targetDocId": "field:EverythingBagel::containerField",
+    "targetEntityType": "field",
+    "relationshipType": "contains",
+    "role": null,
+    "confidence": "exact",
+    "rawText": null
+  },
+  {
+    "sourceDocId": "table:EverythingBagel",
+    "sourceEntityType": "table",
+    "targetDocId": "field:EverythingBagel::calculationField",
+    "targetEntityType": "field",
+    "relationshipType": "contains",
+    "role": null,
+    "confidence": "exact",
+    "rawText": null
+  },
+  {
+    "sourceDocId": "table:EverythingBagel",
+    "sourceEntityType": "table",
+    "targetDocId": "field:EverythingBagel::summaryField",
+    "targetEntityType": "field",
+    "relationshipType": "contains",
+    "role": null,
+    "confidence": "exact",
+    "rawText": null
+  },
+  {
+    "sourceDocId": "to:EverythingBagel",
+    "sourceEntityType": "tableOccurrence",
+    "targetDocId": "table:EverythingBagel",
+    "targetEntityType": "table",
+    "relationshipType": "basedOnBaseTable",
+    "role": null,
+    "confidence": "exact",
+    "rawText": null
+  },
+  {
+    "sourceDocId": "to:EverythingBagel__EVERYTHINGBAGEL__selfJoin",
+    "sourceEntityType": "tableOccurrence",
+    "targetDocId": "table:EverythingBagel",
+    "targetEntityType": "table",
+    "relationshipType": "basedOnBaseTable",
+    "role": null,
+    "confidence": "exact",
+    "rawText": null
+  },
+  {
+    "sourceDocId": "relationship:EverythingBagel__EVERYTHINGBAGEL__selfJoin__EverythingBagel",
+    "sourceEntityType": "relationship",
+    "targetDocId": "to:EverythingBagel__EVERYTHINGBAGEL__selfJoin",
+    "targetEntityType": "tableOccurrence",
+    "relationshipType": "joinsTo",
+    "role": null,
+    "confidence": "exact",
+    "rawText": null
+  },
+  {
+    "sourceDocId": "relationship:EverythingBagel__EVERYTHINGBAGEL__selfJoin__EverythingBagel",
+    "sourceEntityType": "relationship",
+    "targetDocId": "to:EverythingBagel",
+    "targetEntityType": "tableOccurrence",
+    "relationshipType": "joinsTo",
+    "role": null,
+    "confidence": "exact",
+    "rawText": null
+  },
+  {
+    "sourceDocId": "relationship:EverythingBagel__EVERYTHINGBAGEL__selfJoin__EverythingBagel",
+    "sourceEntityType": "relationship",
+    "targetDocId": "field:EverythingBagel::textField",
+    "targetEntityType": "field",
+    "relationshipType": "usesField",
+    "role": "left",
+    "confidence": "exact",
+    "rawText": null
+  },
+  {
+    "sourceDocId": "relationship:EverythingBagel__EVERYTHINGBAGEL__selfJoin__EverythingBagel",
+    "sourceEntityType": "relationship",
+    "targetDocId": "field:EverythingBagel::textField",
+    "targetEntityType": "field",
+    "relationshipType": "usesField",
+    "role": "right",
+    "confidence": "exact",
+    "rawText": null
+  },
+  {
+    "sourceDocId": "layout:EverythingBagel",
+    "sourceEntityType": "layout",
+    "targetDocId": "to:EverythingBagel",
+    "targetEntityType": "tableOccurrence",
+    "relationshipType": "basedOnTableOccurrence",
+    "role": null,
+    "confidence": "exact",
+    "rawText": null
+  }
+]

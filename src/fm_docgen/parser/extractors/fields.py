@@ -5,11 +5,20 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, find_child, find_all_descendants, text_of, xml_path
+from ._helpers import attr, find_child, find_all_children, find_all_descendants, calc_text_of, xml_path
 
 
-def extract_fields(database_elem: etree._Element) -> list[dict[str, Any]]:
+def extract_fields(
+    database_elem: etree._Element,
+    v2_fields_elem: etree._Element | None = None,
+) -> list[dict[str, Any]]:
     """Return a list of raw field dicts, each tagged with its parent table id/name."""
+    if v2_fields_elem is not None:
+        return _extract_fields_v2(v2_fields_elem)
+    return _extract_fields_v1(database_elem)
+
+
+def _extract_fields_v1(database_elem: etree._Element) -> list[dict[str, Any]]:
     catalog = find_child(database_elem, "TableCatalog", "BaseTableCatalog")
     if catalog is None:
         return []
@@ -26,6 +35,21 @@ def extract_fields(database_elem: etree._Element) -> list[dict[str, Any]]:
     return fields
 
 
+def _extract_fields_v2(fields_for_tables: etree._Element) -> list[dict[str, Any]]:
+    """v2: <FieldsForTables><FieldCatalog><BaseTableReference id name>...<ObjectList><Field...>"""
+    fields = []
+    for fc in find_all_children(fields_for_tables, "FieldCatalog"):
+        table_ref = find_child(fc, "BaseTableReference")
+        table_id = attr(table_ref, "id", "ID") if table_ref is not None else ""
+        table_name = attr(table_ref, "name", "Name") if table_ref is not None else ""
+        obj_list = find_child(fc, "ObjectList")
+        if obj_list is None:
+            continue
+        for field_elem in find_all_children(obj_list, "Field"):
+            fields.append(_parse_field(field_elem, table_id, table_name))
+    return fields
+
+
 def _parse_field(elem: etree._Element, table_id: str, table_name: str) -> dict[str, Any]:
     auto_enter = _parse_auto_enter(find_child(elem, "AutoEnter"))
     validation = _parse_validation(find_child(elem, "Validation"))
@@ -36,11 +60,12 @@ def _parse_field(elem: etree._Element, table_id: str, table_name: str) -> dict[s
         "id": attr(elem, "id", "ID"),
         "name": attr(elem, "name", "Name"),
         "uuid": attr(elem, "uuid", "UUID") or None,
-        "data_type": attr(elem, "dataType", "DataType", "fieldDataType") or "Text",
-        "field_type": attr(elem, "fieldType", "FieldType") or "Normal",
+        # v1 uses dataType/fieldType (camelCase); v2 uses datatype/fieldtype (lower)
+        "data_type": attr(elem, "dataType", "DataType", "datatype", "fieldDataType") or "Text",
+        "field_type": attr(elem, "fieldType", "FieldType", "fieldtype") or "Normal",
         "table_id": table_id,
         "table_name": table_name,
-        "calculation": text_of(calculation_elem) or None,
+        "calculation": calc_text_of(calculation_elem) or None,
         "auto_enter": auto_enter,
         "validation": validation,
         "storage": storage,
@@ -83,15 +108,22 @@ def _parse_validation(elem: etree._Element | None) -> dict[str, Any] | None:
     if elem is None:
         return None
 
+    # v2: notEmpty/unique/existing are inline attributes on <Validation>
+    # v1: they are child elements like <NotEmpty value="True"/>
     not_empty_elem = find_child(elem, "NotEmpty")
     required_elem = find_child(elem, "Required")
     unique_elem = find_child(elem, "Unique")
     max_chars_elem = find_child(elem, "MaximumCharacters")
 
+    def _bool_attr(child_elem, inline_name: str) -> bool:
+        if child_elem is not None:
+            return attr(child_elem, "value", "Value") == "True"
+        return attr(elem, inline_name).lower() == "true"
+
     result = {
-        "required": attr(required_elem, "value", "Value") == "True" if required_elem is not None else False,
-        "not_empty": attr(not_empty_elem, "value", "Value") == "True" if not_empty_elem is not None else False,
-        "unique": attr(unique_elem, "value", "Value") == "True" if unique_elem is not None else False,
+        "required": _bool_attr(required_elem, "required"),
+        "not_empty": _bool_attr(not_empty_elem, "notEmpty"),
+        "unique": _bool_attr(unique_elem, "unique"),
         "max_characters": None,
         "message": attr(elem, "message", "Message") or None,
     }

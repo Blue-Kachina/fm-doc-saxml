@@ -213,6 +213,16 @@ def _normalize_relationships(raw: RawModel, model: DocumentModel) -> None:
     for rel in raw.relationships:
         name = normalize_name(rel.get("name", ""))
         if not name:
+            # v2: relationships have no name attribute — synthesize from TO names
+            left_n = rel.get("left_table_name", "")
+            right_n = rel.get("right_table_name", "")
+            if left_n and right_n:
+                name = f"{left_n}__{right_n}"
+            elif left_n or right_n:
+                name = left_n or right_n
+            else:
+                name = f"rel_{rel.get('id', '')}"
+        if not name:
             continue
         doc_id = relationship_doc_id(name)
 

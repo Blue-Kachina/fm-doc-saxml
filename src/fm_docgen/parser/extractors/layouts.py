@@ -24,12 +24,22 @@ def _parse_layout(elem: etree._Element) -> dict[str, Any]:
     # Collect fields referenced on the layout via field objects
     referenced_fields = _collect_referenced_fields(elem)
 
+    # v1: tableOccurrenceID is a direct attribute
+    # v2: <TableOccurrenceReference id="..." name="..."> child element
+    to_id = attr(elem, "tableOccurrenceID", "tableOccurrenceId", "tableID")
+    to_name = attr(elem, "tableOccurrenceName", "tableName")
+    if not to_id:
+        to_ref = find_child(elem, "TableOccurrenceReference")
+        if to_ref is not None:
+            to_id = attr(to_ref, "id", "ID")
+            to_name = to_name or attr(to_ref, "name", "Name")
+
     return {
         "id": attr(elem, "id", "ID"),
         "name": attr(elem, "name", "Name"),
         "uuid": attr(elem, "uuid", "UUID") or None,
-        "table_occurrence_id": attr(elem, "tableOccurrenceID", "tableOccurrenceId", "tableID") or "",
-        "table_occurrence_name": attr(elem, "tableOccurrenceName", "tableName") or "",
+        "table_occurrence_id": to_id,
+        "table_occurrence_name": to_name,
         "theme": attr(elem, "theme", "Theme") or None,
         "referenced_fields": referenced_fields,
         "source_xml_path": xml_path(elem),
