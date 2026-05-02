@@ -19,6 +19,11 @@ from .extractors.scripts import extract_scripts
 from .extractors.custom_functions import extract_custom_functions
 from .extractors.value_lists import extract_value_lists
 from .extractors.privileges import extract_privilege_sets
+from .extractors.accounts import extract_accounts
+from .extractors.extended_privileges import extract_extended_privileges
+from .extractors.custom_menus import extract_custom_menus, extract_custom_menu_sets
+from .extractors.themes import extract_themes
+from .extractors.file_access import extract_file_references
 
 
 @dataclass
@@ -37,6 +42,12 @@ class RawModel:
     custom_functions: list[dict[str, Any]] = field(default_factory=list)
     value_lists: list[dict[str, Any]] = field(default_factory=list)
     privilege_sets: list[dict[str, Any]] = field(default_factory=list)
+    accounts: list[dict[str, Any]] = field(default_factory=list)
+    extended_privileges: list[dict[str, Any]] = field(default_factory=list)
+    custom_menus: list[dict[str, Any]] = field(default_factory=list)
+    custom_menu_sets: list[dict[str, Any]] = field(default_factory=list)
+    themes: list[dict[str, Any]] = field(default_factory=list)
+    file_references: list[dict[str, Any]] = field(default_factory=list)
     parse_warnings: list[str] = field(default_factory=list)
 
 
@@ -104,6 +115,12 @@ def _parse_v2(xml_path: Path, root, raw: RawModel) -> RawModel:
     raw.custom_functions = extract_custom_functions(container, v2_calcs_elem=calcs_for_cf)
     raw.value_lists = extract_value_lists(container, v2_options_elem=options_for_vl)
     raw.privilege_sets = extract_privilege_sets(container)
+    raw.accounts = extract_accounts(container)
+    raw.extended_privileges = extract_extended_privileges(container)
+    raw.custom_menus = extract_custom_menus(container)
+    raw.custom_menu_sets = extract_custom_menu_sets(container)
+    raw.themes = extract_themes(container)
+    raw.file_references = extract_file_references(container)
 
     return raw
 
@@ -140,5 +157,11 @@ def _parse_v1(xml_path: Path, root, raw: RawModel) -> RawModel:
     raw.custom_functions = extract_custom_functions(database_elem)
     raw.value_lists = extract_value_lists(database_elem)
     raw.privilege_sets = extract_privilege_sets(database_elem)
+    raw.accounts = extract_accounts(database_elem)
+    raw.extended_privileges = extract_extended_privileges(database_elem)
+    raw.custom_menus = extract_custom_menus(database_elem)
+    raw.custom_menu_sets = extract_custom_menu_sets(database_elem)
+    raw.themes = extract_themes(database_elem)
+    raw.file_references = extract_file_references(database_elem)
 
     return raw

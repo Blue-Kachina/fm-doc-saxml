@@ -47,6 +47,31 @@ def privilege_set_path(ps_name: str) -> str:
     return f"Privileges/{safe_slug(ps_name)}.md"
 
 
+def account_path(name: str) -> str:
+    return f"Accounts/{safe_slug(name)}.md"
+
+
+def extended_privilege_path(name: str) -> str:
+    return f"ExtendedPrivileges/{safe_slug(name)}.md"
+
+
+def custom_menu_path(name: str) -> str:
+    return f"CustomMenus/{safe_slug(name)}.md"
+
+
+def custom_menu_set_path(name: str) -> str:
+    return f"CustomMenuSets/{safe_slug(name)}.md"
+
+
+def theme_path(name: str) -> str:
+    return f"Themes/{safe_slug(name)}.md"
+
+
+def file_reference_path(doc_id: str) -> str:
+    slug = safe_slug(doc_id.replace("fileRef:", "").replace(":", "_"))
+    return f"FileAccess/{slug}.md"
+
+
 def relative_md_link(from_path: str, to_path: str) -> str:
     """Return a relative path from `from_path` to `to_path` (POSIX-style)."""
     from_parts = PurePosixPath(from_path).parent

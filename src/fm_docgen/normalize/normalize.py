@@ -20,6 +20,13 @@ from ..model.entities import (
     CustomFunctionEntity,
     ValueListEntity,
     PrivilegeSetEntity,
+    AccountEntity,
+    ExtendedPrivilegeEntity,
+    CustomMenuEntity,
+    CustomMenuItem,
+    CustomMenuSetEntity,
+    ThemeEntity,
+    FileReferenceEntity,
     StorageOptions,
     AutoEnterOptions,
     ValidationOptions,
@@ -36,6 +43,12 @@ from .ids import (
     custom_function_doc_id,
     value_list_doc_id,
     privilege_set_doc_id,
+    account_doc_id,
+    extended_privilege_doc_id,
+    custom_menu_doc_id,
+    custom_menu_set_doc_id,
+    theme_doc_id,
+    file_reference_doc_id,
 )
 from .names import normalize_name, qualified_name
 
@@ -64,6 +77,12 @@ def normalize(raw: RawModel, source_file: str = "") -> DocumentModel:
     _normalize_custom_functions(raw, model)
     _normalize_value_lists(raw, model)
     _normalize_privilege_sets(raw, model)
+    _normalize_accounts(raw, model)
+    _normalize_extended_privileges(raw, model)
+    _normalize_custom_menus(raw, model)
+    _normalize_custom_menu_sets(raw, model)
+    _normalize_themes(raw, model)
+    _normalize_file_references(raw, model)
 
     return model
 
@@ -519,3 +538,160 @@ def _normalize_privilege_sets(raw: RawModel, model: DocumentModel) -> None:
             sourceXml=SourceXmlInfo(path=ps.get("source_xml_path", "")) if ps.get("source_xml_path") else None,
         )
         model.entities.privilege_sets[doc_id] = entity
+
+
+# ---------------------------------------------------------------------------
+# Accounts
+# ---------------------------------------------------------------------------
+
+def _normalize_accounts(raw: RawModel, model: DocumentModel) -> None:
+    ps_name_map = {ps.name: ps.doc_id for ps in model.entities.privilege_sets.values()}
+    for acct in raw.accounts:
+        name = normalize_name(acct.get("name", ""))
+        if not name:
+            continue
+        doc_id = account_doc_id(name)
+        ps_name = acct.get("privilege_set_name") or ""
+        ps_doc_id = ps_name_map.get(ps_name) or (privilege_set_doc_id(ps_name) if ps_name else None)
+        entity = AccountEntity(
+            docId=doc_id,
+            name=name,
+            fmpId=str(acct.get("id", "")),
+            accountType=acct.get("account_type", "FileMaker"),
+            enabled=acct.get("enabled", True),
+            description=acct.get("description"),
+            privilegeSetDocId=ps_doc_id,
+            privilegeSetName=ps_name or None,
+            sourceXml=SourceXmlInfo(path=acct.get("source_xml_path", "")) if acct.get("source_xml_path") else None,
+        )
+        model.entities.accounts[doc_id] = entity
+
+
+# ---------------------------------------------------------------------------
+# Extended Privileges
+# ---------------------------------------------------------------------------
+
+def _normalize_extended_privileges(raw: RawModel, model: DocumentModel) -> None:
+    ps_name_map = {ps.name: ps.doc_id for ps in model.entities.privilege_sets.values()}
+    for ep in raw.extended_privileges:
+        name = normalize_name(ep.get("name", ""))
+        if not name:
+            continue
+        doc_id = extended_privilege_doc_id(name)
+        ps_doc_ids = []
+        for ref in ep.get("privilege_set_refs", []):
+            ref_name = ref.get("name", "")
+            ps_did = ps_name_map.get(ref_name) or (privilege_set_doc_id(ref_name) if ref_name else None)
+            if ps_did and ps_did not in ps_doc_ids:
+                ps_doc_ids.append(ps_did)
+        entity = ExtendedPrivilegeEntity(
+            docId=doc_id,
+            name=name,
+            fmpId=str(ep.get("id", "")),
+            description=ep.get("description"),
+            privilegeSetDocIds=ps_doc_ids,
+            sourceXml=SourceXmlInfo(path=ep.get("source_xml_path", "")) if ep.get("source_xml_path") else None,
+        )
+        model.entities.extended_privileges[doc_id] = entity
+
+
+# ---------------------------------------------------------------------------
+# Custom Menus
+# ---------------------------------------------------------------------------
+
+def _normalize_custom_menus(raw: RawModel, model: DocumentModel) -> None:
+    for cm in raw.custom_menus:
+        name = normalize_name(cm.get("name", ""))
+        if not name:
+            continue
+        doc_id = custom_menu_doc_id(name)
+        items = [
+            CustomMenuItem(
+                name=item.get("name", ""),
+                actionType=item.get("action_type", ""),
+                installCondition=item.get("install_condition"),
+            )
+            for item in cm.get("items", [])
+        ]
+        entity = CustomMenuEntity(
+            docId=doc_id,
+            name=name,
+            fmpId=str(cm.get("id", "")),
+            baseMenuName=cm.get("base_menu_name"),
+            installCondition=cm.get("install_condition"),
+            browseMode=cm.get("browse_mode", True),
+            findMode=cm.get("find_mode", True),
+            previewMode=cm.get("preview_mode", True),
+            items=items,
+            sourceXml=SourceXmlInfo(path=cm.get("source_xml_path", "")) if cm.get("source_xml_path") else None,
+        )
+        model.entities.custom_menus[doc_id] = entity
+
+
+# ---------------------------------------------------------------------------
+# Custom Menu Sets
+# ---------------------------------------------------------------------------
+
+def _normalize_custom_menu_sets(raw: RawModel, model: DocumentModel) -> None:
+    for cms in raw.custom_menu_sets:
+        name = normalize_name(cms.get("name", ""))
+        if not name:
+            continue
+        doc_id = custom_menu_set_doc_id(name)
+        menu_doc_ids = []
+        for ref in cms.get("menu_refs", []):
+            ref_name = ref.get("name", "")
+            if ref_name:
+                menu_doc_ids.append(custom_menu_doc_id(ref_name))
+        entity = CustomMenuSetEntity(
+            docId=doc_id,
+            name=name,
+            fmpId=str(cms.get("id", "")),
+            menuDocIds=menu_doc_ids,
+            sourceXml=SourceXmlInfo(path=cms.get("source_xml_path", "")) if cms.get("source_xml_path") else None,
+        )
+        model.entities.custom_menu_sets[doc_id] = entity
+
+
+# ---------------------------------------------------------------------------
+# Themes
+# ---------------------------------------------------------------------------
+
+def _normalize_themes(raw: RawModel, model: DocumentModel) -> None:
+    for th in raw.themes:
+        name = normalize_name(th.get("name", ""))
+        if not name:
+            continue
+        doc_id = theme_doc_id(name)
+        entity = ThemeEntity(
+            docId=doc_id,
+            name=name,
+            fmpId=str(th.get("id", "")),
+            displayName=th.get("display_name", ""),
+            group=th.get("group"),
+            defaultTheme=th.get("default_theme", False),
+            sourceXml=SourceXmlInfo(path=th.get("source_xml_path", "")) if th.get("source_xml_path") else None,
+        )
+        model.entities.themes[doc_id] = entity
+
+
+# ---------------------------------------------------------------------------
+# File References
+# ---------------------------------------------------------------------------
+
+def _normalize_file_references(raw: RawModel, model: DocumentModel) -> None:
+    for fr in raw.file_references:
+        display_name = fr.get("display_name", "") or fr.get("name", "")
+        ref_type = fr.get("ref_type", "Local")
+        if not display_name:
+            continue
+        doc_id = file_reference_doc_id(ref_type, display_name)
+        entity = FileReferenceEntity(
+            docId=doc_id,
+            name=display_name,
+            fmpId=str(fr.get("id", "")),
+            refType=ref_type,
+            isSelf=fr.get("is_self", False),
+            sourceXml=SourceXmlInfo(path=fr.get("source_xml_path", "")) if fr.get("source_xml_path") else None,
+        )
+        model.entities.file_references[doc_id] = entity

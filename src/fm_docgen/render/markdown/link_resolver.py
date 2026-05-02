@@ -15,6 +15,12 @@ from ...normalize.paths import (
     custom_function_path,
     value_list_path,
     privilege_set_path,
+    account_path,
+    extended_privilege_path,
+    custom_menu_path,
+    custom_menu_set_path,
+    theme_path,
+    file_reference_path,
 )
 
 
@@ -73,6 +79,36 @@ class LinkResolver:
 
         for e in em.privilege_sets.values():
             p = privilege_set_path(e.name)
+            self._path_by_doc_id[e.doc_id] = p
+            self._title_by_doc_id[e.doc_id] = e.name
+
+        for e in em.accounts.values():
+            p = account_path(e.name)
+            self._path_by_doc_id[e.doc_id] = p
+            self._title_by_doc_id[e.doc_id] = e.name
+
+        for e in em.extended_privileges.values():
+            p = extended_privilege_path(e.name)
+            self._path_by_doc_id[e.doc_id] = p
+            self._title_by_doc_id[e.doc_id] = e.name
+
+        for e in em.custom_menus.values():
+            p = custom_menu_path(e.name)
+            self._path_by_doc_id[e.doc_id] = p
+            self._title_by_doc_id[e.doc_id] = e.name
+
+        for e in em.custom_menu_sets.values():
+            p = custom_menu_set_path(e.name)
+            self._path_by_doc_id[e.doc_id] = p
+            self._title_by_doc_id[e.doc_id] = e.name
+
+        for e in em.themes.values():
+            p = theme_path(e.name)
+            self._path_by_doc_id[e.doc_id] = p
+            self._title_by_doc_id[e.doc_id] = e.display_name or e.name
+
+        for e in em.file_references.values():
+            p = file_reference_path(e.doc_id)
             self._path_by_doc_id[e.doc_id] = p
             self._title_by_doc_id[e.doc_id] = e.name
 

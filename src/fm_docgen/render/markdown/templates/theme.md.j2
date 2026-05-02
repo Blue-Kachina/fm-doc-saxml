@@ -1,0 +1,18 @@
+---
+docId: {{ entity.doc_id }}
+entityType: theme
+name: {{ entity.name }}
+source: {{ source_file }}
+---
+
+# Theme: {{ entity.display_name or entity.name }}
+
+## Metadata
+
+| Name | Value |
+|---|---|
+| FMP ID | {{ entity.fmp_id }} |
+| Technical Name | `{{ entity.name }}` |
+{% if entity.display_name %}| Display Name | {{ entity.display_name }} |
+{% endif %}{% if entity.group %}| Group | {{ entity.group }} |
+{% endif %}| Default Theme | {{ entity.default_theme }} |

@@ -1,0 +1,27 @@
+---
+docId: {{ entity.doc_id }}
+entityType: extPriv
+name: {{ entity.name }}
+source: {{ source_file }}
+---
+
+# Extended Privilege: {{ entity.name }}
+
+## Metadata
+
+| Name | Value |
+|---|---|
+| FMP ID | {{ entity.fmp_id }} |
+| Keyword | `{{ entity.name }}` |
+{% if entity.description %}| Description | {{ entity.description }} |
+{% endif %}
+
+{% if entity.privilege_set_doc_ids %}
+## Granted To Privilege Sets
+
+| Privilege Set |
+|---|
+{% for ps_id in entity.privilege_set_doc_ids %}
+| {{ link(ps_id) }} |
+{% endfor %}
+{% endif %}

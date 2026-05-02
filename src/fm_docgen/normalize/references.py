@@ -24,6 +24,8 @@ def resolve_references(model: DocumentModel) -> DocumentModel:
     _link_layouts(model)
     _link_scripts(model)
     _link_custom_functions(model)
+    _link_accounts_to_privilege_sets(model)
+    _link_extended_privileges_to_privilege_sets(model)
     return model
 
 
@@ -152,6 +154,33 @@ def _link_scripts(model: DocumentModel) -> None:
                     role=ref.get("role"),
                     confidence=confidence,
                     rawText=ref.get("rawText"),
+                ))
+
+
+def _link_accounts_to_privilege_sets(model: DocumentModel) -> None:
+    for acct in model.entities.accounts.values():
+        if acct.privilege_set_doc_id and acct.privilege_set_doc_id in model.entities.privilege_sets:
+            model.references.append(ReferenceRecord(
+                sourceDocId=acct.doc_id,
+                sourceEntityType="account",
+                targetDocId=acct.privilege_set_doc_id,
+                targetEntityType="privilegeSet",
+                relationshipType="assignedPrivilegeSet",
+                confidence="exact",
+            ))
+
+
+def _link_extended_privileges_to_privilege_sets(model: DocumentModel) -> None:
+    for ep in model.entities.extended_privileges.values():
+        for ps_doc_id in ep.privilege_set_doc_ids:
+            if ps_doc_id in model.entities.privilege_sets:
+                model.references.append(ReferenceRecord(
+                    sourceDocId=ep.doc_id,
+                    sourceEntityType="extPriv",
+                    targetDocId=ps_doc_id,
+                    targetEntityType="privilegeSet",
+                    relationshipType="grantedTo",
+                    confidence="exact",
                 ))
 
 

@@ -201,3 +201,92 @@ class PrivilegeSetEntity(BaseModel):
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
     model_config = ConfigDict(populate_by_name=True)
+
+
+class AccountEntity(BaseModel):
+    doc_id: str = Field(alias="docId")
+    entity_type: str = Field("account", alias="entityType")
+    name: str
+    fmp_id: str = Field(alias="fmpId")
+    account_type: str = Field("FileMaker", alias="accountType")
+    enabled: bool = True
+    description: Optional[str] = None
+    privilege_set_doc_id: Optional[str] = Field(None, alias="privilegeSetDocId")
+    privilege_set_name: Optional[str] = Field(None, alias="privilegeSetName")
+    source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class ExtendedPrivilegeEntity(BaseModel):
+    doc_id: str = Field(alias="docId")
+    entity_type: str = Field("extPriv", alias="entityType")
+    name: str
+    fmp_id: str = Field(alias="fmpId")
+    description: Optional[str] = None
+    privilege_set_doc_ids: list[str] = Field([], alias="privilegeSetDocIds")
+    source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class CustomMenuItem(BaseModel):
+    """Embedded within CustomMenuEntity — not a standalone entity."""
+
+    name: str
+    action_type: str = Field("", alias="actionType")
+    install_condition: Optional[str] = Field(None, alias="installCondition")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class CustomMenuEntity(BaseModel):
+    doc_id: str = Field(alias="docId")
+    entity_type: str = Field("customMenu", alias="entityType")
+    name: str
+    fmp_id: str = Field(alias="fmpId")
+    base_menu_name: Optional[str] = Field(None, alias="baseMenuName")
+    install_condition: Optional[str] = Field(None, alias="installCondition")
+    browse_mode: bool = Field(True, alias="browseMode")
+    find_mode: bool = Field(True, alias="findMode")
+    preview_mode: bool = Field(True, alias="previewMode")
+    items: list[CustomMenuItem] = []
+    source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class CustomMenuSetEntity(BaseModel):
+    doc_id: str = Field(alias="docId")
+    entity_type: str = Field("customMenuSet", alias="entityType")
+    name: str
+    fmp_id: str = Field(alias="fmpId")
+    menu_doc_ids: list[str] = Field([], alias="menuDocIds")
+    source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class ThemeEntity(BaseModel):
+    doc_id: str = Field(alias="docId")
+    entity_type: str = Field("theme", alias="entityType")
+    name: str
+    fmp_id: str = Field(alias="fmpId")
+    display_name: str = Field("", alias="displayName")
+    group: Optional[str] = None
+    default_theme: bool = Field(False, alias="defaultTheme")
+    source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class FileReferenceEntity(BaseModel):
+    doc_id: str = Field(alias="docId")
+    entity_type: str = Field("fileRef", alias="entityType")
+    name: str
+    fmp_id: str = Field(alias="fmpId")
+    ref_type: str = Field("Local", alias="refType")
+    is_self: bool = Field(False, alias="isSelf")
+    source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
+
+    model_config = ConfigDict(populate_by_name=True)

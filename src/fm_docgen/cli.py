@@ -200,6 +200,12 @@ def _print_summary(model, verbose: bool = False) -> None:
         ("Custom Functions", len(em.custom_functions)),
         ("Value Lists", len(em.value_lists)),
         ("Privilege Sets", len(em.privilege_sets)),
+        ("Accounts", len(em.accounts)),
+        ("Extended Privileges", len(em.extended_privileges)),
+        ("Custom Menus", len(em.custom_menus)),
+        ("Custom Menu Sets", len(em.custom_menu_sets)),
+        ("Themes", len(em.themes)),
+        ("File References", len(em.file_references)),
     ]
     for name, count in rows:
         tbl.add_row(name, str(count))

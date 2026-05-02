@@ -12,7 +12,9 @@ from ...model.document_model import DocumentModel
 from ...normalize.paths import (
     table_path, field_path, table_occurrence_path, relationship_path,
     layout_path, script_path, custom_function_path, value_list_path,
-    privilege_set_path, relative_md_link,
+    privilege_set_path, account_path, extended_privilege_path,
+    custom_menu_path, custom_menu_set_path, theme_path, file_reference_path,
+    relative_md_link,
 )
 from ...utils.file_writer import write_text
 from .link_resolver import LinkResolver
@@ -36,6 +38,12 @@ def render_markdown(model: DocumentModel, output_dir: Path) -> None:
     _render_custom_functions(model, output_dir, env, links)
     _render_value_lists(model, output_dir, env, links)
     _render_privilege_sets(model, output_dir, env, links)
+    _render_accounts(model, output_dir, env, links)
+    _render_extended_privileges(model, output_dir, env, links)
+    _render_custom_menus(model, output_dir, env, links)
+    _render_custom_menu_sets(model, output_dir, env, links)
+    _render_themes(model, output_dir, env, links)
+    _render_file_references(model, output_dir, env, links)
     _render_reports(model, output_dir, env, links)
 
 
@@ -117,6 +125,10 @@ def _render_tables(model: DocumentModel, output_dir: Path, env: Environment, lin
     for entity in entities:
         rel_path = table_path(entity.name)
         ctx = _make_ctx(model, rel_path, links, entity)
+        ctx["global_fields"] = [
+            f for f in model.entities.fields.values()
+            if f.base_table_doc_id == entity.doc_id and f.storage.global_storage
+        ]
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
 
@@ -347,6 +359,156 @@ def _render_privilege_sets(model: DocumentModel, output_dir: Path, env: Environm
 
 
 # ---------------------------------------------------------------------------
+# Accounts
+# ---------------------------------------------------------------------------
+
+def _render_accounts(model: DocumentModel, output_dir: Path, env: Environment, links: LinkResolver) -> None:
+    if not model.entities.accounts:
+        return
+    tmpl = env.get_template("account.md.j2")
+    entities = list(model.entities.accounts.values())
+    _render_section_index(
+        entities, output_dir / "Accounts" / "index.md",
+        section_title="Accounts",
+        entity_type_label="account",
+        extra_header="Type",
+        extra_col_fn=lambda e: e.account_type,
+        index_path="Accounts/index.md",
+        links=links,
+    )
+    for entity in entities:
+        rel_path = account_path(entity.name)
+        ctx = _make_ctx(model, rel_path, links, entity)
+        content = tmpl.render(**ctx)
+        write_text(output_dir / rel_path, content)
+
+
+# ---------------------------------------------------------------------------
+# Extended Privileges
+# ---------------------------------------------------------------------------
+
+def _render_extended_privileges(model: DocumentModel, output_dir: Path, env: Environment, links: LinkResolver) -> None:
+    if not model.entities.extended_privileges:
+        return
+    tmpl = env.get_template("extended_privilege.md.j2")
+    entities = list(model.entities.extended_privileges.values())
+    _render_section_index(
+        entities, output_dir / "ExtendedPrivileges" / "index.md",
+        section_title="Extended Privileges",
+        entity_type_label="extended privilege",
+        extra_header="Description",
+        extra_col_fn=lambda e: e.description or "",
+        index_path="ExtendedPrivileges/index.md",
+        links=links,
+    )
+    for entity in entities:
+        rel_path = extended_privilege_path(entity.name)
+        ctx = _make_ctx(model, rel_path, links, entity)
+        content = tmpl.render(**ctx)
+        write_text(output_dir / rel_path, content)
+
+
+# ---------------------------------------------------------------------------
+# Custom Menus
+# ---------------------------------------------------------------------------
+
+def _render_custom_menus(model: DocumentModel, output_dir: Path, env: Environment, links: LinkResolver) -> None:
+    if not model.entities.custom_menus:
+        return
+    tmpl = env.get_template("custom_menu.md.j2")
+    entities = list(model.entities.custom_menus.values())
+    _render_section_index(
+        entities, output_dir / "CustomMenus" / "index.md",
+        section_title="Custom Menus",
+        entity_type_label="custom menu",
+        extra_header="Base Menu",
+        extra_col_fn=lambda e: e.base_menu_name or "",
+        index_path="CustomMenus/index.md",
+        links=links,
+    )
+    for entity in entities:
+        rel_path = custom_menu_path(entity.name)
+        ctx = _make_ctx(model, rel_path, links, entity)
+        content = tmpl.render(**ctx)
+        write_text(output_dir / rel_path, content)
+
+
+# ---------------------------------------------------------------------------
+# Custom Menu Sets
+# ---------------------------------------------------------------------------
+
+def _render_custom_menu_sets(model: DocumentModel, output_dir: Path, env: Environment, links: LinkResolver) -> None:
+    if not model.entities.custom_menu_sets:
+        return
+    tmpl = env.get_template("custom_menu_set.md.j2")
+    entities = list(model.entities.custom_menu_sets.values())
+    _render_section_index(
+        entities, output_dir / "CustomMenuSets" / "index.md",
+        section_title="Custom Menu Sets",
+        entity_type_label="custom menu set",
+        extra_header="Menu Count",
+        extra_col_fn=lambda e: str(len(e.menu_doc_ids)),
+        index_path="CustomMenuSets/index.md",
+        links=links,
+    )
+    for entity in entities:
+        rel_path = custom_menu_set_path(entity.name)
+        ctx = _make_ctx(model, rel_path, links, entity)
+        content = tmpl.render(**ctx)
+        write_text(output_dir / rel_path, content)
+
+
+# ---------------------------------------------------------------------------
+# Themes
+# ---------------------------------------------------------------------------
+
+def _render_themes(model: DocumentModel, output_dir: Path, env: Environment, links: LinkResolver) -> None:
+    if not model.entities.themes:
+        return
+    tmpl = env.get_template("theme.md.j2")
+    entities = list(model.entities.themes.values())
+    _render_section_index(
+        entities, output_dir / "Themes" / "index.md",
+        section_title="Themes",
+        entity_type_label="theme",
+        extra_header="Display Name",
+        extra_col_fn=lambda e: e.display_name or e.name,
+        index_path="Themes/index.md",
+        links=links,
+    )
+    for entity in entities:
+        rel_path = theme_path(entity.name)
+        ctx = _make_ctx(model, rel_path, links, entity)
+        content = tmpl.render(**ctx)
+        write_text(output_dir / rel_path, content)
+
+
+# ---------------------------------------------------------------------------
+# File References
+# ---------------------------------------------------------------------------
+
+def _render_file_references(model: DocumentModel, output_dir: Path, env: Environment, links: LinkResolver) -> None:
+    if not model.entities.file_references:
+        return
+    tmpl = env.get_template("file_access.md.j2")
+    entities = list(model.entities.file_references.values())
+    _render_section_index(
+        entities, output_dir / "FileAccess" / "index.md",
+        section_title="File References",
+        entity_type_label="file reference",
+        extra_header="Type",
+        extra_col_fn=lambda e: e.ref_type,
+        index_path="FileAccess/index.md",
+        links=links,
+    )
+    for entity in entities:
+        rel_path = file_reference_path(entity.doc_id)
+        ctx = _make_ctx(model, rel_path, links, entity)
+        content = tmpl.render(**ctx)
+        write_text(output_dir / rel_path, content)
+
+
+# ---------------------------------------------------------------------------
 # Reports
 # ---------------------------------------------------------------------------
 
@@ -457,4 +619,10 @@ def _counts(model: DocumentModel) -> _Counts:
         custom_functions=len(model.entities.custom_functions),
         value_lists=len(model.entities.value_lists),
         privilege_sets=len(model.entities.privilege_sets),
+        accounts=len(model.entities.accounts),
+        extended_privileges=len(model.entities.extended_privileges),
+        custom_menus=len(model.entities.custom_menus),
+        custom_menu_sets=len(model.entities.custom_menu_sets),
+        themes=len(model.entities.themes),
+        file_references=len(model.entities.file_references),
     )

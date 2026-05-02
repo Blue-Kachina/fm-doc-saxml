@@ -207,6 +207,85 @@ Prospect]]></Text>
           </PrivilegeSet>
         </ObjectList>
       </PrivilegeSetsCatalog>
+      <AccountsCatalog membercount="1">
+        <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000A0</UUID>
+        <TagList></TagList>
+        <ObjectList membercount="1">
+          <Account id="1" type="FileMaker" enable="True">
+            <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000A1</UUID>
+            <AccountName>admin</AccountName>
+            <PrivilegeSetReference id="1" name="[Full Access]"></PrivilegeSetReference>
+            <Description>Default admin account</Description>
+          </Account>
+        </ObjectList>
+      </AccountsCatalog>
+      <ExtendedPrivilegesCatalog membercount="2">
+        <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000B0</UUID>
+        <TagList></TagList>
+        <ObjectList membercount="2">
+          <ExtendedPrivilege id="1" name="fmwebdirect">
+            <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000B1</UUID>
+            <Description>Access via FileMaker WebDirect</Description>
+            <ObjectList membercount="1">
+              <PrivilegeSetReference id="1" name="[Full Access]"></PrivilegeSetReference>
+            </ObjectList>
+          </ExtendedPrivilege>
+          <ExtendedPrivilege id="2" name="fmapp">
+            <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000B2</UUID>
+            <Description>Access via FileMaker client</Description>
+          </ExtendedPrivilege>
+        </ObjectList>
+      </ExtendedPrivilegesCatalog>
+      <CustomMenuCatalog membercount="2">
+        <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000C0</UUID>
+        <TagList></TagList>
+        <ObjectList membercount="2">
+          <CustomMenu id="1" name="EditMenu">
+            <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000C1</UUID>
+            <Base name="Edit"></Base>
+            <Options browseMode="True" findMode="True" previewMode="False"></Options>
+            <MenuItemList membercount="2">
+              <MenuItem id="1" name="Undo" type="Standard">
+                <Base name="Undo"></Base>
+              </MenuItem>
+              <MenuItem id="2" name="Redo" type="Standard">
+                <Base name="Redo"></Base>
+              </MenuItem>
+            </MenuItemList>
+          </CustomMenu>
+          <CustomMenu id="2" name="EmptyMenu">
+            <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000C2</UUID>
+            <Options browseMode="True" findMode="False" previewMode="False"></Options>
+            <MenuItemList membercount="0"></MenuItemList>
+          </CustomMenu>
+        </ObjectList>
+      </CustomMenuCatalog>
+      <CustomMenuSetsCatalog membercount="1">
+        <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000D0</UUID>
+        <TagList></TagList>
+        <ObjectList membercount="1">
+          <CustomMenuSet id="1" name="DefaultMenuSet">
+            <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000D1</UUID>
+            <CustomMenuReference id="1" name="EditMenu"></CustomMenuReference>
+            <CustomMenuReference id="2" name="EmptyMenu"></CustomMenuReference>
+          </CustomMenuSet>
+        </ObjectList>
+      </CustomMenuSetsCatalog>
+      <ThemeCatalog membercount="1">
+        <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000E0</UUID>
+        <TagList></TagList>
+        <Theme id="1" name="com.filemaker.theme.minimalist_touch" Display="Minimalist Touch" Group="FileMaker" defaultTheme="True">
+          <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000E1</UUID>
+        </Theme>
+      </ThemeCatalog>
+      <FileAccessCatalog membercount="1">
+        <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000F0</UUID>
+        <ObjectList membercount="1">
+          <Authorization id="1" type="Local" self="True">
+            <Display><![CDATA[TestSolution]]></Display>
+          </Authorization>
+        </ObjectList>
+      </FileAccessCatalog>
     </AddAction>
   </Structure>
 </FMSaveAsXML>

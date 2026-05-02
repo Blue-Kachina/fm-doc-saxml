@@ -17,6 +17,12 @@ from .entities import (
     CustomFunctionEntity,
     ValueListEntity,
     PrivilegeSetEntity,
+    AccountEntity,
+    ExtendedPrivilegeEntity,
+    CustomMenuEntity,
+    CustomMenuSetEntity,
+    ThemeEntity,
+    FileReferenceEntity,
 )
 from .references import ReferenceRecord
 
@@ -51,6 +57,12 @@ class EntityMaps(BaseModel):
     custom_functions: dict[str, CustomFunctionEntity] = Field({}, alias="customFunctions")
     value_lists: dict[str, ValueListEntity] = Field({}, alias="valueLists")
     privilege_sets: dict[str, PrivilegeSetEntity] = Field({}, alias="privilegeSets")
+    accounts: dict[str, AccountEntity] = {}
+    extended_privileges: dict[str, ExtendedPrivilegeEntity] = Field({}, alias="extendedPrivileges")
+    custom_menus: dict[str, CustomMenuEntity] = Field({}, alias="customMenus")
+    custom_menu_sets: dict[str, CustomMenuSetEntity] = Field({}, alias="customMenuSets")
+    themes: dict[str, ThemeEntity] = {}
+    file_references: dict[str, FileReferenceEntity] = Field({}, alias="fileReferences")
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -89,6 +101,12 @@ class DocumentModel(BaseModel):
             "customFunction": self.entities.custom_functions,
             "valueList": self.entities.value_lists,
             "privilegeSet": self.entities.privilege_sets,
+            "account": self.entities.accounts,
+            "extPriv": self.entities.extended_privileges,
+            "customMenu": self.entities.custom_menus,
+            "customMenuSet": self.entities.custom_menu_sets,
+            "theme": self.entities.themes,
+            "fileRef": self.entities.file_references,
         }
         entity_map = maps.get(prefix)
         if entity_map is not None:
