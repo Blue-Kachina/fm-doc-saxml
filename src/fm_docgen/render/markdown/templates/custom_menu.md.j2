@@ -1,0 +1,36 @@
+---
+docId: {{ entity.doc_id }}
+entityType: customMenu
+name: {{ entity.name }}
+source: {{ source_file }}
+---
+
+# Custom Menu: {{ entity.name }}
+
+## Metadata
+
+| Name | Value |
+|---|---|
+| FMP ID | {{ entity.fmp_id }} |
+{% if entity.base_menu_name %}| Base Menu | {{ entity.base_menu_name }} |
+{% endif %}| Browse Mode | {{ entity.browse_mode }} |
+| Find Mode | {{ entity.find_mode }} |
+| Preview Mode | {{ entity.preview_mode }} |
+
+{% if entity.install_condition %}
+## Install Condition
+
+```
+{{ entity.install_condition }}
+```
+{% endif %}
+
+{% if entity.items %}
+## Menu Items
+
+| Item | Action Type |
+|---|---|
+{% for item in entity.items %}
+| {{ item.name }} | {{ item.action_type or "—" }} |
+{% endfor %}
+{% endif %}

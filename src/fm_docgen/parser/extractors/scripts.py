@@ -8,38 +8,69 @@ from lxml import etree
 from ._helpers import attr, find_child, find_all_descendants, text_of, xml_path
 
 
-def extract_scripts(database_elem: etree._Element) -> list[dict[str, Any]]:
+def extract_scripts(
+    database_elem: etree._Element,
+    v2_steps_elem: etree._Element | None = None,
+) -> list[dict[str, Any]]:
     """Return a list of raw script dicts (each containing their steps)."""
     catalog = find_child(database_elem, "ScriptCatalog")
     if catalog is None:
         return []
 
+    # Build script id → steps list from v2 StepsForScripts section
+    steps_map: dict[str, list] = {}
+    if v2_steps_elem is not None:
+        for script_wrapper in find_all_descendants(v2_steps_elem, "Script"):
+            sc_ref = find_child(script_wrapper, "ScriptReference")
+            sc_id = attr(sc_ref, "id", "ID") if sc_ref is not None else ""
+            if not sc_id:
+                continue
+            obj_list = find_child(script_wrapper, "ObjectList")
+            steps = []
+            if obj_list is not None:
+                for idx, step_elem in enumerate(find_all_descendants(obj_list, "Step")):
+                    steps.append(_parse_step(step_elem, idx))
+            steps_map[sc_id] = steps
+
     results = []
-    _walk_script_folder(catalog, folder_path="", results=results)
+    _walk_script_folder(catalog, folder_path="", results=results, steps_map=steps_map)
     return results
 
 
-def _walk_script_folder(elem: etree._Element, folder_path: str, results: list[dict[str, Any]]) -> None:
+def _walk_script_folder(
+    elem: etree._Element,
+    folder_path: str,
+    results: list[dict[str, Any]],
+    steps_map: dict[str, list] | None = None,
+) -> None:
     """Recursively walk script folders, collecting scripts with their folder path."""
     for child in elem:
+        if not isinstance(child.tag, str):
+            continue
         local = _local(child.tag)
-        if local in ("Script",):
-            results.append(_parse_script(child, folder_path))
+        if local == "Script":
+            results.append(_parse_script(child, folder_path, steps_map or {}))
         elif local in ("ScriptFolder", "Folder", "Group"):
             folder_name = attr(child, "name", "Name")
             sub_path = f"{folder_path}/{folder_name}".lstrip("/")
-            _walk_script_folder(child, sub_path, results)
+            _walk_script_folder(child, sub_path, results, steps_map)
 
 
-def _parse_script(elem: etree._Element, folder_path: str) -> dict[str, Any]:
-    step_list = find_child(elem, "StepList")
-    steps = []
-    if step_list is not None:
-        for idx, step_elem in enumerate(find_all_descendants(step_list, "Step")):
-            steps.append(_parse_step(step_elem, idx))
+def _parse_script(elem: etree._Element, folder_path: str, steps_map: dict[str, list]) -> dict[str, Any]:
+    sc_id = attr(elem, "id", "ID")
+
+    # v1: steps live in a <StepList> child of the <Script> element
+    # v2: steps come from the steps_map (StepsForScripts section)
+    steps = steps_map.get(sc_id)
+    if steps is None:
+        step_list = find_child(elem, "StepList")
+        steps = []
+        if step_list is not None:
+            for idx, step_elem in enumerate(find_all_descendants(step_list, "Step")):
+                steps.append(_parse_step(step_elem, idx))
 
     return {
-        "id": attr(elem, "id", "ID"),
+        "id": sc_id,
         "name": attr(elem, "name", "Name"),
         "uuid": attr(elem, "uuid", "UUID") or None,
         "folder_path": folder_path or None,

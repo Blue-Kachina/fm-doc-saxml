@@ -41,3 +41,27 @@ def value_list_doc_id(name: str) -> str:
 
 def privilege_set_doc_id(name: str) -> str:
     return f"privilegeSet:{name}"
+
+
+def account_doc_id(name: str) -> str:
+    return f"account:{name}"
+
+
+def extended_privilege_doc_id(name: str) -> str:
+    return f"extPriv:{name}"
+
+
+def custom_menu_doc_id(name: str) -> str:
+    return f"customMenu:{name}"
+
+
+def custom_menu_set_doc_id(name: str) -> str:
+    return f"customMenuSet:{name}"
+
+
+def theme_doc_id(name: str) -> str:
+    return f"theme:{name}"
+
+
+def file_reference_doc_id(ref_type: str, display_name: str) -> str:
+    return f"fileRef:{ref_type}:{display_name}"

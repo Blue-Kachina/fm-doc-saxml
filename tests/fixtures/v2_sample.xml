@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.2.3.0" Source="22.0.6" File="TestSolution.fmp12" UUID="00000000-0000-0000-0000-000000000001" locale="English" Has_DDR_INFO="True">
+  <Structure membercount="1">
+    <AddAction membercount="8">
+      <BaseTableCatalog membercount="1">
+        <UUID modifications="1" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000010</UUID>
+        <BaseTable id="1" comment="" name="Contact">
+          <UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000011</UUID>
+          <TagList></TagList>
+        </BaseTable>
+      </BaseTableCatalog>
+      <TableOccurrenceCatalog membercount="2">
+        <UUID modifications="1" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000020</UUID>
+        <TagList></TagList>
+        <TableOccurrence View="Full" height="0" id="1048577" name="Contact" type="Local">
+          <UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000021</UUID>
+          <BaseTableSourceReference type="BaseTableReference">
+            <BaseTableReference id="1" name="Contact" UUID="00000000-0000-0000-0000-000000000011"></BaseTableReference>
+          </BaseTableSourceReference>
+          <TagList></TagList>
+        </TableOccurrence>
+        <TableOccurrence View="Full" height="0" id="1048578" name="Contact__selfJoin" type="Local">
+          <UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000022</UUID>
+          <BaseTableSourceReference type="BaseTableReference">
+            <BaseTableReference id="1" name="Contact" UUID="00000000-0000-0000-0000-000000000011"></BaseTableReference>
+          </BaseTableSourceReference>
+          <TagList></TagList>
+        </TableOccurrence>
+      </TableOccurrenceCatalog>
+      <CustomFunctionsCatalog membercount="1">
+        <UUID modifications="1" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000030</UUID>
+        <TagList></TagList>
+        <ObjectList membercount="1">
+          <CustomFunction id="1" name="DoubleIt" access="All">
+            <UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000031</UUID>
+            <TagList></TagList>
+            <ObjectList membercount="1">
+              <Parameter name="n"></Parameter>
+            </ObjectList>
+          </CustomFunction>
+        </ObjectList>
+      </CustomFunctionsCatalog>
+      <ValueListCatalog membercount="2">
+        <UUID modifications="1" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000040</UUID>
+        <TagList></TagList>
+        <ValueList id="1" name="StatusList">
+          <Source value="Custom"></Source>
+          <UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000041</UUID>
+          <TagList></TagList>
+        </ValueList>
+        <ValueList id="2" name="NameFromField">
+          <Source value="FromField"></Source>
+          <UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000042</UUID>
+          <TagList></TagList>
+        </ValueList>
+      </ValueListCatalog>
+      <FieldsForTables membercount="1">
+        <FieldCatalog>
+          <UUID modifications="2" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000050</UUID>
+          <TagList></TagList>
+          <BaseTableReference id="1" name="Contact" UUID="00000000-0000-0000-0000-000000000011"></BaseTableReference>
+          <ObjectList membercount="3">
+            <Field id="1" name="ContactID" fieldtype="Normal" datatype="Number" comment="">
+              <UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000051</UUID>
+              <AutoEnter type="" prohibitModification="False"></AutoEnter>
+              <Validation type="OnlyDuringDataEntry" allowOverride="True" notEmpty="True" unique="True" existing="False"></Validation>
+              <Storage autoIndex="True" index="All" global="False" maxRepetitions="1">
+                <LanguageReference name="English" id="21"></LanguageReference>
+              </Storage>
+              <TagList></TagList>
+            </Field>
+            <Field id="2" name="FullName" fieldtype="Calculated" datatype="Text" comment="">
+              <UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000052</UUID>
+              <AutoEnter alwaysEvaluate="False"></AutoEnter>
+              <Storage storeCalculationResults="True" autoIndex="True" index="None" global="False" maxRepetitions="1">
+                <LanguageReference name="English" id="21"></LanguageReference>
+              </Storage>
+              <Calculation>
+                <TableOccurrenceReference id="1048577" name="Contact" UUID="00000000-0000-0000-0000-000000000021"></TableOccurrenceReference>
+                <Text><![CDATA[Contact::FirstName & " " & Contact::LastName]]></Text>
+              </Calculation>
+              <TagList></TagList>
+            </Field>
+            <Field id="3" name="Status" fieldtype="Normal" datatype="Text" comment="">
+              <UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000053</UUID>
+              <AutoEnter type="" prohibitModification="False"></AutoEnter>
+              <Validation type="OnlyDuringDataEntry" allowOverride="True" notEmpty="False" unique="False" existing="False"></Validation>
+              <Storage autoIndex="True" index="None" global="False" maxRepetitions="1">
+                <LanguageReference name="English" id="21"></LanguageReference>
+              </Storage>
+              <TagList></TagList>
+            </Field>
+          </ObjectList>
+        </FieldCatalog>
+      </FieldsForTables>
+      <OptionsForValueLists membercount="2">
+        <ValueList>
+          <ValueListReference id="1" name="StatusList" UUID="00000000-0000-0000-0000-000000000041"></ValueListReference>
+          <Source value="Custom"></Source>
+          <CustomValues>
+            <Text><![CDATA[Active
+Inactive
+Prospect]]></Text>
+          </CustomValues>
+        </ValueList>
+        <ValueList>
+          <ValueListReference id="2" name="NameFromField" UUID="00000000-0000-0000-0000-000000000042"></ValueListReference>
+          <Source value="FromField"></Source>
+          <Field>
+            <PrimaryField show="True" sort="True">
+              <FieldReference id="3" name="Status" UUID="00000000-0000-0000-0000-000000000053">
+                <TableOccurrenceReference id="1048577" name="Contact" UUID="00000000-0000-0000-0000-000000000021"></TableOccurrenceReference>
+              </FieldReference>
+            </PrimaryField>
+            <ShowRelated value="False"></ShowRelated>
+          </Field>
+        </ValueList>
+      </OptionsForValueLists>
+      <RelationshipCatalog membercount="1">
+        <UUID modifications="1" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000060</UUID>
+        <Relationship id="1">
+          <UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000061</UUID>
+          <LeftTable cascadeCreate="False" cascadeDelete="False" type="Local">
+            <TableOccurrenceReference id="1048578" name="Contact__selfJoin" UUID="00000000-0000-0000-0000-000000000022"></TableOccurrenceReference>
+          </LeftTable>
+          <RightTable cascadeCreate="False" cascadeDelete="False" type="Local">
+            <TableOccurrenceReference id="1048577" name="Contact" UUID="00000000-0000-0000-0000-000000000021"></TableOccurrenceReference>
+          </RightTable>
+          <JoinPredicateList membercount="1">
+            <JoinPredicate type="Equal">
+              <LeftField>
+                <FieldReference id="1" name="ContactID" UUID="00000000-0000-0000-0000-000000000051">
+                  <TableOccurrenceReference id="1048578" name="Contact__selfJoin" UUID="00000000-0000-0000-0000-000000000022"></TableOccurrenceReference>
+                </FieldReference>
+              </LeftField>
+              <RightField>
+                <FieldReference id="1" name="ContactID" UUID="00000000-0000-0000-0000-000000000051">
+                  <TableOccurrenceReference id="1048577" name="Contact" UUID="00000000-0000-0000-0000-000000000021"></TableOccurrenceReference>
+                </FieldReference>
+              </RightField>
+            </JoinPredicate>
+          </JoinPredicateList>
+          <TagList></TagList>
+        </Relationship>
+      </RelationshipCatalog>
+      <CalcsForCustomFunctions membercount="1">
+        <ObjectList membercount="1">
+          <CustomFunctionCalc>
+            <CustomFunctionReference id="1" name="DoubleIt" UUID="00000000-0000-0000-0000-000000000031"></CustomFunctionReference>
+            <Calculation>
+              <Text><![CDATA[n * 2]]></Text>
+            </Calculation>
+          </CustomFunctionCalc>
+        </ObjectList>
+      </CalcsForCustomFunctions>
+      <ScriptCatalog membercount="1">
+        <UUID modifications="1" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000070</UUID>
+        <TagList></TagList>
+        <Script id="1" name="SendEmail">
+          <UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000071</UUID>
+          <Options hidden="False" access="ReadWrite" runwithfullaccess="False" compatibility="0">0</Options>
+          <TagList></TagList>
+        </Script>
+      </ScriptCatalog>
+      <StepsForScripts membercount="1">
+        <Script>
+          <ScriptReference id="1" name="SendEmail" UUID="00000000-0000-0000-0000-000000000071"></ScriptReference>
+          <ObjectList membercount="2">
+            <Step hash="AAAA" index="0" id="89" name="# (comment)" enable="True">
+              <UUID>00000000-0000-0000-AAAA-000000000001</UUID>
+              <OwnerID></OwnerID>
+              <Options>4</Options>
+              <ParameterValues membercount="1">
+                <Parameter type="Comment">
+                  <Comment value="Send the email"></Comment>
+                </Parameter>
+              </ParameterValues>
+            </Step>
+            <Step hash="BBBB" index="1" id="106" name="Send Mail" enable="True">
+              <UUID>00000000-0000-0000-BBBB-000000000001</UUID>
+              <OwnerID></OwnerID>
+              <Options>0</Options>
+              <ParameterValues membercount="0"></ParameterValues>
+            </Step>
+          </ObjectList>
+        </Script>
+      </StepsForScripts>
+      <LayoutCatalog membercount="1">
+        <UUID modifications="1" userName="Admin" accountName="Admin" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000080</UUID>
+        <TagList></TagList>
+        <Layout id="1" name="ContactDetail" width="1024">
+          <TableOccurrenceReference id="1048577" name="Contact" UUID="00000000-0000-0000-0000-000000000021"></TableOccurrenceReference>
+          <TagList></TagList>
+        </Layout>
+      </LayoutCatalog>
+      <PrivilegeSetsCatalog membercount="2">
+        <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000090</UUID>
+        <TagList></TagList>
+        <ObjectList membercount="2">
+          <PrivilegeSet id="1" name="[Full Access]">
+            <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000091</UUID>
+            <Description>access to everything</Description>
+          </PrivilegeSet>
+          <PrivilegeSet id="2" name="[Read-Only Access]">
+            <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-000000000092</UUID>
+            <Description>read access only</Description>
+          </PrivilegeSet>
+        </ObjectList>
+      </PrivilegeSetsCatalog>
+      <AccountsCatalog membercount="1">
+        <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000A0</UUID>
+        <TagList></TagList>
+        <ObjectList membercount="1">
+          <Account id="1" type="FileMaker" enable="True">
+            <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000A1</UUID>
+            <AccountName>admin</AccountName>
+            <PrivilegeSetReference id="1" name="[Full Access]"></PrivilegeSetReference>
+            <Description>Default admin account</Description>
+          </Account>
+        </ObjectList>
+      </AccountsCatalog>
+      <ExtendedPrivilegesCatalog membercount="2">
+        <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000B0</UUID>
+        <TagList></TagList>
+        <ObjectList membercount="2">
+          <ExtendedPrivilege id="1" name="fmwebdirect">
+            <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000B1</UUID>
+            <Description>Access via FileMaker WebDirect</Description>
+            <ObjectList membercount="1">
+              <PrivilegeSetReference id="1" name="[Full Access]"></PrivilegeSetReference>
+            </ObjectList>
+          </ExtendedPrivilege>
+          <ExtendedPrivilege id="2" name="fmapp">
+            <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000B2</UUID>
+            <Description>Access via FileMaker client</Description>
+          </ExtendedPrivilege>
+        </ObjectList>
+      </ExtendedPrivilegesCatalog>
+      <CustomMenuCatalog membercount="2">
+        <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000C0</UUID>
+        <TagList></TagList>
+        <ObjectList membercount="2">
+          <CustomMenu id="1" name="EditMenu">
+            <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000C1</UUID>
+            <Base name="Edit"></Base>
+            <Options browseMode="True" findMode="True" previewMode="False"></Options>
+            <MenuItemList membercount="2">
+              <MenuItem id="1" name="Undo" type="Standard">
+                <Base name="Undo"></Base>
+              </MenuItem>
+              <MenuItem id="2" name="Redo" type="Standard">
+                <Base name="Redo"></Base>
+              </MenuItem>
+            </MenuItemList>
+          </CustomMenu>
+          <CustomMenu id="2" name="EmptyMenu">
+            <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000C2</UUID>
+            <Options browseMode="True" findMode="False" previewMode="False"></Options>
+            <MenuItemList membercount="0"></MenuItemList>
+          </CustomMenu>
+        </ObjectList>
+      </CustomMenuCatalog>
+      <CustomMenuSetsCatalog membercount="1">
+        <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000D0</UUID>
+        <TagList></TagList>
+        <ObjectList membercount="1">
+          <CustomMenuSet id="1" name="DefaultMenuSet">
+            <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000D1</UUID>
+            <CustomMenuReference id="1" name="EditMenu"></CustomMenuReference>
+            <CustomMenuReference id="2" name="EmptyMenu"></CustomMenuReference>
+          </CustomMenuSet>
+        </ObjectList>
+      </CustomMenuSetsCatalog>
+      <ThemeCatalog membercount="1">
+        <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000E0</UUID>
+        <TagList></TagList>
+        <Theme id="1" name="com.filemaker.theme.minimalist_touch" Display="Minimalist Touch" Group="FileMaker" defaultTheme="True">
+          <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000E1</UUID>
+        </Theme>
+      </ThemeCatalog>
+      <FileAccessCatalog membercount="1">
+        <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000F0</UUID>
+        <ObjectList membercount="1">
+          <Authorization id="1" type="Local" self="True">
+            <Display><![CDATA[TestSolution]]></Display>
+          </Authorization>
+        </ObjectList>
+      </FileAccessCatalog>
+    </AddAction>
+  </Structure>
+</FMSaveAsXML>

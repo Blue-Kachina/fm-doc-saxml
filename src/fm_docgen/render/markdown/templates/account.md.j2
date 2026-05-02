@@ -1,0 +1,24 @@
+---
+docId: {{ entity.doc_id }}
+entityType: account
+name: {{ entity.name }}
+source: {{ source_file }}
+---
+
+# Account: {{ entity.name }}
+
+## Metadata
+
+| Name | Value |
+|---|---|
+| FMP ID | {{ entity.fmp_id }} |
+| Type | {{ entity.account_type }} |
+| Enabled | {{ entity.enabled }} |
+{% if entity.privilege_set_doc_id %}| Privilege Set | {{ link(entity.privilege_set_doc_id) }} |
+{% elif entity.privilege_set_name %}| Privilege Set | {{ entity.privilege_set_name }} |
+{% endif %}
+{% if entity.description %}
+## Description
+
+{{ entity.description }}
+{% endif %}

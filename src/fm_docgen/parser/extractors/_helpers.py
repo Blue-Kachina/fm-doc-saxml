@@ -64,6 +64,21 @@ def text_of(elem: etree._Element | None) -> str:
     return (elem.text or "").strip()
 
 
+def calc_text_of(calc_elem: etree._Element | None) -> str:
+    """Extract calculation text from a <Calculation> element.
+
+    In v1 the text is the direct content; in v2 it lives in a <Text><![CDATA[...]]></Text> child.
+    """
+    if calc_elem is None:
+        return ""
+    text_child = find_child(calc_elem, "Text")
+    if text_child is not None:
+        val = (text_child.text or "").strip()
+        if val:
+            return val
+    return (calc_elem.text or "").strip()
+
+
 def xml_path(elem: etree._Element) -> str:
     """Build a simple XPath-like path string for debugging."""
     parts = []

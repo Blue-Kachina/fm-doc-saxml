@@ -19,6 +19,11 @@ from .extractors.scripts import extract_scripts
 from .extractors.custom_functions import extract_custom_functions
 from .extractors.value_lists import extract_value_lists
 from .extractors.privileges import extract_privilege_sets
+from .extractors.accounts import extract_accounts
+from .extractors.extended_privileges import extract_extended_privileges
+from .extractors.custom_menus import extract_custom_menus, extract_custom_menu_sets
+from .extractors.themes import extract_themes
+from .extractors.file_access import extract_file_references
 
 
 @dataclass
@@ -37,6 +42,12 @@ class RawModel:
     custom_functions: list[dict[str, Any]] = field(default_factory=list)
     value_lists: list[dict[str, Any]] = field(default_factory=list)
     privilege_sets: list[dict[str, Any]] = field(default_factory=list)
+    accounts: list[dict[str, Any]] = field(default_factory=list)
+    extended_privileges: list[dict[str, Any]] = field(default_factory=list)
+    custom_menus: list[dict[str, Any]] = field(default_factory=list)
+    custom_menu_sets: list[dict[str, Any]] = field(default_factory=list)
+    themes: list[dict[str, Any]] = field(default_factory=list)
+    file_references: list[dict[str, Any]] = field(default_factory=list)
     parse_warnings: list[str] = field(default_factory=list)
 
 
@@ -51,9 +62,73 @@ def parse_savexml(xml_path: Path) -> RawModel:
         return raw
 
     root = tree.getroot()
+
+    root_tag = root.tag.split("}")[-1] if "}" in root.tag else root.tag
+    if root_tag == "FMSaveAsXML" and _is_v2_format(root):
+        return _parse_v2(xml_path, root, raw)
+    return _parse_v1(xml_path, root, raw)
+
+
+def _is_v2_format(root) -> bool:
+    """Return True for FMSaveAsXML v2.x format.
+
+    v2 has a 'File' attribute (the .fmp12 filename) and a dotted version like '2.2.3.0'.
+    v1 has only 'Version="1.0"' and no 'File' attribute.
+    """
+    if root.get("File") or root.get("file"):
+        return True
+    version = root.get("version") or root.get("Version") or ""
+    return version.startswith("2.")
+
+
+def _parse_v2(xml_path: Path, root, raw: RawModel) -> RawModel:
+    """Handle FileMaker SaveAsXML v2.x format."""
+    fm_source = root.get("Source", "")
+    xml_version = root.get("version", "unknown")
+    raw.filemaker_version = fm_source if fm_source else xml_version
+
+    file_attr = root.get("File", "")
+    raw.solution_name = file_attr.replace(".fmp12", "").replace(".fmp7", "") or xml_path.stem
+
+    structure = find_child(root, "Structure")
+    if structure is None:
+        raw.parse_warnings.append("v2: Could not find <Structure> element.")
+        return raw
+
+    add_action = find_child(structure, "AddAction")
+    if add_action is None:
+        raw.parse_warnings.append("v2: Could not find <AddAction> element.")
+        return raw
+
+    container = add_action
+    fields_for_tables = find_child(container, "FieldsForTables")
+    options_for_vl = find_child(container, "OptionsForValueLists")
+    calcs_for_cf = find_child(container, "CalcsForCustomFunctions")
+    steps_for_scripts = find_child(container, "StepsForScripts")
+
+    raw.tables = extract_tables(container)
+    raw.fields = extract_fields(container, v2_fields_elem=fields_for_tables)
+    raw.table_occurrences = extract_table_occurrences(container)
+    raw.relationships = extract_relationships(container)
+    raw.layouts = extract_layouts(container)
+    raw.scripts = extract_scripts(container, v2_steps_elem=steps_for_scripts)
+    raw.custom_functions = extract_custom_functions(container, v2_calcs_elem=calcs_for_cf)
+    raw.value_lists = extract_value_lists(container, v2_options_elem=options_for_vl)
+    raw.privilege_sets = extract_privilege_sets(container)
+    raw.accounts = extract_accounts(container)
+    raw.extended_privileges = extract_extended_privileges(container)
+    raw.custom_menus = extract_custom_menus(container)
+    raw.custom_menu_sets = extract_custom_menu_sets(container)
+    raw.themes = extract_themes(container)
+    raw.file_references = extract_file_references(container)
+
+    return raw
+
+
+def _parse_v1(xml_path: Path, root, raw: RawModel) -> RawModel:
+    """Handle FileMaker SaveAsXML v1.x format."""
     raw.filemaker_version = detect_version(root)
 
-    # Locate <File> element (may be direct child or inside root)
     file_elem = find_child(root, "File")
     if file_elem is not None:
         raw.solution_name = (
@@ -61,14 +136,12 @@ def parse_savexml(xml_path: Path) -> RawModel:
         )
         database_elem = find_child(file_elem, "Database")
     else:
-        # Some exports place <Database> directly under root
         database_elem = find_child(root, "Database")
 
     if database_elem is None:
         raw.parse_warnings.append("Could not find <Database> element. XML structure may be unexpected.")
         return raw
 
-    # Solution name fallback from Database attributes
     if not raw.solution_name:
         raw.solution_name = (
             database_elem.get("name") or database_elem.get("Name") or
@@ -84,5 +157,11 @@ def parse_savexml(xml_path: Path) -> RawModel:
     raw.custom_functions = extract_custom_functions(database_elem)
     raw.value_lists = extract_value_lists(database_elem)
     raw.privilege_sets = extract_privilege_sets(database_elem)
+    raw.accounts = extract_accounts(database_elem)
+    raw.extended_privileges = extract_extended_privileges(database_elem)
+    raw.custom_menus = extract_custom_menus(database_elem)
+    raw.custom_menu_sets = extract_custom_menu_sets(database_elem)
+    raw.themes = extract_themes(database_elem)
+    raw.file_references = extract_file_references(database_elem)
 
     return raw

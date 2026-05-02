@@ -1,0 +1,24 @@
+---
+docId: {{ entity.doc_id }}
+entityType: customMenuSet
+name: {{ entity.name }}
+source: {{ source_file }}
+---
+
+# Custom Menu Set: {{ entity.name }}
+
+## Metadata
+
+| Name | Value |
+|---|---|
+| FMP ID | {{ entity.fmp_id }} |
+
+{% if entity.menu_doc_ids %}
+## Menus
+
+| Menu |
+|---|
+{% for menu_id in entity.menu_doc_ids %}
+| {{ link(menu_id) }} |
+{% endfor %}
+{% endif %}

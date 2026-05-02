@@ -40,6 +40,16 @@ _No fields found._
 _No table occurrences found._
 {% endif %}
 
+{% if global_fields %}
+## Global Fields
+
+| Field | Data Type |
+|---|---|
+{% for f in global_fields %}
+| {{ link(f.doc_id) }} | {{ f.data_type }} |
+{% endfor %}
+{% endif %}
+
 {% set bl = backlinks(entity.doc_id) %}
 {% if bl %}
 ## Referenced By
