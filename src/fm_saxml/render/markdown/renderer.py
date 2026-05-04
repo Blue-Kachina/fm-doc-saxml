@@ -697,12 +697,3 @@ def _counts(model: DocumentModel) -> _Counts:
         themes=len(model.entities.themes),
         file_references=len(model.entities.file_references),
     )
-n(model.entities.value_lists),
-        privilege_sets=len(model.entities.privilege_sets),
-        accounts=len(model.entities.accounts),
-        extended_privileges=len(model.entities.extended_privileges),
-        custom_menus=len(model.entities.custom_menus),
-        custom_menu_sets=len(model.entities.custom_menu_sets),
-        themes=len(model.entities.themes),
-        file_references=len(model.entities.file_references),
-    )
