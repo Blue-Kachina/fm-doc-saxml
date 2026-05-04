@@ -85,6 +85,8 @@ def _make_ctx(
         else None
     )
 
+    from ...version import get_self_updated_at_display, REPO_URL, REPO_LABEL
+
     return {
         "entity": entity,
         "source_file": model.source.file_name,
@@ -93,6 +95,9 @@ def _make_ctx(
         "solution_name": model.solution.name,
         "generated_at": model.source.generated_at.strftime("%Y-%m-%d %H:%M UTC"),
         "xml_modified_at": xml_modified_at,
+        "fm_saxml_updated_at": get_self_updated_at_display(),
+        "fm_saxml_repo_url": REPO_URL,
+        "fm_saxml_repo_label": REPO_LABEL,
         "link": link,
         "get_entity": get_entity,
         "backlinks": backlinks,
@@ -573,9 +578,13 @@ def _render_reports(model: DocumentModel, output_dir: Path, env: Environment, li
         if model.source.source_modified_at
         else None
     )
+    from ...version import get_self_updated_at_display, REPO_URL, REPO_LABEL
     content = tmpl.render(
         generated_at=model.source.generated_at.strftime("%Y-%m-%d %H:%M UTC"),
         xml_modified_at=xml_modified_at,
+        fm_saxml_updated_at=get_self_updated_at_display(),
+        fm_saxml_repo_url=REPO_URL,
+        fm_saxml_repo_label=REPO_LABEL,
         counts=counts,
         total_references=len(model.references),
         exact_references=sum(1 for r in model.references if r.confidence == "exact"),
@@ -680,6 +689,15 @@ def _counts(model: DocumentModel) -> _Counts:
         script_steps=len(model.entities.script_steps),
         custom_functions=len(model.entities.custom_functions),
         value_lists=len(model.entities.value_lists),
+        privilege_sets=len(model.entities.privilege_sets),
+        accounts=len(model.entities.accounts),
+        extended_privileges=len(model.entities.extended_privileges),
+        custom_menus=len(model.entities.custom_menus),
+        custom_menu_sets=len(model.entities.custom_menu_sets),
+        themes=len(model.entities.themes),
+        file_references=len(model.entities.file_references),
+    )
+n(model.entities.value_lists),
         privilege_sets=len(model.entities.privilege_sets),
         accounts=len(model.entities.accounts),
         extended_privileges=len(model.entities.extended_privileges),
