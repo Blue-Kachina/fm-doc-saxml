@@ -15,6 +15,7 @@ source: {{ source_file }}
 {% if entity.base_table_occurrence_doc_id %}| Table Occurrence | {{ link(entity.base_table_occurrence_doc_id) }} |
 {% endif %}{% if entity.theme %}| Theme | {{ entity.theme }} |
 {% endif %}| Field Count | {{ entity.referenced_fields | length }} |
+| Layout Object Count | {{ entity.layout_objects | length }} |
 
 {% if entity.referenced_fields %}
 ## Fields on Layout
@@ -23,6 +24,16 @@ source: {{ source_file }}
 |---|---|
 {% for fd in entity.referenced_fields %}{% set field = get_entity(fd) %}
 | {{ link(fd) }} | {{ field.data_type if field else "?" }} |
+{% endfor %}
+{% endif %}
+
+{% if entity.layout_objects %}
+## Layout Objects
+
+| ID | Type | Part | Name / Text | Field |
+|---|---|---|---|---|
+{% for od in entity.layout_objects %}{% set obj = get_entity(od) %}
+| {{ obj.object_id }} | {{ obj.object_type }} | {{ obj.part or "" }} | {{ obj.name or obj.raw_text or "" }} | {{ link(obj.field_doc_id) if obj.field_doc_id else "" }} |
 {% endfor %}
 {% endif %}
 

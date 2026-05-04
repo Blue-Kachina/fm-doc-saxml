@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any
+from pathlib import Path
+from typing import Any, Optional
 
 from ..parser.saxml_reader import RawModel
 from ..model.document_model import DocumentModel, SourceInfo, SolutionInfo, EntityMaps, Warning
@@ -15,6 +16,8 @@ from ..model.entities import (
     RelationshipPredicate,
     RelationshipOptions,
     LayoutEntity,
+    LayoutObjectEntity,
+    LayoutObjectBounds,
     ScriptStepEntity,
     ScriptEntity,
     CustomFunctionEntity,
@@ -38,6 +41,7 @@ from .ids import (
     to_doc_id,
     relationship_doc_id,
     layout_doc_id,
+    layout_object_doc_id,
     script_doc_id,
     script_step_doc_id,
     custom_function_doc_id,
@@ -53,12 +57,23 @@ from .ids import (
 from .names import normalize_name, qualified_name
 
 
-def normalize(raw: RawModel, source_file: str = "") -> DocumentModel:
-    """Convert a RawModel into a fully normalized DocumentModel."""
+def normalize(
+    raw: RawModel,
+    source_file: str = "",
+    source_path: Optional[Path] = None,
+) -> DocumentModel:
+    """Convert a RawModel into a fully normalized DocumentModel.
+
+    ``source_path``, if provided, is used to capture the modification timestamp
+    of the source XML file (rendered as "XML Created At" in the summary).
+    """
+    source_modified_at = _extract_mtime(source_path)
+
     source = SourceInfo(
         fileName=source_file or raw.file_name,
         fileMakerVersion=raw.filemaker_version,
         generatedAt=datetime.now(timezone.utc),
+        sourceModifiedAt=source_modified_at,
     )
     solution = SolutionInfo(name=raw.solution_name or source_file or "Unknown Solution")
     entities = EntityMaps()
@@ -73,6 +88,7 @@ def normalize(raw: RawModel, source_file: str = "") -> DocumentModel:
     _normalize_table_occurrences(raw, model)
     _normalize_relationships(raw, model)
     _normalize_layouts(raw, model)
+    _normalize_layout_objects(raw, model)
     _normalize_scripts(raw, model)
     _normalize_custom_functions(raw, model)
     _normalize_value_lists(raw, model)
@@ -85,6 +101,20 @@ def normalize(raw: RawModel, source_file: str = "") -> DocumentModel:
     _normalize_file_references(raw, model)
 
     return model
+
+
+def _extract_mtime(source_path: Optional[Path]) -> Optional[datetime]:
+    """Return the mtime of ``source_path`` as a UTC datetime, or None."""
+    if not source_path:
+        return None
+    try:
+        path = Path(source_path)
+        if not path.exists():
+            return None
+        ts = path.stat().st_mtime
+        return datetime.fromtimestamp(ts, tz=timezone.utc)
+    except OSError:
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -364,6 +394,103 @@ def _normalize_layouts(raw: RawModel, model: DocumentModel) -> None:
             sourceXml=SourceXmlInfo(path=layout.get("source_xml_path", "")) if layout.get("source_xml_path") else None,
         )
         model.entities.layouts[doc_id] = entity
+
+
+# ---------------------------------------------------------------------------
+# Layout Objects
+# ---------------------------------------------------------------------------
+
+def _normalize_layout_objects(raw: RawModel, model: DocumentModel) -> None:
+    """Build LayoutObjectEntity instances from raw layout dicts.
+
+    Also re-populates each layout's ``referenced_fields`` from the resolved
+    layout-object field references (which gives us a more accurate count than
+    the raw ``referenced_fields`` list).
+    """
+    field_name_map: dict[tuple[str, str], str] = {
+        (f.base_table_doc_id.split(":", 1)[1], f.name): f.doc_id
+        for f in model.entities.fields.values()
+    }
+    to_id_map = {to.fmp_id: to.doc_id for to in model.entities.table_occurrences.values()}
+    to_name_map = {to.name: to.doc_id for to in model.entities.table_occurrences.values()}
+
+    for raw_layout in raw.layouts:
+        layout_name = normalize_name(raw_layout.get("name", ""))
+        if not layout_name:
+            continue
+        layout_did = layout_doc_id(layout_name)
+        layout_entity = model.entities.layouts.get(layout_did)
+        if layout_entity is None:
+            continue
+
+        objects = raw_layout.get("layout_objects", []) or []
+        object_doc_ids: list[str] = []
+        # Track field doc IDs derived from real layout objects so we can
+        # overwrite the layout's referenced_fields with a verified set.
+        derived_field_dids: list[str] = []
+        seen_fields: set[str] = set()
+
+        for obj in objects:
+            obj_id = str(obj.get("id", "") or "")
+            fallback_idx = int(obj.get("fallback_index", 0) or 0)
+            doc_id = layout_object_doc_id(layout_name, obj_id, fallback_idx)
+
+            bounds_raw = obj.get("bounds") or {}
+            bounds = (
+                LayoutObjectBounds(**bounds_raw)
+                if isinstance(bounds_raw, dict) and bounds_raw
+                else None
+            )
+
+            field_did: str | None = None
+            to_did: str | None = None
+            f = obj.get("field")
+            if f:
+                fn = f.get("field_name", "")
+                tn = f.get("table_name", "")
+                if fn:
+                    field_did = field_name_map.get((tn, fn)) or (
+                        field_doc_id(tn, fn) if tn and fn else None
+                    )
+                fm_to_id = str(f.get("to_id", "") or "")
+                if fm_to_id and fm_to_id in to_id_map:
+                    to_did = to_id_map[fm_to_id]
+                elif tn and tn in to_name_map:
+                    to_did = to_name_map[tn]
+
+            entity = LayoutObjectEntity(
+                docId=doc_id,
+                layoutDocId=layout_did,
+                part=obj.get("part"),
+                objectId=obj_id,
+                objectType=obj.get("type", "") or "",
+                kind=obj.get("kind"),
+                name=obj.get("name", "") or "",
+                uuid=obj.get("uuid"),
+                bounds=bounds,
+                fieldDocId=field_did,
+                tableOccurrenceDocId=to_did,
+                rawText=obj.get("raw_text"),
+                sourceXml=(
+                    SourceXmlInfo(path=obj.get("source_xml_path", ""))
+                    if obj.get("source_xml_path")
+                    else None
+                ),
+            )
+            model.entities.layout_objects[doc_id] = entity
+            object_doc_ids.append(doc_id)
+
+            if field_did and field_did not in seen_fields:
+                seen_fields.add(field_did)
+                derived_field_dids.append(field_did)
+
+        layout_entity.layout_objects = object_doc_ids
+        # Prefer the field set we just derived from real layout objects. If
+        # none were found (e.g. nothing field-bound on this layout) leave the
+        # existing referenced_fields list — which was populated from the same
+        # source — alone.
+        if derived_field_dids:
+            layout_entity.referenced_fields = derived_field_dids
 
 
 # ---------------------------------------------------------------------------

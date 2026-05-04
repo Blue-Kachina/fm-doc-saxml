@@ -25,6 +25,7 @@ def write_split_json(model: DocumentModel, output_dir: Path) -> None:
         "tableOccurrences": model.entities.table_occurrences,
         "relationships": model.entities.relationships,
         "layouts": model.entities.layouts,
+        "layoutObjects": model.entities.layout_objects,
         "scripts": model.entities.scripts,
         "scriptSteps": model.entities.script_steps,
         "customFunctions": model.entities.custom_functions,

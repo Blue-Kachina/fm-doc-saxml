@@ -23,6 +23,18 @@ def layout_doc_id(name: str) -> str:
     return f"layout:{name}"
 
 
+def layout_object_doc_id(layout_name: str, object_id: str, fallback_index: int = 0) -> str:
+    """Build a stable docId for a single layout object.
+
+    ``object_id`` is the FileMaker-assigned id within the layout. When the id
+    is missing we fall back to the object's positional index, prefixed with
+    'idx' so it can't collide with a real id.
+    """
+    if object_id:
+        return f"layoutObject:{layout_name}::{object_id}"
+    return f"layoutObject:{layout_name}::idx{fallback_index:04d}"
+
+
 def script_doc_id(name: str) -> str:
     return f"script:{name}"
 

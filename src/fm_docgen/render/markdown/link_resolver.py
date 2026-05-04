@@ -11,6 +11,7 @@ from ...normalize.paths import (
     table_occurrence_path,
     relationship_path,
     layout_path,
+    layout_object_path,
     script_path,
     custom_function_path,
     value_list_path,
@@ -61,6 +62,15 @@ class LinkResolver:
             p = layout_path(e.name)
             self._path_by_doc_id[e.doc_id] = p
             self._title_by_doc_id[e.doc_id] = e.name
+
+        for e in em.layout_objects.values():
+            layout = em.layouts.get(e.layout_doc_id)
+            layout_name = layout.name if layout else e.layout_doc_id.split(":", 1)[-1]
+            obj_label = e.object_id or e.doc_id.split("::", 1)[-1]
+            p = layout_object_path(layout_name, obj_label)
+            self._path_by_doc_id[e.doc_id] = p
+            display = e.name or e.raw_text or e.object_type or obj_label
+            self._title_by_doc_id[e.doc_id] = f"{layout_name} · {display}"
 
         for e in em.scripts.values():
             p = script_path(e.name, e.folder_path)

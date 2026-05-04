@@ -126,6 +126,44 @@ class LayoutEntity(BaseModel):
     base_table_occurrence_doc_id: Optional[str] = Field(None, alias="baseTableOccurrenceDocId")
     theme: Optional[str] = None
     referenced_fields: list[str] = Field([], alias="referencedFields")
+    layout_objects: list[str] = Field([], alias="layoutObjects")  # LayoutObject docIds
+    source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class LayoutObjectBounds(BaseModel):
+    """Pixel bounds of a layout object on the layout."""
+
+    top: Optional[float] = None
+    left: Optional[float] = None
+    bottom: Optional[float] = None
+    right: Optional[float] = None
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class LayoutObjectEntity(BaseModel):
+    """A single object placed on a layout — a field, button, text block, portal, etc.
+
+    Layout objects are nested inside ``<Part><ObjectList>`` in the SaveAsXML
+    format. They carry the field placements that the layout displays, along
+    with text, buttons, and other on-layout content.
+    """
+
+    doc_id: str = Field(alias="docId")
+    entity_type: str = Field("layoutObject", alias="entityType")
+    layout_doc_id: str = Field(alias="layoutDocId")
+    part: Optional[str] = None  # e.g. "Body", "Header", "Top Navigation"
+    object_id: str = Field("", alias="objectId")  # FM's id="..." within the layout
+    object_type: str = Field("", alias="objectType")  # "Edit Box", "Text", "Button", "Portal", etc.
+    kind: Optional[str] = None  # FM's kind="..." numeric flag (kept as string)
+    name: str = ""  # Object name (often blank for plain text/edit boxes)
+    uuid: Optional[str] = None
+    bounds: Optional[LayoutObjectBounds] = None
+    field_doc_id: Optional[str] = Field(None, alias="fieldDocId")
+    table_occurrence_doc_id: Optional[str] = Field(None, alias="tableOccurrenceDocId")
+    raw_text: Optional[str] = Field(None, alias="rawText")  # Plain-text label (Text objects)
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
     model_config = ConfigDict(populate_by_name=True)

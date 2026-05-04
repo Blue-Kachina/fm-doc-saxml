@@ -11,8 +11,8 @@ from jinja2 import Environment, PackageLoader, select_autoescape, Undefined
 from ...model.document_model import DocumentModel
 from ...normalize.paths import (
     table_path, field_path, table_occurrence_path, relationship_path,
-    layout_path, script_path, custom_function_path, value_list_path,
-    privilege_set_path, account_path, extended_privilege_path,
+    layout_path, layout_object_path, script_path, custom_function_path,
+    value_list_path, privilege_set_path, account_path, extended_privilege_path,
     custom_menu_path, custom_menu_set_path, theme_path, file_reference_path,
     relative_md_link,
 )
@@ -34,6 +34,7 @@ def render_markdown(model: DocumentModel, output_dir: Path) -> None:
     _render_table_occurrences(model, output_dir, env, links)
     _render_relationships(model, output_dir, env, links)
     _render_layouts(model, output_dir, env, links)
+    _render_layout_objects(model, output_dir, env, links)
     _render_scripts(model, output_dir, env, links)
     _render_custom_functions(model, output_dir, env, links)
     _render_value_lists(model, output_dir, env, links)
@@ -78,6 +79,12 @@ def _make_ctx(
     def backlinks(doc_id: str) -> list[dict]:
         return model.backlinks.get(doc_id, [])
 
+    xml_modified_at = (
+        model.source.source_modified_at.strftime("%Y-%m-%d %H:%M UTC")
+        if model.source.source_modified_at
+        else None
+    )
+
     return {
         "entity": entity,
         "source_file": model.source.file_name,
@@ -85,6 +92,7 @@ def _make_ctx(
         "schema_version": model.schema_version,
         "solution_name": model.solution.name,
         "generated_at": model.source.generated_at.strftime("%Y-%m-%d %H:%M UTC"),
+        "xml_modified_at": xml_modified_at,
         "link": link,
         "get_entity": get_entity,
         "backlinks": backlinks,
@@ -252,6 +260,45 @@ def _render_layouts(model: DocumentModel, output_dir: Path, env: Environment, li
     )
     for entity in entities:
         rel_path = layout_path(entity.name)
+        ctx = _make_ctx(model, rel_path, links, entity)
+        content = tmpl.render(**ctx)
+        write_text(output_dir / rel_path, content)
+
+
+# ---------------------------------------------------------------------------
+# Layout Objects
+# ---------------------------------------------------------------------------
+
+def _render_layout_objects(model: DocumentModel, output_dir: Path, env: Environment, links: LinkResolver) -> None:
+    if not model.entities.layout_objects:
+        return
+    tmpl = env.get_template("layout_object.md.j2")
+    entities = list(model.entities.layout_objects.values())
+
+    # Top-level index for layout objects, grouped & sortable by layout name.
+    def layout_name_for(e):
+        layout = model.entities.layouts.get(e.layout_doc_id)
+        return layout.name if layout else e.layout_doc_id.split(":", 1)[-1]
+
+    _render_section_index(
+        entities, output_dir / "LayoutObjects" / "index.md",
+        section_title="Layout Objects",
+        entity_type_label="layout object",
+        extra_header="Layout · Type · Field",
+        extra_col_fn=lambda e: (
+            f"{layout_name_for(e)} · {e.object_type or '?'}"
+            + (f" · {links.title_for(e.field_doc_id)}" if e.field_doc_id else "")
+        ),
+        index_path="LayoutObjects/index.md",
+        links=links,
+        sort_key=lambda e: (layout_name_for(e).lower(), e.object_id or ""),
+        name_fn=lambda e: e.name or e.raw_text or e.object_id or "(object)",
+    )
+
+    for entity in entities:
+        rel_path = links.path_for(entity.doc_id)
+        if not rel_path:
+            continue
         ctx = _make_ctx(model, rel_path, links, entity)
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
@@ -521,8 +568,14 @@ def _render_reports(model: DocumentModel, output_dir: Path, env: Environment, li
 
     # Summary
     tmpl = env.get_template("reports/summary.md.j2")
+    xml_modified_at = (
+        model.source.source_modified_at.strftime("%Y-%m-%d %H:%M UTC")
+        if model.source.source_modified_at
+        else None
+    )
     content = tmpl.render(
         generated_at=model.source.generated_at.strftime("%Y-%m-%d %H:%M UTC"),
+        xml_modified_at=xml_modified_at,
         counts=counts,
         total_references=len(model.references),
         exact_references=sum(1 for r in model.references if r.confidence == "exact"),
@@ -557,19 +610,27 @@ def _render_section_index(
     extra_col_fn,
     index_path: str,
     links: LinkResolver,
+    sort_key=None,
+    name_fn=None,
 ) -> None:
     from ...normalize.names import safe_slug
+
+    if sort_key is None:
+        sort_key = lambda x: (getattr(x, "name", "") or "").lower()
+    if name_fn is None:
+        name_fn = lambda x: getattr(x, "name", "") or ""
 
     lines = [f"# {section_title}", "", f"_{len(entities)} {entity_type_label}(s)_", ""]
     lines.append(f"| Name | {extra_header} |")
     lines.append("|---|---|")
-    for e in sorted(entities, key=lambda x: x.name.lower()):
+    for e in sorted(entities, key=sort_key):
+        display_name = name_fn(e)
         doc_path = links.path_for(e.doc_id)
         if doc_path:
             href = _relative_from_index(index_path, doc_path)
-            name_cell = f"[{e.name}]({href})"
+            name_cell = f"[{display_name}]({href})"
         else:
-            name_cell = e.name
+            name_cell = display_name
         extra_cell = str(extra_col_fn(e))
         lines.append(f"| {name_cell} | {extra_cell} |")
 
@@ -614,6 +675,7 @@ def _counts(model: DocumentModel) -> _Counts:
         table_occurrences=len(model.entities.table_occurrences),
         relationships=len(model.entities.relationships),
         layouts=len(model.entities.layouts),
+        layout_objects=len(model.entities.layout_objects),
         scripts=len(model.entities.scripts),
         script_steps=len(model.entities.script_steps),
         custom_functions=len(model.entities.custom_functions),

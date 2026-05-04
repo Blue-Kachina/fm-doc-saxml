@@ -12,6 +12,7 @@ from .entities import (
     TableOccurrenceEntity,
     RelationshipEntity,
     LayoutEntity,
+    LayoutObjectEntity,
     ScriptStepEntity,
     ScriptEntity,
     CustomFunctionEntity,
@@ -35,6 +36,10 @@ class SourceInfo(BaseModel):
     file_name: str = Field(alias="fileName")
     file_maker_version: str = Field("unknown", alias="fileMakerVersion")
     generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), alias="generatedAt")
+    # Modification time (mtime) of the source XML file, captured at parse time.
+    # Disambiguated in rendered docs as "XML Created At" vs the model's
+    # generated_at timestamp ("Support Documentation Created At").
+    source_modified_at: Optional[datetime] = Field(None, alias="sourceModifiedAt")
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -52,6 +57,7 @@ class EntityMaps(BaseModel):
     table_occurrences: dict[str, TableOccurrenceEntity] = Field({}, alias="tableOccurrences")
     relationships: dict[str, RelationshipEntity] = {}
     layouts: dict[str, LayoutEntity] = {}
+    layout_objects: dict[str, LayoutObjectEntity] = Field({}, alias="layoutObjects")
     scripts: dict[str, ScriptEntity] = {}
     script_steps: dict[str, ScriptStepEntity] = Field({}, alias="scriptSteps")
     custom_functions: dict[str, CustomFunctionEntity] = Field({}, alias="customFunctions")
@@ -96,6 +102,7 @@ class DocumentModel(BaseModel):
             "to": self.entities.table_occurrences,
             "relationship": self.entities.relationships,
             "layout": self.entities.layouts,
+            "layoutObject": self.entities.layout_objects,
             "script": self.entities.scripts,
             "scriptStep": self.entities.script_steps,
             "customFunction": self.entities.custom_functions,

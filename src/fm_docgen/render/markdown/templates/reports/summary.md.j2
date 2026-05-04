@@ -4,7 +4,12 @@ title: Summary Report
 
 # Summary
 
-_Generated {{ generated_at }}_
+## Timestamps
+
+| Name | Value |
+|---|---|
+| XML Created At | {{ xml_modified_at or "_unknown_" }} |
+| Support Documentation Created At | {{ generated_at }} |
 
 ## Entity Counts
 
@@ -15,6 +20,7 @@ _Generated {{ generated_at }}_
 | Table Occurrences | {{ counts.table_occurrences }} |
 | Relationships | {{ counts.relationships }} |
 | Layouts | {{ counts.layouts }} |
+| Layout Objects | {{ counts.layout_objects }} |
 | Scripts | {{ counts.scripts }} |
 | Script Steps | {{ counts.script_steps }} |
 | Custom Functions | {{ counts.custom_functions }} |

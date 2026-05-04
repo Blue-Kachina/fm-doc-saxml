@@ -1,0 +1,39 @@
+---
+docId: {{ entity.doc_id }}
+entityType: layoutObject
+layout: {{ entity.layout_doc_id }}
+source: {{ source_file }}
+---
+
+# Layout Object: {{ entity.name or entity.raw_text or entity.object_id or "(unnamed)" }}
+
+## Metadata
+
+| Name | Value |
+|---|---|
+| Object ID | {{ entity.object_id }} |
+| Object Type | {{ entity.object_type }} |
+{% if entity.kind %}| Kind | {{ entity.kind }} |
+{% endif %}| Layout | {{ link(entity.layout_doc_id) }} |
+{% if entity.part %}| Part | {{ entity.part }} |
+{% endif %}{% if entity.uuid %}| UUID | {{ entity.uuid }} |
+{% endif %}{% if entity.field_doc_id %}| Field | {{ link(entity.field_doc_id) }} |
+{% endif %}{% if entity.table_occurrence_doc_id %}| Table Occurrence | {{ link(entity.table_occurrence_doc_id) }} |
+{% endif %}
+
+{% if entity.bounds %}
+## Bounds
+
+| Edge | Value |
+|---|---:|
+| Top | {{ entity.bounds.top if entity.bounds.top is not none else "" }} |
+| Left | {{ entity.bounds.left if entity.bounds.left is not none else "" }} |
+| Bottom | {{ entity.bounds.bottom if entity.bounds.bottom is not none else "" }} |
+| Right | {{ entity.bounds.right if entity.bounds.right is not none else "" }} |
+{% endif %}
+
+{% if entity.raw_text %}
+## Text
+
+{{ entity.raw_text }}
+{% endif %}

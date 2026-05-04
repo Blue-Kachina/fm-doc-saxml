@@ -22,6 +22,7 @@ def resolve_references(model: DocumentModel) -> DocumentModel:
     _link_tos_to_tables(model)
     _link_relationships(model)
     _link_layouts(model)
+    _link_layout_objects(model)
     _link_scripts(model)
     _link_custom_functions(model)
     _link_accounts_to_privilege_sets(model)
@@ -119,6 +120,45 @@ def _link_layouts(model: DocumentModel) -> None:
                     role="display",
                     confidence="exact",
                 ))
+
+
+# ---------------------------------------------------------------------------
+# Layout Object → Layout / Field / Table Occurrence
+# ---------------------------------------------------------------------------
+
+def _link_layout_objects(model: DocumentModel) -> None:
+    for obj in model.entities.layout_objects.values():
+        if obj.layout_doc_id in model.entities.layouts:
+            model.references.append(ReferenceRecord(
+                sourceDocId=obj.layout_doc_id,
+                sourceEntityType="layout",
+                targetDocId=obj.doc_id,
+                targetEntityType="layoutObject",
+                relationshipType="contains",
+                confidence="exact",
+            ))
+        if obj.field_doc_id and obj.field_doc_id in model.entities.fields:
+            model.references.append(ReferenceRecord(
+                sourceDocId=obj.doc_id,
+                sourceEntityType="layoutObject",
+                targetDocId=obj.field_doc_id,
+                targetEntityType="field",
+                relationshipType="usesField",
+                role="display",
+                confidence="exact",
+            ))
+        if (
+            obj.table_occurrence_doc_id
+            and obj.table_occurrence_doc_id in model.entities.table_occurrences
+        ):
+            model.references.append(ReferenceRecord(
+                sourceDocId=obj.doc_id,
+                sourceEntityType="layoutObject",
+                targetDocId=obj.table_occurrence_doc_id,
+                targetEntityType="tableOccurrence",
+                relationshipType="basedOnTableOccurrence",
+                confidence="exact",
+            ))
 
 
 # ---------------------------------------------------------------------------

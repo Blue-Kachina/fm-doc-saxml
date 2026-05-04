@@ -27,6 +27,11 @@ def layout_path(layout_name: str) -> str:
     return f"Layouts/{safe_slug(layout_name)}.md"
 
 
+def layout_object_path(layout_name: str, object_id: str) -> str:
+    """Path for a single layout-object detail page (one per object)."""
+    return f"LayoutObjects/{safe_slug(layout_name)}/{safe_slug(object_id) or 'object'}.md"
+
+
 def script_path(script_name: str, folder: str | None = None) -> str:
     if folder:
         parts = folder_parts(folder)
