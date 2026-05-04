@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "fm-docgen"
+name = "fm-saxml-converter"
 version = "0.1.0"
-description = "Generate structured documentation from FileMaker Pro Save As XML exports"
+description = "Convert FileMaker Pro Save As XML exports into structured Markdown / JSON documentation"
 requires-python = ">=3.11"
 dependencies = [
     "lxml>=5.0",
@@ -24,10 +24,10 @@ dev = [
 ]
 
 [project.scripts]
-fm-docgen = "fm_docgen.cli:app"
+fm-saxml = "fm_saxml.cli:app"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/fm_docgen"]
+packages = ["src/fm_saxml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

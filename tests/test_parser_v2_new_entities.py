@@ -3,7 +3,7 @@ custom menus, custom menu sets, themes, file references."""
 
 from pathlib import Path
 import pytest
-from fm_docgen.parser.saxml_reader import parse_savexml
+from fm_saxml.parser.saxml_reader import parse_savexml
 
 FIXTURE = Path(__file__).parent / "fixtures" / "v2_sample.xml"
 

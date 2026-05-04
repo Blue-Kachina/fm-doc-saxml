@@ -54,7 +54,7 @@ def render_markdown(model: DocumentModel, output_dir: Path) -> None:
 
 def _make_jinja_env() -> Environment:
     env = Environment(
-        loader=PackageLoader("fm_docgen", "render/markdown/templates"),
+        loader=PackageLoader("fm_saxml", "render/markdown/templates"),
         autoescape=False,
         keep_trailing_newline=True,
         trim_blocks=True,

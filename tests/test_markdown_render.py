@@ -4,11 +4,11 @@ from pathlib import Path
 import pytest
 import tempfile
 
-from fm_docgen.parser.saxml_reader import parse_savexml
-from fm_docgen.normalize.normalize import normalize
-from fm_docgen.normalize.references import resolve_references
-from fm_docgen.analyze.backlinks import generate_backlinks
-from fm_docgen.render.markdown.renderer import render_markdown
+from fm_saxml.parser.saxml_reader import parse_savexml
+from fm_saxml.normalize.normalize import normalize
+from fm_saxml.normalize.references import resolve_references
+from fm_saxml.analyze.backlinks import generate_backlinks
+from fm_saxml.render.markdown.renderer import render_markdown
 
 FIXTURE = Path(__file__).parent / "fixtures" / "small_sample.xml"
 

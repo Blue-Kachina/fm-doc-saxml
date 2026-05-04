@@ -12,8 +12,8 @@ from pathlib import Path
 
 import pytest
 
-from fm_docgen.parser.saxml_reader import parse_savexml
-from fm_docgen.normalize.normalize import normalize
+from fm_saxml.parser.saxml_reader import parse_savexml
+from fm_saxml.normalize.normalize import normalize
 
 
 V2_LAYOUT_FIXTURE = """<?xml version="1.0"?>

@@ -3,8 +3,8 @@
 from pathlib import Path
 import pytest
 
-from fm_docgen.parser.saxml_reader import parse_savexml
-from fm_docgen.normalize.normalize import normalize
+from fm_saxml.parser.saxml_reader import parse_savexml
+from fm_saxml.normalize.normalize import normalize
 
 FIXTURE = Path(__file__).parent / "fixtures" / "small_sample.xml"
 

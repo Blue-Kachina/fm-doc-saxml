@@ -1,4 +1,4 @@
-"""Command-line interface for fm-docgen."""
+"""Command-line interface for fm-saxml."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from rich.console import Console
 from rich.table import Table
 
 app = typer.Typer(
-    name="fm-docgen",
+    name="fm-saxml",
     help="Generate structured documentation from FileMaker Pro Save As XML exports.",
     no_args_is_help=True,
 )

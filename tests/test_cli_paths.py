@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 import typer
 
-from fm_docgen.cli import _normalize_path, _confirm_output_directory
+from fm_saxml.cli import _normalize_path, _confirm_output_directory
 
 
 # ---------------------------------------------------------------------------

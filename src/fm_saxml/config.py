@@ -1,4 +1,4 @@
-"""Configuration model for fm-docgen."""
+"""Configuration model for fm-saxml."""
 
 from __future__ import annotations
 

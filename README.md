@@ -1,8 +1,10 @@
-# fm-docgen
+# fm-saxml-converter
 
 Generate structured, navigable documentation from FileMaker Pro **Save a Copy as XML** exports.
 
-`fm-docgen` turns a FileMaker `SaveAsXML` file into a normalized JSON model of the solution and a folder of cross-linked Markdown pages — one file per table, field, layout, script, relationship, custom function, and value list. The JSON model is the canonical output; Markdown is the first of several planned renderers (HTML/Vue, search index, AI corpus, diff reports).
+`fm-saxml-converter` turns a FileMaker `SaveAsXML` file into a normalized JSON model of the solution and a folder of cross-linked Markdown pages — one file per table, field, layout, layout object, script, relationship, custom function, and value list. The JSON model is the canonical output; Markdown is the first of several planned renderers (HTML/Vue, search index, AI corpus, diff reports).
+
+The CLI is exposed as `fm-saxml`.
 
 ## Why this exists
 
@@ -33,10 +35,10 @@ Early development. The full design is captured in [`fm-saxml-converter-plan.md`]
 
 1. Parse base tables, fields, scripts, and script steps.
 2. Build a normalized JSON model with stable `docId` values.
-3. Render Markdown pages for tables, fields, and scripts with table↔field links.
+3. Render Markdown pages for tables, fields, layouts, layout objects, and scripts with table↔field links.
 4. Emit `summary.md`, `warnings.md`, and `unresolved-references.md` reports.
 
-Reference-graph analysis (layouts, table occurrences, relationships, backlinks), HTML/Vue rendering, and diff/version comparison are planned in later phases.
+Reference-graph analysis (layouts, table occurrences, relationships, backlinks) is in place. HTML/Vue rendering and diff/version comparison are planned in later phases.
 
 ## Requirements
 
@@ -64,25 +66,43 @@ pip install -e ".[dev]"
 
 ## Usage
 
-The CLI is exposed as `fm-docgen`:
+The CLI is exposed as `fm-saxml`. The `--out` option is **optional** for the `build` and `render` commands — when omitted, output is written to a directory named `saxml2doc` next to the current working directory.
+
+If the output directory already exists and is non-empty, you'll be prompted to overwrite or cancel; pass `--force` (or `-f`) to skip the prompt in non-interactive contexts.
+
+Paths are platform-flexible — Windows drive letters and UNC paths, macOS, and Linux paths all work. `~` and environment variables (`$HOME`, `%USERPROFILE%`) are expanded automatically.
 
 ```bash
-# Parse XML into normalized JSON
-fm-docgen parse ./MySolution.xml --out ./build/model.json
+# One-shot: parse and render. Output goes to ./saxml2doc by default.
+fm-saxml build ./MySolution.xml
 
-# Render Markdown from a previously parsed model
-fm-docgen render markdown ./build/model.json --out ./docs
+# Just parse XML into the normalized JSON model.
+fm-saxml parse ./MySolution.xml
 
-# One-shot: parse and render
-fm-docgen build ./MySolution.xml --out ./docs --model-out ./build/model.json
+# Render Markdown from a previously parsed model.
+fm-saxml render markdown --model ./build/model.json
+
+# Print entity counts and warnings without writing any files.
+fm-saxml inspect ./MySolution.xml
+
+# Validate the model and exit non-zero if there are critical issues.
+fm-saxml validate ./MySolution.xml
 ```
 
-Planned commands include `validate`, `inspect`, and `diff`.
+### Custom output location
+
+Use `--out` (or `-o`) to write somewhere other than `./saxml2doc`:
+
+```bash
+fm-saxml build ./MySolution.xml --out ./docs/MySolution
+```
+
+Planned commands include `diff` for comparing two exports.
 
 ## Output layout
 
 ```text
-docs/
+saxml2doc/
 ├─ index.md
 ├─ entities.json
 ├─ references.json
@@ -92,6 +112,8 @@ docs/
 ├─ TableOccurrences/
 ├─ Relationships/
 ├─ Layouts/
+├─ LayoutObjects/
+│  └─ <LayoutName>/
 ├─ Scripts/
 ├─ CustomFunctions/
 ├─ ValueLists/
@@ -101,13 +123,13 @@ docs/
    └─ unresolved-references.md
 ```
 
-Every Markdown page carries YAML front matter with `docId`, `entityType`, and source metadata so the output is friendly to static site generators and AI indexers.
+Every Markdown page carries YAML front matter with `docId`, `entityType`, and source metadata so the output is friendly to static site generators and AI indexers. The top-level `index.md` records two timestamps for clarity: **XML Created At** (mtime of the source export) and **Support Documentation Created At** (when the docs were generated).
 
 ## Repository structure
 
 ```text
-src/fm_docgen/
-├─ cli.py               # Typer CLI entry point
+src/fm_saxml/
+├─ cli.py               # Typer CLI entry point (fm-saxml)
 ├─ config.py            # Project configuration
 ├─ parser/              # XML parsing and per-entity extractors
 │  ├─ saxml_reader.py
@@ -154,6 +176,7 @@ A few quirks worth knowing about:
 
 - `SaveAsXML` files are encoded as **UTF-16 LE**. Always open in binary mode and let `lxml` read the encoding declaration.
 - In FileMaker 22+, embedded layout images are duplicated inside every `<LayoutObject>` (rather than shared via `<LibraryCatalog>`), which can dramatically inflate file size. The layout extractor skips `<StreamList>` image data by default.
+- Layout objects in modern (v2) `SaveAsXML` files appear as `<LayoutObject>` inside `<Part><ObjectList>`. Older v1 exports use `<Object type="FieldObj">`. Both are parsed.
 - Relationship names, script folder paths, and script step display labels are **derived during normalization**, not read directly from the XML.
 
 ## Roadmap
@@ -161,11 +184,11 @@ A few quirks worth knowing about:
 Major milestones from the plan:
 
 1. **Phase 1** — POC: tables, fields, scripts, basic Markdown output.
-2. **Phase 2** — Reference graph: layouts, table occurrences, relationships, backlinks.
+2. **Phase 2** — Reference graph: layouts, layout objects, table occurrences, relationships, backlinks.
 3. **Phase 3** — Markdown polish: Jinja templates, front matter, indexes, reports.
 4. **Phase 4** — Analysis: dependency graph, dead-code detection, server-compatibility checks.
 5. **Phase 5** — HTML/Vue interactive renderer over the same JSON model.
-6. **Phase 6** — `fm-docgen diff` for version comparison between two exports.
+6. **Phase 6** — `fm-saxml diff` for version comparison between two exports.
 
 ## License
 
