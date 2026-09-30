@@ -120,7 +120,11 @@ def _parse_validation(elem: etree._Element | None) -> dict[str, Any] | None:
             return attr(child_elem, "value", "Value") == "True"
         return attr(elem, inline_name).lower() == "true"
 
+    vl_ref = find_child(elem, "ValueListReference")
+    value_list = attr(vl_ref, "name", "Name") if vl_ref is not None else ""
+
     result = {
+        "value_list": value_list or None,
         "required": _bool_attr(required_elem, "required"),
         "not_empty": _bool_attr(not_empty_elem, "notEmpty"),
         "unique": _bool_attr(unique_elem, "unique"),
@@ -133,7 +137,7 @@ def _parse_validation(elem: etree._Element | None) -> dict[str, Any] | None:
         except ValueError:
             pass
 
-    if not any([result["required"], result["not_empty"], result["unique"], result["max_characters"]]):
+    if not any([result["required"], result["not_empty"], result["unique"], result["max_characters"], result["value_list"]]):
         return None
     return result
 

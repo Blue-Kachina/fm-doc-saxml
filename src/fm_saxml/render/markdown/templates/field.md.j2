@@ -101,4 +101,15 @@ _None._
 | {{ link(b.sourceDocId) }} | {{ b.role or b.relationshipType }} |
 {% endfor %}
 {% endif %}
+
+{% set other_bl = bl | rejectattr('sourceEntityType', 'in', ['scriptStep', 'layout', 'relationship', 'table', 'layoutObject']) | list %}
+{% if other_bl %}
+### Other References
+
+| Source | Type | Relationship |
+|---|---|---|
+{% for b in other_bl %}
+| {{ link(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.role or b.relationshipType }} |
+{% endfor %}
+{% endif %}
 {% endif %}

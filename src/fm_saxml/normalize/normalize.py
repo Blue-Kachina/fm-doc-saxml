@@ -88,11 +88,11 @@ def normalize(
     _normalize_fields(raw, model)
     _normalize_table_occurrences(raw, model)
     _normalize_relationships(raw, model)
+    _normalize_value_lists(raw, model)  # before layouts/scripts: their calcs reference value lists by name
     _normalize_layouts(raw, model)
     _normalize_layout_objects(raw, model)
     _normalize_scripts(raw, model)
     _normalize_custom_functions(raw, model)
-    _normalize_value_lists(raw, model)
     _normalize_privilege_sets(raw, model)
     _normalize_accounts(raw, model)
     _normalize_extended_privileges(raw, model)
@@ -180,6 +180,10 @@ def _normalize_fields(raw: RawModel, model: DocumentModel) -> None:
                 unique=val_raw.get("unique", False),
                 max_characters=val_raw.get("max_characters"),
                 message=val_raw.get("message"),
+                valueListDocId=(
+                    value_list_doc_id(normalize_name(val_raw["value_list"]))
+                    if val_raw.get("value_list") else None
+                ),
             )
 
         entity = FieldEntity(
@@ -444,6 +448,10 @@ def _normalize_layout_objects(raw: RawModel, model: DocumentModel) -> None:
                 bounds=bounds,
                 fieldDocId=field_did,
                 tableOccurrenceDocId=to_did,
+                valueListDocId=(
+                    value_list_doc_id(normalize_name(obj["value_list"]["name"]))
+                    if obj.get("value_list") else None
+                ),
                 rawText=obj.get("raw_text"),
                 sourceXml=(
                     SourceXmlInfo(path=obj.get("source_xml_path", ""))
@@ -527,19 +535,25 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
                         ref_fields.append(fd)
                         script_entity.referenced_fields.append(fd)
 
-            # Fields referenced from within the step's calculation text
+            # Value lists used by the step (e.g. Sort Records by value list)
+            for vr in raw_step.get("value_list_refs", []) or []:
+                vd = value_list_doc_id(normalize_name(vr["name"]))
+                if not any(r["kind"] == "valueList" and r["targetDocId"] == vd for r in step_refs):
+                    step_refs.append({"kind": "valueList", "targetDocId": vd, "role": "sort"})
+
+            # Fields / value lists referenced from within the step's calculation text
             if raw_step.get("calculation"):
                 from ..analyze.calculations import extract_calc_references
                 for cref in extract_calc_references(raw_step["calculation"], model, resolve_field):
-                    if cref["entityType"] != "field" or cref["confidence"] == "unresolved":
+                    if cref["entityType"] not in ("field", "valueList") or cref["confidence"] == "unresolved":
                         continue
-                    fd = cref["targetDocId"]
-                    if any(r["kind"] == "field" and r["targetDocId"] == fd for r in step_refs):
+                    kind, target = cref["entityType"], cref["targetDocId"]
+                    if any(r["kind"] == kind and r["targetDocId"] == target for r in step_refs):
                         continue
-                    step_refs.append({"kind": "field", "targetDocId": fd, "role": "calculation", "rawText": cref.get("rawText")})
-                    if fd not in ref_fields:
-                        ref_fields.append(fd)
-                        script_entity.referenced_fields.append(fd)
+                    step_refs.append({"kind": kind, "targetDocId": target, "role": "calculation", "rawText": cref.get("rawText")})
+                    if kind == "field" and target not in ref_fields:
+                        ref_fields.append(target)
+                        script_entity.referenced_fields.append(target)
 
             # Script reference
             sr = raw_step.get("script_ref")

@@ -140,7 +140,15 @@ def _parse_layout_object(
     bounds = _parse_bounds(find_child(lo, "Bounds"))
 
     # Field reference (Edit Box, Drop Down, etc. with an associated field)
-    field_info = _parse_field_block(find_child(lo, "Field"))
+    field_elem = find_child(lo, "Field")
+    field_info = _parse_field_block(field_elem)
+
+    # Value list attached to the control (<Field><Display><ValueListReference/>)
+    value_list = None
+    display = find_child(field_elem, "Display") if field_elem is not None else None
+    vl_ref = find_child(display, "ValueListReference") if display is not None else None
+    if vl_ref is not None and attr(vl_ref, "name", "Name"):
+        value_list = {"id": attr(vl_ref, "id", "ID"), "name": attr(vl_ref, "name", "Name")}
 
     # Plain text content for "Text" objects
     raw_text = _parse_text_content(find_child(lo, "Text"))
@@ -154,6 +162,7 @@ def _parse_layout_object(
         "part": part_label or None,
         "bounds": bounds,
         "field": field_info,
+        "value_list": value_list,
         "raw_text": raw_text,
         "fallback_index": fallback_index,
         "source_xml_path": xml_path(lo),

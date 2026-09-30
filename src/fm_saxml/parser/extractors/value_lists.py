@@ -39,6 +39,7 @@ def _parse_options_entry(vl_wrapper: etree._Element) -> dict:
 
     values = []
     source_field = None
+    second_field = None
 
     if source_val == "Custom":
         custom_values = find_child(vl_wrapper, "CustomValues")
@@ -53,14 +54,23 @@ def _parse_options_entry(vl_wrapper: etree._Element) -> dict:
             if primary is not None:
                 field_ref = find_child(primary, "FieldReference")
                 if field_ref is not None:
-                    to_ref = find_child(field_ref, "TableOccurrenceReference")
-                    source_field = {
-                        "id": attr(field_ref, "id", "ID"),
-                        "name": attr(field_ref, "name", "Name"),
-                        "table": attr(to_ref, "name", "Name") if to_ref is not None else "",
-                    }
+                    source_field = _field_ref_dict(field_ref)
+            secondary = find_child(field_wrapper, "SecondaryField")
+            if secondary is not None:
+                field_ref = find_child(secondary, "FieldReference")
+                if field_ref is not None:
+                    second_field = _field_ref_dict(field_ref)
 
-    return {"values": values, "source_field": source_field}
+    return {"values": values, "source_field": source_field, "second_field": second_field}
+
+
+def _field_ref_dict(field_ref: etree._Element) -> dict:
+    to_ref = find_child(field_ref, "TableOccurrenceReference")
+    return {
+        "id": attr(field_ref, "id", "ID"),
+        "name": attr(field_ref, "name", "Name"),
+        "table": attr(to_ref, "name", "Name") if to_ref is not None else "",
+    }
 
 
 def _parse_value_list(elem: etree._Element, options_map: dict[str, dict]) -> dict[str, Any]:
@@ -116,7 +126,8 @@ def _parse_value_list(elem: etree._Element, options_map: dict[str, dict]) -> dic
                 }
         if source_field:
             source_table_name = source_field.get("table")
-        second = find_child(elem, "SecondField")
+        second_field = opt.get("second_field")
+        second = find_child(elem, "SecondField") if second_field is None else None
         if second is not None:
             second_field = {
                 "id": attr(second, "id", "ID"),

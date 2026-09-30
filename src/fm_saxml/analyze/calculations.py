@@ -12,7 +12,10 @@ if TYPE_CHECKING:
 _TABLE_FIELD_RE = re.compile(r'([A-Za-z_][A-Za-z0-9_ ]*)::([A-Za-z_][A-Za-z0-9_ ]*)')
 
 # Matches potential custom function calls: FunctionName( ...
-_CF_CALL_RE = re.compile(r'\b([A-Za-z_][A-Za-z0-9_]*)\s*\(')
+_VALUE_LIST_ITEMS_RE = re.compile(
+    r'\bValueListItems\s*\(\s*[^;()]*(?:\([^()]*\))?[^;()]*;\s*"((?:[^"\\]|\\.)*)"', re.IGNORECASE
+)
+_CF_CALL_RE =re.compile(r'\b([A-Za-z_][A-Za-z0-9_]*)\s*\(')
 
 
 def extract_calc_references(
@@ -52,6 +55,21 @@ def extract_calc_references(
             "confidence": confidence,
             "rawText": raw_text,
         })
+
+    # ValueListItems ( file ; "Value List Name" ) — value list referenced by name
+    known_vls = {vl.name.casefold(): vl.doc_id for vl in model.entities.value_lists.values()}
+    for match in _VALUE_LIST_ITEMS_RE.finditer(calculation):
+        vl_name = match.group(1).replace('\\"', '"')
+        vl_doc = known_vls.get(vl_name.strip().casefold())
+        if vl_doc and vl_doc not in seen:
+            seen.add(vl_doc)
+            refs.append({
+                "targetDocId": vl_doc,
+                "entityType": "valueList",
+                "relationshipType": "usesValueList",
+                "confidence": "parsed",
+                "rawText": match.group(0),
+            })
 
     # Extract custom function calls
     known_cf_names = {cf.name: cf.doc_id for cf in model.entities.custom_functions.values()}

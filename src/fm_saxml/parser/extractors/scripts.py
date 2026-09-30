@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, find_child, find_all_descendants, text_of, xml_path
+from ._helpers import attr, calc_text_of, find_child, find_all_descendants, text_of, xml_path
 
 
 def extract_scripts(
@@ -43,13 +43,38 @@ def _walk_script_folder(
     results: list[dict[str, Any]],
     steps_map: dict[str, list] | None = None,
 ) -> None:
-    """Recursively walk script folders, collecting scripts with their folder path."""
+    """Recursively walk script folders, collecting scripts with their folder path.
+
+    Folders and dividers are not scripts. In v2 exports the catalog is flat:
+    ``<Script isFolder="True">`` opens a folder, the folder's items follow as
+    siblings, and ``<Script isFolder="Marker">`` closes it. Dividers are
+    ``<Script isSeparatorItem="True">``. Folders are tracked on a stack so
+    real scripts still get a folder path.
+    """
+    open_folders: list[str] = []
     for child in elem:
         if not isinstance(child.tag, str):
             continue
         local = _local(child.tag)
         if local == "Script":
-            results.append(_parse_script(child, folder_path, steps_map or {}))
+            is_folder = attr(child, "isFolder", "IsFolder").lower()
+            if attr(child, "isSeparatorItem", "IsSeparatorItem").lower() == "true":
+                continue
+            if is_folder == "marker":
+                if open_folders:
+                    open_folders.pop()
+                continue
+            if is_folder == "true":
+                name = attr(child, "name", "Name")
+                base = "/".join(p for p in [folder_path, *open_folders] if p)
+                sub_path = f"{base}/{name}".lstrip("/")
+                if any(_local(c.tag) == "Script" for c in child if isinstance(c.tag, str)):
+                    _walk_script_folder(child, sub_path, results, steps_map)  # nested form
+                else:
+                    open_folders.append(name)
+                continue
+            path = "/".join(p for p in [folder_path, *open_folders] if p)
+            results.append(_parse_script(child, path, steps_map or {}))
         elif local in ("ScriptFolder", "Folder", "Group"):
             folder_name = attr(child, "name", "Name")
             sub_path = f"{folder_path}/{folder_name}".lstrip("/")
@@ -94,10 +119,15 @@ def _parse_step(elem: etree._Element, fallback_index: int) -> dict[str, Any]:
     name = attr(elem, "name", "Name")
 
     # Collect step parameters — layout refs, field refs, script refs, calculations
-    layout_ref = _extract_layout_ref(elem)
-    field_refs = _extract_field_refs(elem)
-    script_ref = _extract_script_ref(elem)
-    calc = _extract_calculation(elem)
+    if find_child(elem, "ParameterValues") is not None:
+        # v2: references are nested in <ParameterValues><Parameter> as *Reference elements
+        layout_ref, field_refs, script_ref, calc, value_list_refs = _extract_v2_step_refs(elem)
+    else:
+        layout_ref = _extract_layout_ref(elem)
+        field_refs = _extract_field_refs(elem)
+        script_ref = _extract_script_ref(elem)
+        calc = _extract_calculation(elem)
+        value_list_refs = []
 
     # Build raw_text from available info
     raw_parts = [name]
@@ -120,8 +150,50 @@ def _parse_step(elem: etree._Element, fallback_index: int) -> dict[str, Any]:
         "layout_ref": layout_ref,
         "field_refs": field_refs,
         "script_ref": script_ref,
+        "value_list_refs": value_list_refs,
         "calculation": calc,
     }
+
+
+def _extract_v2_step_refs(
+    elem: etree._Element,
+) -> tuple[dict | None, list[dict], dict | None, str | None, list[dict]]:
+    """Pull layout / field / script / value-list references and calc text from a v2 step.
+
+    In v2 a field reference's table half is a ``<TableOccurrenceReference>``
+    child of ``<FieldReference>`` (i.e. a table *occurrence* name).
+    """
+    layout_ref = None
+    script_ref = None
+    field_refs: list[dict] = []
+    value_list_refs: list[dict] = []
+    calcs: list[str] = []
+
+    for node in elem.iter():
+        if not isinstance(node.tag, str):
+            continue
+        tag = _local(node.tag)
+        name = attr(node, "name", "Name")
+        if tag == "FieldReference" and name:
+            to_ref = find_child(node, "TableOccurrenceReference")
+            field_refs.append({
+                "id": attr(node, "id", "ID"),
+                "name": name,
+                "table": attr(to_ref, "name", "Name") if to_ref is not None else "",
+                "table_id": attr(to_ref, "id", "ID") if to_ref is not None else "",
+            })
+        elif tag == "LayoutReference" and name and layout_ref is None:
+            layout_ref = {"id": attr(node, "id", "ID"), "name": name}
+        elif tag == "ScriptReference" and name and script_ref is None:
+            script_ref = {"id": attr(node, "id", "ID"), "name": name}
+        elif tag == "ValueListReference" and name:
+            value_list_refs.append({"id": attr(node, "id", "ID"), "name": name})
+        elif tag == "Calculation" and find_child(node, "Text") is not None:
+            text = calc_text_of(node)
+            if text:
+                calcs.append(text)
+
+    return layout_ref, field_refs, script_ref, "\n".join(calcs) or None, value_list_refs
 
 
 def _extract_layout_ref(elem: etree._Element) -> dict[str, Any] | None:

@@ -24,3 +24,14 @@ source: {{ source_file }}
 - {{ val }}
 {% endfor %}
 {% endif %}
+
+{% set bl = backlinks(entity.doc_id) %}
+{% if bl %}
+## Referenced By
+
+| Source | Type | Relationship | Role |
+|---|---|---|---|
+{% for b in bl %}
+| {{ link(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.relationshipType }} | {{ b.role or '' }} |
+{% endfor %}
+{% endif %}

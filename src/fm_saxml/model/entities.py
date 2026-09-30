@@ -38,6 +38,7 @@ class ValidationOptions(BaseModel):
     unique: bool = False
     max_characters: Optional[int] = None
     message: Optional[str] = None
+    value_list_doc_id: Optional[str] = Field(None, alias="valueListDocId")  # "member of value list"
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -163,6 +164,7 @@ class LayoutObjectEntity(BaseModel):
     bounds: Optional[LayoutObjectBounds] = None
     field_doc_id: Optional[str] = Field(None, alias="fieldDocId")
     table_occurrence_doc_id: Optional[str] = Field(None, alias="tableOccurrenceDocId")
+    value_list_doc_id: Optional[str] = Field(None, alias="valueListDocId")  # value list on the control
     raw_text: Optional[str] = Field(None, alias="rawText")  # Plain-text label (Text objects)
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 

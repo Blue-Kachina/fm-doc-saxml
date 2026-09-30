@@ -129,6 +129,7 @@ def _link_layouts(model: DocumentModel) -> None:
 # ---------------------------------------------------------------------------
 
 def _link_layout_objects(model: DocumentModel) -> None:
+    layout_vl_seen: set[tuple[str, str]] = set()
     for obj in model.entities.layout_objects.values():
         if obj.layout_doc_id in model.entities.layouts:
             model.references.append(ReferenceRecord(
@@ -139,6 +140,29 @@ def _link_layout_objects(model: DocumentModel) -> None:
                 relationshipType="contains",
                 confidence="exact",
             ))
+        if obj.value_list_doc_id and obj.value_list_doc_id in model.entities.value_lists:
+            model.references.append(ReferenceRecord(
+                sourceDocId=obj.doc_id,
+                sourceEntityType="layoutObject",
+                targetDocId=obj.value_list_doc_id,
+                targetEntityType="valueList",
+                relationshipType="usesValueList",
+                role="control",
+                confidence="exact",
+            ))
+            # Roll up to the owning layout (once per layout / value list)
+            key = (obj.layout_doc_id, obj.value_list_doc_id)
+            if obj.layout_doc_id in model.entities.layouts and key not in layout_vl_seen:
+                layout_vl_seen.add(key)
+                model.references.append(ReferenceRecord(
+                    sourceDocId=obj.layout_doc_id,
+                    sourceEntityType="layout",
+                    targetDocId=obj.value_list_doc_id,
+                    targetEntityType="valueList",
+                    relationshipType="usesValueList",
+                    role="control",
+                    confidence="exact",
+                ))
         if obj.field_doc_id and obj.field_doc_id in model.entities.fields:
             model.references.append(ReferenceRecord(
                 sourceDocId=obj.doc_id,
@@ -183,6 +207,7 @@ def _link_scripts(model: DocumentModel) -> None:
                     "layout": "usesLayout",
                     "script": "usesScript",
                     "customFunction": "usesCustomFunction",
+                    "valueList": "usesValueList",
                 }
                 rel_type = rel_type_map.get(kind, "usesField")
                 entity_exists = model.get_entity(target) is not None
@@ -243,9 +268,23 @@ def _link_value_lists(model: DocumentModel) -> None:
 
 
 def _link_field_calculations(model: DocumentModel) -> None:
-    """Calculation / auto-enter calculation fields → fields and custom functions they use."""
+    """Calculation / auto-enter calculation fields → fields, value lists and custom functions they use.
+
+    Also links a field to the value list used by its "member of value list" validation.
+    """
     from ..analyze.calculations import extract_calc_references
     for field in model.entities.fields.values():
+        vl = field.validation.value_list_doc_id if field.validation else None
+        if vl and vl in model.entities.value_lists:
+            model.references.append(ReferenceRecord(
+                sourceDocId=field.doc_id,
+                sourceEntityType="field",
+                targetDocId=vl,
+                targetEntityType="valueList",
+                relationshipType="usesValueList",
+                role="validation",
+                confidence="exact",
+            ))
         calcs = [field.calculation]
         if field.auto_enter is not None:
             calcs.append(field.auto_enter.calculation)

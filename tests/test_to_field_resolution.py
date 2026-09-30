@@ -98,3 +98,41 @@ def test_case_insensitive_table_name_match():
     raw.layouts[0]["layout_objects"][0]["field"] = {"table_name": "licence", "field_name": "TOTAL"}
     m = normalize(raw)
     assert m.entities.layout_objects["layoutObject:Lic::5"].field_doc_id == FIELD
+
+
+# ---------------------------------------------------------------------------
+# Value list linkage
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def vl_model():
+    raw = _raw()
+    raw.layouts[0]["layout_objects"][0]["value_list"] = {"id": "40", "name": "VL"}
+    raw.fields[2]["validation"] = {"value_list": "VL"}
+    raw.scripts[0]["steps"][0]["value_list_refs"] = [{"id": "40", "name": "VL"}]
+    raw.scripts[0]["steps"].append({
+        "index": 1, "step_type_id": "2", "name": "Set Variable", "field_refs": [],
+        "calculation": 'ValueListItems ( Get ( FileName ) ; "VL" )',
+    })
+    m = normalize(raw)
+    m = resolve_references(m)
+    return generate_backlinks(m)
+
+
+def _sources(model, target):
+    return {(b["sourceEntityType"], b["sourceDocId"], b["relationshipType"]) for b in model.backlinks.get(target, [])}
+
+
+def test_value_list_referenced_by_layout_object_and_layout(vl_model):
+    src = _sources(vl_model, "valueList:VL")
+    assert ("layoutObject", "layoutObject:Lic::5", "usesValueList") in src
+    assert ("layout", "layout:Lic", "usesValueList") in src
+
+
+def test_value_list_referenced_by_field_validation(vl_model):
+    assert ("field", FIELD3, "usesValueList") in _sources(vl_model, "valueList:VL")
+
+
+def test_value_list_referenced_by_script_steps(vl_model):
+    steps = {s for (t, s, r) in _sources(vl_model, "valueList:VL") if t == "scriptStep"}
+    assert len(steps) == 2  # one via a step parameter, one via ValueListItems() in a calc
