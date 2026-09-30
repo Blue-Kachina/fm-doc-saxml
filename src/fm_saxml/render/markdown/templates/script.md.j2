@@ -54,7 +54,7 @@ source: {{ source_file }}
 | # | Enabled | Step |
 |---:|---|---|
 {% for step_doc_id in entity.steps %}{% set step = get_entity(step_doc_id) %}{% if step %}
-| {{ step.index + 1 }} | {{ "Yes" if step.enabled else "No" }} | {{ step.raw_text | default(step.name) | truncate(120) }} |
+| {{ step.index + 1 }} | {{ "Yes" if step.enabled else "No" }} | {{ step.raw_text | default(step.name) | cell | truncate(120) }} |
 {% endif %}{% endfor %}
 
 {% set bl = backlinks(entity.doc_id) %}

@@ -60,7 +60,15 @@ def _make_jinja_env() -> Environment:
         trim_blocks=True,
         lstrip_blocks=True,
     )
+    env.filters["cell"] = _md_cell
     return env
+
+
+def _md_cell(value: object) -> str:
+    """Make text safe for a single Markdown table cell (no raw newlines or bare pipes)."""
+    text = "" if value is None else str(value)
+    text = " ".join(text.split("\n")).replace("\r", "")
+    return text.replace("|", "\\|")
 
 
 def _make_ctx(
