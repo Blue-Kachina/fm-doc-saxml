@@ -18,10 +18,14 @@ _CF_CALL_RE = re.compile(r'\b([A-Za-z_][A-Za-z0-9_]*)\s*\(')
 def extract_calc_references(
     calculation: str,
     model: "DocumentModel",
+    resolver=None,
 ) -> list[dict[str, Any]]:
     """Parse a calculation string and return a list of reference dicts."""
     if not calculation:
         return []
+
+    from ..normalize.field_resolver import build_field_resolver
+    resolve_field = resolver or build_field_resolver(model)
 
     refs: list[dict[str, Any]] = []
     seen: set[str] = set()
@@ -32,28 +36,14 @@ def extract_calc_references(
         field_name = match.group(2).strip()
         raw_text = match.group(0)
 
-        # Try to find matching field in model
-        from ..normalize.ids import field_doc_id, to_doc_id
-        candidate_doc_id = field_doc_id(table_name, field_name)
+        # Table part is normally a table occurrence name — resolve to the real field
+        from ..normalize.ids import field_doc_id
+        resolved = resolve_field(table_name, field_name)
+        candidate_doc_id = resolved or field_doc_id(table_name, field_name)
+        confidence = "parsed" if resolved else "unresolved"
         if candidate_doc_id in seen:
             continue
         seen.add(candidate_doc_id)
-
-        if candidate_doc_id in model.entities.fields:
-            confidence = "parsed"
-        else:
-            # Maybe table_name is a TO name; try resolving via base table
-            to_entity = model.entities.table_occurrences.get(to_doc_id(table_name))
-            if to_entity:
-                base_name = to_entity.base_table_doc_id.split(":", 1)[1] if ":" in to_entity.base_table_doc_id else ""
-                alt_id = field_doc_id(base_name, field_name) if base_name else ""
-                if alt_id in model.entities.fields:
-                    candidate_doc_id = alt_id
-                    confidence = "parsed"
-                else:
-                    confidence = "unresolved"
-            else:
-                confidence = "unresolved"
 
         refs.append({
             "targetDocId": candidate_doc_id,

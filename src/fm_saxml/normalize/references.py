@@ -25,6 +25,8 @@ def resolve_references(model: DocumentModel) -> DocumentModel:
     _link_layout_objects(model)
     _link_scripts(model)
     _link_custom_functions(model)
+    _link_value_lists(model)
+    _link_field_calculations(model)
     _link_accounts_to_privilege_sets(model)
     _link_extended_privileges_to_privilege_sets(model)
     return model
@@ -221,6 +223,46 @@ def _link_extended_privileges_to_privilege_sets(model: DocumentModel) -> None:
                     targetEntityType="privilegeSet",
                     relationshipType="grantedTo",
                     confidence="exact",
+                ))
+
+
+def _link_value_lists(model: DocumentModel) -> None:
+    """Value list → source / second field (usage evidence for those fields)."""
+    for vl in model.entities.value_lists.values():
+        for fd, role in [(vl.source_field_doc_id, "source"), (vl.second_field_doc_id, "second")]:
+            if fd and fd in model.entities.fields:
+                model.references.append(ReferenceRecord(
+                    sourceDocId=vl.doc_id,
+                    sourceEntityType="valueList",
+                    targetDocId=fd,
+                    targetEntityType="field",
+                    relationshipType="usesField",
+                    role=role,
+                    confidence="exact",
+                ))
+
+
+def _link_field_calculations(model: DocumentModel) -> None:
+    """Calculation / auto-enter calculation fields → fields and custom functions they use."""
+    from ..analyze.calculations import extract_calc_references
+    for field in model.entities.fields.values():
+        calcs = [field.calculation]
+        if field.auto_enter is not None:
+            calcs.append(field.auto_enter.calculation)
+        for calc in calcs:
+            if not calc:
+                continue
+            for ref in extract_calc_references(calc, model):
+                if ref["confidence"] == "unresolved" or ref["targetDocId"] == field.doc_id:
+                    continue
+                model.references.append(ReferenceRecord(
+                    sourceDocId=field.doc_id,
+                    sourceEntityType="field",
+                    targetDocId=ref["targetDocId"],
+                    targetEntityType=ref["entityType"],
+                    relationshipType=ref["relationshipType"],
+                    confidence=ref["confidence"],
+                    rawText=ref.get("rawText"),
                 ))
 
 

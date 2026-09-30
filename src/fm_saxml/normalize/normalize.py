@@ -55,6 +55,7 @@ from .ids import (
     file_reference_doc_id,
 )
 from .names import normalize_name, qualified_name
+from .field_resolver import build_field_resolver, resolve_field_or_fallback
 
 
 def normalize(
@@ -252,12 +253,7 @@ def _normalize_table_occurrences(raw: RawModel, model: DocumentModel) -> None:
 def _normalize_relationships(raw: RawModel, model: DocumentModel) -> None:
     to_id_map = {to.fmp_id: to.doc_id for to in model.entities.table_occurrences.values()}
     to_name_map = {to.name: to.doc_id for to in model.entities.table_occurrences.values()}
-    field_name_map: dict[tuple[str, str], str] = {
-        (f.base_table_doc_id.split(":", 1)[1], f.name): f.doc_id
-        for f in model.entities.fields.values()
-    }
-    # Also map by table occurrence name (which may equal base table name)
-    to_to_base_map = {to.name: to.base_table_doc_id for to in model.entities.table_occurrences.values()}
+    resolve_field = build_field_resolver(model)
 
     for rel in raw.relationships:
         name = normalize_name(rel.get("name", ""))
@@ -285,8 +281,8 @@ def _normalize_relationships(raw: RawModel, model: DocumentModel) -> None:
 
         predicates = []
         for pred in rel.get("predicates", []):
-            left_field_doc = _resolve_pred_field(pred, "left", to_to_base_map, field_name_map, model)
-            right_field_doc = _resolve_pred_field(pred, "right", to_to_base_map, field_name_map, model)
+            left_field_doc = _resolve_pred_field(pred, "left", resolve_field)
+            right_field_doc = _resolve_pred_field(pred, "right", resolve_field)
             predicates.append(RelationshipPredicate(
                 leftFieldDocId=left_field_doc,
                 operator=pred.get("operator", "="),
@@ -318,24 +314,10 @@ def _normalize_relationships(raw: RawModel, model: DocumentModel) -> None:
                 to_entity.relationships.append(doc_id)
 
 
-def _resolve_pred_field(
-    pred: dict,
-    side: str,
-    to_to_base_map: dict[str, str],
-    field_name_map: dict[tuple[str, str], str],
-    model: DocumentModel,
-) -> str:
+def _resolve_pred_field(pred: dict, side: str, resolve_field) -> str:
     field_name = pred.get(f"{side}_field_name", "")
     table_name = pred.get(f"{side}_table_name", "")
-    # Try resolving via base table name
-    base_table_name = to_to_base_map.get(table_name, "")
-    if base_table_name:
-        actual_table = base_table_name.split(":", 1)[1] if ":" in base_table_name else base_table_name
-        doc_id = field_name_map.get((actual_table, field_name), "")
-        if doc_id:
-            return doc_id
-    # Fallback: construct docId directly
-    return field_doc_id(table_name, field_name) if table_name and field_name else ""
+    return resolve_field_or_fallback(resolve_field, table_name, field_name) or ""
 
 
 # ---------------------------------------------------------------------------
@@ -352,10 +334,7 @@ def _normalize_layouts(raw: RawModel, model: DocumentModel) -> None:
         if base_name and base_name not in base_to_map:
             base_to_map[base_name] = to.doc_id
 
-    field_name_map: dict[tuple[str, str], str] = {
-        (f.base_table_doc_id.split(":", 1)[1], f.name): f.doc_id
-        for f in model.entities.fields.values()
-    }
+    resolve_field = build_field_resolver(model)
 
     for layout in raw.layouts:
         name = normalize_name(layout.get("name", ""))
@@ -379,7 +358,7 @@ def _normalize_layouts(raw: RawModel, model: DocumentModel) -> None:
             fn = ref.get("field_name", "")
             if not fn:
                 continue
-            fd = field_name_map.get((t, fn)) or field_doc_id(t, fn)
+            fd = resolve_field_or_fallback(resolve_field, t, fn) or field_doc_id(t, fn)
             if fd not in ref_field_doc_ids:
                 ref_field_doc_ids.append(fd)
 
@@ -407,10 +386,7 @@ def _normalize_layout_objects(raw: RawModel, model: DocumentModel) -> None:
     layout-object field references (which gives us a more accurate count than
     the raw ``referenced_fields`` list).
     """
-    field_name_map: dict[tuple[str, str], str] = {
-        (f.base_table_doc_id.split(":", 1)[1], f.name): f.doc_id
-        for f in model.entities.fields.values()
-    }
+    resolve_field = build_field_resolver(model)
     to_id_map = {to.fmp_id: to.doc_id for to in model.entities.table_occurrences.values()}
     to_name_map = {to.name: to.doc_id for to in model.entities.table_occurrences.values()}
 
@@ -449,9 +425,7 @@ def _normalize_layout_objects(raw: RawModel, model: DocumentModel) -> None:
                 fn = f.get("field_name", "")
                 tn = f.get("table_name", "")
                 if fn:
-                    field_did = field_name_map.get((tn, fn)) or (
-                        field_doc_id(tn, fn) if tn and fn else None
-                    )
+                    field_did = resolve_field_or_fallback(resolve_field, tn, fn)
                 fm_to_id = str(f.get("to_id", "") or "")
                 if fm_to_id and fm_to_id in to_id_map:
                     to_did = to_id_map[fm_to_id]
@@ -521,10 +495,7 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
         script_entities.append((s, entity))
 
     # Second pass — process steps (now all script docIds are known)
-    field_name_map: dict[tuple[str, str], str] = {
-        (f.base_table_doc_id.split(":", 1)[1], f.name): f.doc_id
-        for f in model.entities.fields.values()
-    }
+    resolve_field = build_field_resolver(model)
 
     for s, script_entity in script_entities:
         step_doc_ids = []
@@ -550,8 +521,22 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
                 fn = fr.get("name", "")
                 tn = fr.get("table", "")
                 if fn:
-                    fd = field_name_map.get((tn, fn)) or field_doc_id(tn, fn)
+                    fd = resolve_field(tn, fn) or field_doc_id(tn, fn)
                     step_refs.append({"kind": "field", "targetDocId": fd, "role": "target", "rawText": f"{tn}::{fn}"})
+                    if fd not in ref_fields:
+                        ref_fields.append(fd)
+                        script_entity.referenced_fields.append(fd)
+
+            # Fields referenced from within the step's calculation text
+            if raw_step.get("calculation"):
+                from ..analyze.calculations import extract_calc_references
+                for cref in extract_calc_references(raw_step["calculation"], model, resolve_field):
+                    if cref["entityType"] != "field" or cref["confidence"] == "unresolved":
+                        continue
+                    fd = cref["targetDocId"]
+                    if any(r["kind"] == "field" and r["targetDocId"] == fd for r in step_refs):
+                        continue
+                    step_refs.append({"kind": "field", "targetDocId": fd, "role": "calculation", "rawText": cref.get("rawText")})
                     if fd not in ref_fields:
                         ref_fields.append(fd)
                         script_entity.referenced_fields.append(fd)
@@ -609,10 +594,7 @@ def _normalize_custom_functions(raw: RawModel, model: DocumentModel) -> None:
 # ---------------------------------------------------------------------------
 
 def _normalize_value_lists(raw: RawModel, model: DocumentModel) -> None:
-    field_name_map: dict[tuple[str, str], str] = {
-        (f.base_table_doc_id.split(":", 1)[1], f.name): f.doc_id
-        for f in model.entities.fields.values()
-    }
+    resolve_field = build_field_resolver(model)
     for vl in raw.value_lists:
         name = normalize_name(vl.get("name", ""))
         if not name:
@@ -624,14 +606,14 @@ def _normalize_value_lists(raw: RawModel, model: DocumentModel) -> None:
         if sf:
             t = sf.get("table", "")
             fn = sf.get("name", "")
-            source_field_doc = field_name_map.get((t, fn)) or (field_doc_id(t, fn) if t and fn else None)
+            source_field_doc = resolve_field_or_fallback(resolve_field, t, fn)
 
         second_field_doc = None
         sf2 = vl.get("second_field")
         if sf2:
             t = sf2.get("table", "")
             fn = sf2.get("name", "")
-            second_field_doc = field_name_map.get((t, fn)) or (field_doc_id(t, fn) if t and fn else None)
+            second_field_doc = resolve_field_or_fallback(resolve_field, t, fn)
 
         entity = ValueListEntity(
             docId=doc_id,
