@@ -63,8 +63,8 @@ def test_external_script_and_layout_are_external_and_namespaced(model):
     assert _conf(model, 1) == ["external"]
     assert _conf(model, 2) == ["external"]
     targets = {r.target_doc_id for r in model.references if r.confidence == "external"}
-    assert "externalScript:idiClients::Open Script" in targets
-    assert "externalLayout:idiClients::Coordonnees" in targets
+    assert "ds:idiClients/script:Open Script" in targets
+    assert "ds:idiClients/layout:Coordonnees" in targets
 
 
 def test_calculation_ref_via_external_to_is_external(model):
@@ -215,3 +215,138 @@ def test_extractor_reads_data_source_catalog():
       </ExternalDataSource></ExternalDataSourceCatalog></AddAction>""")
     assert extract_external_data_sources(container) == [
         {"name": "idiClients", "id": "3", "uuid": "EEC9827D", "type": "FileMaker", "paths": ["file:idiClients"]}]
+
+
+# ---------------------------------------------------------------------------
+# File-scoped docIds:  <scope>/<docId>
+# ---------------------------------------------------------------------------
+
+def test_scope_helpers_round_trip_and_handle_slashes_in_names():
+    from fm_saxml.normalize.ids import file_scope, provisional_scope, scoped_doc_id, split_scoped_doc_id
+
+    uuid = "87139397-FED7-453D-A8E6-746F8DC6B771"
+    assert file_scope(uuid, "a.fmp12") == uuid
+    assert file_scope(None, "a.fmp12") == "file:a.fmp12"
+    assert provisional_scope("EEC9827D-DC30", "idiClients") == "ds:EEC9827D-DC30"
+    assert provisional_scope(None, "we/ird") == "ds:we%2Fird"
+
+    # docIds may contain "/" (script names can): only the leading scope is split off
+    for scope in (uuid, "file:a.fmp12", "ds:EEC9827D-DC30"):
+        assert split_scoped_doc_id(scoped_doc_id(scope, "script:Open/Close")) == (scope, "script:Open/Close")
+    # unscoped ids are left alone, even when the name contains "/"
+    assert split_scoped_doc_id("script:Open/Close") == (None, "script:Open/Close")
+    assert split_scoped_doc_id("field:T::f") == (None, "field:T::f")
+
+
+def test_model_scope_prefers_file_uuid(rich):
+    assert rich.source.scope == "FILE-UUID"
+    assert rich.scoped("script:S") == "FILE-UUID/script:S"
+
+
+def test_scope_falls_back_to_fmp_file_name():
+    raw = _rich_raw()
+    raw.file_uuid = ""
+    m = normalize(raw)
+    assert m.source.scope == "file:main.fmp12"
+
+
+def test_external_targets_get_scoped_doc_ids_everywhere(rich):
+    field = _ext_targets(rich, "scriptStep:S:0000", "field")[0]
+    # target's own docId (base table in the OTHER file + field), and its provisional scoped form
+    assert field.target_doc_id == "field:Clients::Code_client"
+    assert field.scope == "ds:DS-UUID"
+    assert field.scoped_doc_id == "ds:DS-UUID/field:Clients::Code_client"
+
+    script = _ext_targets(rich, "scriptStep:S:0001", "script")[0]
+    assert script.scoped_doc_id == "ds:DS-UUID/script:Open Script"
+
+    # every external reference points at its scoped id, and backlinks are keyed by it
+    for r in rich.references:
+        if r.confidence == "external":
+            assert r.target_doc_id == r.external_target.scoped_doc_id
+            assert r.source_doc_id in {b["sourceDocId"] for b in rich.backlinks[r.target_doc_id]}
+
+    # entity fields that name an external field use the same scoped id
+    obj = next(iter(rich.entities.layout_objects.values()))
+    assert obj.field_doc_id == "ds:DS-UUID/field:Clients::Nom"
+    pred = next(iter(rich.entities.relationships.values())).predicates[0]
+    assert pred.right_field_doc_id == "ds:DS-UUID/field:Clients::Code_client"
+    assert pred.left_field_doc_id == "field:Contrat::Code_client"  # local side stays unscoped
+
+
+def test_external_references_json_carries_scopes(rich, tmp_path):
+    import json
+    from fm_saxml.render.json.writer import write_external_references_json
+
+    write_external_references_json(rich, tmp_path)
+    doc = json.loads((tmp_path / "external-references.json").read_text(encoding="utf-8"))
+    assert doc["source"]["scope"] == "FILE-UUID"
+    row = next(r for r in doc["references"] if r["sourceDocId"].startswith("scriptStep:S:0001"))
+    assert row["sourceScopedDocId"] == "FILE-UUID/scriptStep:S:0001"
+    assert row["target"]["scopedDocId"] == "ds:DS-UUID/script:Open Script"
+
+
+def test_markdown_shows_external_targets_readably(rich):
+    from fm_saxml.render.markdown.link_resolver import LinkResolver
+
+    links = LinkResolver(rich)
+    assert links.title_for("ds:DS-UUID/script:Open Script") == "Open Script (idiClients)"
+    assert links.title_for("ds:DS-UUID/field:Clients::Code_client") == "Clients::Code_client (idiClients)"
+
+
+# ---------------------------------------------------------------------------
+# Folders/dividers in the layout catalog; custom menu items
+# ---------------------------------------------------------------------------
+
+def test_layout_folders_and_dividers_are_not_layouts():
+    from fm_saxml.parser.extractors.layouts import extract_layouts
+
+    db = etree.fromstring("""<Database><LayoutCatalog>
+      <Layout id="1" name="Top"></Layout>
+      <Layout id="2" name="DEV" isFolder="True"></Layout>
+      <Layout id="3" name="-" isSeparatorItem="True"></Layout>
+      <Layout id="4" name="Inner"></Layout>
+      <Layout id="5" name="--" isFolder="Marker"></Layout>
+      <Layout id="6" name="After"></Layout>
+    </LayoutCatalog></Database>""")
+    got = {l["name"]: l["folder_path"] for l in extract_layouts(db)}
+    assert got == {"Top": None, "Inner": "DEV", "After": None}
+
+
+MENU_XML = """<Container><CustomMenuCatalog><CustomMenu name="Main" id="1"><MenuItemList membercount="4">
+  <CustomMenuItem index="0" isSubMenuItem="False" isSeparatorItem="False"><Command name="Add New Request" id="50209"/></CustomMenuItem>
+  <CustomMenuItem index="1" isSubMenuItem="False" isSeparatorItem="True"></CustomMenuItem>
+  <CustomMenuItem index="2" isSubMenuItem="True" isSeparatorItem="False"><CustomMenuReference id="14" name="Sub"/></CustomMenuItem>
+  <CustomMenuItem index="3" isSubMenuItem="False" isSeparatorItem="False"><action><Step index="0" id="1" name="Perform Script"><ParameterValues>
+    <Parameter type="List"><List><ScriptReference id="84" name="Show All" UUID="U"/></List></Parameter></ParameterValues></Step></action></CustomMenuItem>
+</MenuItemList></CustomMenu></CustomMenuCatalog></Container>"""
+
+
+def test_custom_menu_items_are_extracted():
+    from fm_saxml.parser.extractors.custom_menus import extract_custom_menus
+
+    (menu,) = extract_custom_menus(etree.fromstring(MENU_XML))
+    kinds = [(i["action_type"], i["name"]) for i in menu["items"]]
+    assert kinds == [("command", "Add New Request"), ("separator", "-"), ("submenu", "Sub"),
+                     ("script", "Perform Script [ Show All ]")]
+    assert menu["items"][3]["script_ref"]["name"] == "Show All"
+    assert menu["items"][2]["submenu_name"] == "Sub"
+
+
+def test_custom_menu_links_to_scripts_and_submenus():
+    raw = _raw()
+    raw.scripts = [{"id": "1", "name": "Show All", "steps": []}]
+    raw.custom_menus = [
+        {"id": "1", "name": "Main", "items": [
+            {"name": "Show", "action_type": "script", "script_ref": {"name": "Show All", "id": "84"}},
+            {"name": "Ext", "action_type": "script",
+             "script_ref": {"name": "Open Script", "id": "9", "data_source": "idiClients"}},
+            {"name": "Sub", "action_type": "submenu", "submenu_name": "Sub"}]},
+        {"id": "2", "name": "Sub", "items": []},
+    ]
+    m = generate_backlinks(resolve_references(normalize(raw)))
+    got = {(r.target_doc_id, r.confidence) for r in m.references if r.source_doc_id == "customMenu:Main"}
+    assert ("script:Show All", "exact") in got
+    assert ("customMenu:Sub", "exact") in got
+    assert ("ds:idiClients/script:Open Script", "external") in got
+    assert any(b["sourceDocId"] == "customMenu:Main" for b in m.backlinks["script:Show All"])

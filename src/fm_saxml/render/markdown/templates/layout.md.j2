@@ -12,6 +12,8 @@ source: {{ source_file }}
 | Name | Value |
 |---|---|
 | FMP ID | {{ entity.fmp_id }} |
+{% if entity.folder_path %}| Folder | {{ entity.folder_path }} |
+{% endif %}
 {% if entity.base_table_occurrence_doc_id %}| Table Occurrence | {{ link(entity.base_table_occurrence_doc_id) }} |
 {% endif %}{% if entity.theme %}| Theme | {{ entity.theme }} |
 {% endif %}| Field Count | {{ entity.referenced_fields | length }} |
@@ -23,7 +25,7 @@ source: {{ source_file }}
 | Field | Data Type |
 |---|---|
 {% for fd in entity.referenced_fields %}{% set field = get_entity(fd) %}
-| {{ link(fd) }} | {{ field.data_type if field else "?" }} |
+| {{ link(fd) }} | {{ field.data_type if field else ("external" if fd.startswith("ds:") else "?") }} |
 {% endfor %}
 {% endif %}
 

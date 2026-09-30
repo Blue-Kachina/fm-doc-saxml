@@ -53,6 +53,7 @@ from .ids import (
     custom_menu_set_doc_id,
     theme_doc_id,
     file_reference_doc_id,
+    file_scope,
 )
 from .names import normalize_name, qualified_name
 from .field_resolver import build_field_resolver, resolve_field_or_fallback
@@ -79,6 +80,7 @@ def normalize(
         sourceModifiedAt=source_modified_at,
         fmpFileName=raw.fmp_file_name or None,
         fileUuid=raw.file_uuid or None,
+        scope=file_scope(raw.file_uuid, raw.fmp_file_name, Path(source_file or raw.file_name).name),
     )
     solution = SolutionInfo(name=raw.solution_name or source_file or "Unknown Solution")
     entities = EntityMaps()
@@ -309,16 +311,18 @@ def _normalize_relationships(raw: RawModel, model: DocumentModel) -> None:
 
         predicates = []
         for pred in rel.get("predicates", []):
-            left_field_doc = _resolve_pred_field(pred, "left", resolve_field)
-            right_field_doc = _resolve_pred_field(pred, "right", resolve_field)
+            left_ext = ext.field(pred.get("left_table_name"), pred.get("left_field_name", ""),
+                                 pred.get("left_field_id"), pred.get("left_field_uuid"))
+            right_ext = ext.field(pred.get("right_table_name"), pred.get("right_field_name", ""),
+                                  pred.get("right_field_id"), pred.get("right_field_uuid"))
+            left_field_doc = left_ext.scoped_doc_id if left_ext else _resolve_pred_field(pred, "left", resolve_field)
+            right_field_doc = right_ext.scoped_doc_id if right_ext else _resolve_pred_field(pred, "right", resolve_field)
             predicates.append(RelationshipPredicate(
                 leftFieldDocId=left_field_doc,
                 operator=pred.get("operator", "="),
                 rightFieldDocId=right_field_doc,
-                leftExternal=ext.field(pred.get("left_table_name"), pred.get("left_field_name", ""),
-                                       pred.get("left_field_id"), pred.get("left_field_uuid")),
-                rightExternal=ext.field(pred.get("right_table_name"), pred.get("right_field_name", ""),
-                                        pred.get("right_field_id"), pred.get("right_field_uuid")),
+                leftExternal=left_ext,
+                rightExternal=right_ext,
             ))
 
         options = RelationshipOptions(
@@ -401,6 +405,7 @@ def _normalize_layouts(raw: RawModel, model: DocumentModel) -> None:
             uuid=layout.get("uuid"),
             baseTableOccurrenceDocId=to_doc,
             theme=layout.get("theme"),
+            folderPath=layout.get("folder_path"),
             referencedFields=ref_field_doc_ids,
             sourceXml=SourceXmlInfo(path=layout.get("source_xml_path", "")) if layout.get("source_xml_path") else None,
         )
@@ -459,8 +464,11 @@ def _normalize_layout_objects(raw: RawModel, model: DocumentModel) -> None:
                 fn = f.get("field_name", "")
                 tn = f.get("table_name", "")
                 if fn:
-                    field_did = resolve_field_or_fallback(resolve_field, tn, fn)
                     field_external = ext.field(tn, fn, f.get("field_id"), f.get("field_uuid"))
+                    field_did = (
+                        field_external.scoped_doc_id if field_external
+                        else resolve_field_or_fallback(resolve_field, tn, fn)
+                    )
                 fm_to_id = str(f.get("to_id", "") or "")
                 if fm_to_id and fm_to_id in to_id_map:
                     to_did = to_id_map[fm_to_id]
@@ -559,7 +567,7 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
                 # Go to Related Record through an External TO -> layout is in the other file
                 l_ext = ext.layout(lr.get("via_to"), lr["name"], lr.get("id"), lr.get("uuid"))
                 if l_ext:
-                    ld = f"externalLayout:{l_ext.data_source}::{lr['name']}"
+                    ld = l_ext.scoped_doc_id
                 else:
                     ld = layout_name_map.get(lr["name"]) or layout_doc_id(lr["name"])
                 step_refs.append({"kind": "layout", "targetDocId": ld, "role": "target", **_ext(l_ext)})
@@ -572,10 +580,10 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
                 fn = fr.get("name", "")
                 tn = fr.get("table", "")
                 if fn:
-                    fd = resolve_field(tn, fn) or field_doc_id(tn, fn)
+                    f_ext = ext.field(tn, fn, fr.get("id"), fr.get("uuid"))
+                    fd = f_ext.scoped_doc_id if f_ext else (resolve_field(tn, fn) or field_doc_id(tn, fn))
                     step_refs.append({"kind": "field", "targetDocId": fd, "role": "target",
-                                      "rawText": f"{tn}::{fn}",
-                                      **_ext(ext.field(tn, fn, fr.get("id"), fr.get("uuid")))})
+                                      "rawText": f"{tn}::{fn}", **_ext(f_ext)})
                     if fd not in ref_fields:
                         ref_fields.append(fd)
                         script_entity.referenced_fields.append(fd)
@@ -593,11 +601,14 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
                     if cref["entityType"] not in ("field", "valueList") or cref["confidence"] == "unresolved":
                         continue
                     kind, target = cref["entityType"], cref["targetDocId"]
+                    c_ext = ext.field(cref.get("table"), cref.get("field", "")) if cref["confidence"] == "external" else None
+                    if c_ext:
+                        target = c_ext.scoped_doc_id
                     if any(r["kind"] == kind and r["targetDocId"] == target for r in step_refs):
                         continue
                     step_refs.append({"kind": kind, "targetDocId": target, "role": "calculation",
                                       "rawText": cref.get("rawText"),
-                                      **_ext(ext.field(cref.get("table"), cref.get("field", "")) if cref["confidence"] == "external" else None)})
+                                      **_ext(c_ext)})
                     if kind == "field" and target not in ref_fields:
                         ref_fields.append(target)
                         script_entity.referenced_fields.append(target)
@@ -608,7 +619,7 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
                 sn = sr["name"]
                 s_ext = ext.script(sr.get("data_source"), sn, sr.get("id"), sr.get("uuid"))  # "from file: X"
                 if s_ext:
-                    sd = f"externalScript:{s_ext.data_source}::{sn}"
+                    sd = s_ext.scoped_doc_id
                 else:
                     sd = script_name_map_prelim.get(sn) or script_doc_id(sn)
                 step_refs.append({"kind": "script", "targetDocId": sd, "role": "callee", **_ext(s_ext)})
@@ -674,16 +685,22 @@ def _normalize_value_lists(raw: RawModel, model: DocumentModel) -> None:
         if sf:
             t = sf.get("table", "")
             fn = sf.get("name", "")
-            source_field_doc = resolve_field_or_fallback(resolve_field, t, fn)
             source_external = ext.field(t, fn, sf.get("id"))
+            source_field_doc = (
+                source_external.scoped_doc_id if source_external
+                else resolve_field_or_fallback(resolve_field, t, fn)
+            )
 
         second_field_doc = None
         sf2 = vl.get("second_field")
         if sf2:
             t = sf2.get("table", "")
             fn = sf2.get("name", "")
-            second_field_doc = resolve_field_or_fallback(resolve_field, t, fn)
             second_external = ext.field(t, fn, sf2.get("id"))
+            second_field_doc = (
+                second_external.scoped_doc_id if second_external
+                else resolve_field_or_fallback(resolve_field, t, fn)
+            )
 
         entity = ValueListEntity(
             docId=doc_id,
@@ -781,19 +798,29 @@ def _normalize_extended_privileges(raw: RawModel, model: DocumentModel) -> None:
 # ---------------------------------------------------------------------------
 
 def _normalize_custom_menus(raw: RawModel, model: DocumentModel) -> None:
+    ext = ExternalTargets(model)
+    script_name_map = {s.name: s.doc_id for s in model.entities.scripts.values()}
     for cm in raw.custom_menus:
         name = normalize_name(cm.get("name", ""))
         if not name:
             continue
         doc_id = custom_menu_doc_id(name)
-        items = [
-            CustomMenuItem(
+        items = []
+        for item in cm.get("items", []):
+            sref = item.get("script_ref")
+            s_ext = ext.script(sref.get("data_source"), sref["name"], sref.get("id"), sref.get("uuid")) if sref else None
+            if s_ext:
+                script_did = s_ext.scoped_doc_id
+            else:
+                script_did = script_name_map.get(sref["name"]) or script_doc_id(sref["name"]) if sref else None
+            items.append(CustomMenuItem(
                 name=item.get("name", ""),
                 actionType=item.get("action_type", ""),
                 installCondition=item.get("install_condition"),
-            )
-            for item in cm.get("items", [])
-        ]
+                scriptDocId=script_did,
+                scriptExternal=s_ext,
+                submenuDocId=custom_menu_doc_id(normalize_name(item["submenu_name"])) if item.get("submenu_name") else None,
+            ))
         entity = CustomMenuEntity(
             docId=doc_id,
             name=name,

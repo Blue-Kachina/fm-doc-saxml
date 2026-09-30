@@ -27,6 +27,7 @@ def resolve_references(model: DocumentModel) -> DocumentModel:
     _link_scripts(model)
     _link_custom_functions(model)
     _link_value_lists(model)
+    _link_custom_menus(model)
     _link_field_calculations(model)
     _link_accounts_to_privilege_sets(model)
     _link_extended_privileges_to_privilege_sets(model)
@@ -282,6 +283,39 @@ def _link_extended_privileges_to_privilege_sets(model: DocumentModel) -> None:
                 ))
 
 
+def _link_custom_menus(model: DocumentModel) -> None:
+    """Custom menu → scripts its items perform, and submenus they open."""
+    for menu in model.entities.custom_menus.values():
+        for item in menu.items:
+            if item.script_doc_id:
+                if item.script_external is not None:
+                    confidence = "external"
+                else:
+                    confidence = "exact" if item.script_doc_id in model.entities.scripts else "unresolved"
+                model.references.append(ReferenceRecord(
+                    sourceDocId=menu.doc_id,
+                    sourceEntityType="customMenu",
+                    targetDocId=item.script_doc_id,
+                    targetEntityType="script",
+                    relationshipType="usesScript",
+                    role="menuItem",
+                    confidence=confidence,
+                    rawText=item.name,
+                    externalTarget=item.script_external,
+                ))
+            if item.submenu_doc_id:
+                model.references.append(ReferenceRecord(
+                    sourceDocId=menu.doc_id,
+                    sourceEntityType="customMenu",
+                    targetDocId=item.submenu_doc_id,
+                    targetEntityType="customMenu",
+                    relationshipType="usesCustomMenu",
+                    role="submenu",
+                    confidence="exact" if item.submenu_doc_id in model.entities.custom_menus else "unresolved",
+                    rawText=item.name,
+                ))
+
+
 def _link_value_lists(model: DocumentModel) -> None:
     """Value list → source / second field (usage evidence for those fields)."""
     for vl in model.entities.value_lists.values():
@@ -339,15 +373,16 @@ def _link_field_calculations(model: DocumentModel) -> None:
             for ref in extract_calc_references(calc, model):
                 if ref["confidence"] == "unresolved" or ref["targetDocId"] == field.doc_id:
                     continue
+                et = _calc_external_target(ext, ref)
                 model.references.append(ReferenceRecord(
                     sourceDocId=field.doc_id,
                     sourceEntityType="field",
-                    targetDocId=ref["targetDocId"],
+                    targetDocId=_calc_target_doc_id(ref, et),
                     targetEntityType=ref["entityType"],
                     relationshipType=ref["relationshipType"],
                     confidence=ref["confidence"],
                     rawText=ref.get("rawText"),
-                    externalTarget=_calc_external_target(ext, ref),
+                    externalTarget=et,
                 ))
 
 
@@ -358,22 +393,28 @@ def _calc_external_target(ext: ExternalTargets, ref: dict):
     return ext.field(ref.get("table"), ref.get("field", ""))
 
 
+def _calc_target_doc_id(ref: dict, external_target) -> str:
+    """DocId a calculation reference points at: the scoped id when it lives in another file."""
+    return external_target.scoped_doc_id if external_target else ref["targetDocId"]
+
+
 def _link_custom_functions(model: DocumentModel) -> None:
     """Parse calculation text of custom functions and add parsed references."""
     from ..analyze.calculations import extract_calc_references
+    ext = ExternalTargets(model)
     for cf in model.entities.custom_functions.values():
         if not cf.calculation:
             continue
         refs = extract_calc_references(cf.calculation, model)
-        ext = ExternalTargets(model)
         for ref in refs:
+            et = _calc_external_target(ext, ref)
             model.references.append(ReferenceRecord(
                 sourceDocId=cf.doc_id,
                 sourceEntityType="customFunction",
-                targetDocId=ref["targetDocId"],
+                targetDocId=_calc_target_doc_id(ref, et),
                 targetEntityType=ref["entityType"],
                 relationshipType=ref["relationshipType"],
                 confidence=ref["confidence"],
                 rawText=ref.get("rawText"),
-                externalTarget=_calc_external_target(ext, ref),
+                externalTarget=et,
             ))

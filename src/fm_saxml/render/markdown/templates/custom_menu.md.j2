@@ -28,9 +28,20 @@ source: {{ source_file }}
 {% if entity.items %}
 ## Menu Items
 
-| Item | Action Type |
-|---|---|
+| Item | Action Type | Target |
+|---|---|---|
 {% for item in entity.items %}
-| {{ item.name }} | {{ item.action_type or "—" }} |
+| {{ item.name }} | {{ item.action_type or "—" }} | {% if item.script_doc_id %}{{ link(item.script_doc_id) }}{% elif item.submenu_doc_id %}{{ link(item.submenu_doc_id) }}{% else %}—{% endif %} |
+{% endfor %}
+{% endif %}
+
+{% set bl = backlinks(entity.doc_id) %}
+{% if bl %}
+## Referenced By
+
+| Source | Type | Relationship |
+|---|---|---|
+{% for b in bl %}
+| {{ link(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.relationshipType }} |
 {% endfor %}
 {% endif %}

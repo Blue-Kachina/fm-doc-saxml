@@ -12,7 +12,7 @@ source: {{ source_file }}
 | Name | Value |
 |---|---|
 | FMP ID | {{ entity.fmp_id }} |
-{% if entity.external_data_source %}| Base Table | External — file `{{ entity.external_data_source }}` |
+{% if entity.external_data_source %}| Base Table | External — table `{{ entity.external_base_table or "?" }}` in file `{{ entity.external_data_source }}` |
 {% else %}| Base Table | {{ link(entity.base_table_doc_id) }} |
 {% endif %}
 

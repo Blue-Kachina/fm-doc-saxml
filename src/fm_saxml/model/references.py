@@ -15,6 +15,7 @@ RelationshipType = Literal[
     "usesScript",
     "usesCustomFunction",
     "usesValueList",
+    "usesCustomMenu",
     "basedOnTableOccurrence",
     "basedOnBaseTable",
     "joinsTo",
@@ -35,6 +36,13 @@ class ExternalTarget(BaseModel):
     the external data source* in this file, which is a label, not necessarily
     the target file's name — see ``DocumentModel.external_data_sources``.
     """
+
+    # docId of the target INSIDE its own file (docIds are derived from names), and the
+    # provisional scope + that docId, e.g. "ds:<data source uuid>/script:Open Script".
+    # Replace the scope with the target file's UUID once its export has been paired.
+    target_doc_id: str = Field("", alias="targetDocId")
+    scope: str = ""
+    scoped_doc_id: str = Field("", alias="scopedDocId")
 
     data_source: str = Field(alias="dataSource")
     data_source_id: Optional[str] = Field(None, alias="dataSourceId")

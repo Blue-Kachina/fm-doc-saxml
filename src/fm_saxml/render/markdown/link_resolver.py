@@ -122,6 +122,15 @@ class LinkResolver:
             self._path_by_doc_id[e.doc_id] = p
             self._title_by_doc_id[e.doc_id] = e.name
 
+        # Targets in other files have no page here; show them readably, not as a raw scoped id
+        for ref in self._model.references:
+            t = ref.external_target
+            if t is not None and ref.target_doc_id not in self._title_by_doc_id:
+                label = t.name
+                if t.target_type == "field" and (t.base_table or t.table_occurrence):
+                    label = f"{t.base_table or t.table_occurrence}::{t.name}"
+                self._title_by_doc_id[ref.target_doc_id] = f"{label} ({t.data_source})"
+
     def path_for(self, doc_id: str) -> str | None:
         return self._path_by_doc_id.get(doc_id)
 

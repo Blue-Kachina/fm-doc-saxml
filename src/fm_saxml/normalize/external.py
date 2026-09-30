@@ -12,6 +12,7 @@ from typing import Optional
 from ..model.document_model import DocumentModel
 from ..model.entities import TableOccurrenceEntity
 from ..model.references import ExternalTarget
+from .ids import field_doc_id, layout_doc_id, provisional_scope, script_doc_id, scoped_doc_id
 
 
 class ExternalTargets:
@@ -41,6 +42,24 @@ class ExternalTargets:
             "dataSourceUuid": ds_uuid or (cat.uuid if cat else None),
         }
 
+    @staticmethod
+    def _make(**kw) -> ExternalTarget:
+        """Build an ExternalTarget, filling in its file-scoped docId.
+
+        ``targetDocId`` is the docId the entity has inside its own file (docIds
+        are derived from names); ``scopedDocId`` prefixes the provisional
+        ``ds:`` scope until the target file's UUID is known.
+        """
+        kind, name = kw["targetType"], kw["name"]
+        if kind == "script":
+            local = script_doc_id(name)
+        elif kind == "layout":
+            local = layout_doc_id(name)
+        else:
+            local = field_doc_id(kw.get("baseTable") or kw.get("tableOccurrence") or "", name)
+        scope = provisional_scope(kw.get("dataSourceUuid"), kw["dataSource"])
+        return ExternalTarget(**kw, targetDocId=local, scope=scope, scopedDocId=scoped_doc_id(scope, local))
+
     def field(
         self, to_name: Optional[str], field_name: str,
         fmp_id: Optional[str] = None, uuid: Optional[str] = None,
@@ -49,7 +68,7 @@ class ExternalTargets:
         to = self.to_entity(to_name)
         if to is None or not field_name:
             return None
-        return ExternalTarget(
+        return self._make(
             **self._source_fields(to.external_data_source, to.external_data_source_id, to.external_data_source_uuid),
             targetType="field",
             name=field_name,
@@ -68,7 +87,7 @@ class ExternalTargets:
         """Target for a Perform Script "from file" step, else None (local script)."""
         if not data_source:
             return None
-        return ExternalTarget(
+        return self._make(
             **self._source_fields(data_source),
             targetType="script", name=name, fmpId=fmp_id or None, uuid=uuid or None,
         )
@@ -81,7 +100,7 @@ class ExternalTargets:
         to = self.to_entity(via_to)
         if to is None:
             return None
-        return ExternalTarget(
+        return self._make(
             **self._source_fields(to.external_data_source, to.external_data_source_id, to.external_data_source_uuid),
             targetType="layout", name=name, fmpId=fmp_id or None, uuid=uuid or None,
             tableOccurrence=to.name,

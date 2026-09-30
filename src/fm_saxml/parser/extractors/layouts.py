@@ -23,10 +23,43 @@ def extract_layouts(database_elem: etree._Element) -> list[dict[str, Any]]:
     if catalog is None:
         return []
 
-    results = []
-    for layout_elem in find_all_descendants(catalog, "Layout"):
-        results.append(_parse_layout(layout_elem))
+    results: list[dict[str, Any]] = []
+    _walk_layout_catalog(catalog, "", results)
     return results
+
+
+def _walk_layout_catalog(elem: etree._Element, folder_path: str, results: list[dict[str, Any]]) -> None:
+    """Collect layouts, skipping folders and dividers (which are ``<Layout>`` elements too).
+
+    v2 catalogs are flat: ``<Layout isFolder="True">`` opens a folder, its items
+    follow as siblings, and ``<Layout isFolder="Marker">`` closes it. Dividers are
+    ``<Layout isSeparatorItem="True">``. Folders are tracked on a stack so real
+    layouts still get a folder path.
+    """
+    open_folders: list[str] = []
+    for child in elem:
+        if not isinstance(child.tag, str):
+            continue
+        if _local(child.tag) != "Layout":
+            _walk_layout_catalog(child, folder_path, results)  # wrapper elements (older formats)
+            continue
+        is_folder = attr(child, "isFolder", "IsFolder").lower()
+        if attr(child, "isSeparatorItem", "IsSeparatorItem").lower() == "true":
+            continue
+        if is_folder == "marker":
+            if open_folders:
+                open_folders.pop()
+            continue
+        if is_folder == "true":
+            open_folders.append(attr(child, "name", "Name"))
+            continue
+        layout = _parse_layout(child)
+        layout["folder_path"] = "/".join(p for p in [folder_path, *open_folders] if p) or None
+        results.append(layout)
+
+
+def _local(tag: str) -> str:
+    return tag.split("}", 1)[1] if tag.startswith("{") else tag
 
 
 def _parse_layout(elem: etree._Element) -> dict[str, Any]:

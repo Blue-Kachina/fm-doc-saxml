@@ -138,6 +138,7 @@ class LayoutEntity(BaseModel):
     uuid: Optional[str] = None
     base_table_occurrence_doc_id: Optional[str] = Field(None, alias="baseTableOccurrenceDocId")
     theme: Optional[str] = None
+    folder_path: Optional[str] = Field(None, alias="folderPath")  # layout folder(s), e.g. "DEV/Old"
     referenced_fields: list[str] = Field([], alias="referencedFields")
     layout_objects: list[str] = Field([], alias="layoutObjects")  # LayoutObject docIds
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
@@ -289,8 +290,11 @@ class CustomMenuItem(BaseModel):
     """Embedded within CustomMenuEntity — not a standalone entity."""
 
     name: str
-    action_type: str = Field("", alias="actionType")
+    action_type: str = Field("", alias="actionType")  # separator | submenu | command | script | action
     install_condition: Optional[str] = Field(None, alias="installCondition")
+    script_doc_id: Optional[str] = Field(None, alias="scriptDocId")  # script the item performs
+    script_external: Optional[ExternalTarget] = Field(None, alias="scriptExternal")  # ...if it lives in another file
+    submenu_doc_id: Optional[str] = Field(None, alias="submenuDocId")  # custom menu this item opens
 
     model_config = ConfigDict(populate_by_name=True)
 

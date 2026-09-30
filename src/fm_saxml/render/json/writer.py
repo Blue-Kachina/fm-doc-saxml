@@ -28,6 +28,11 @@ def build_external_references(model: DocumentModel) -> dict:
     ``target.fmpId``, then ``target.name`` (fields: ``target.baseTable`` +
     ``target.name``). ``target.dataSource`` is only a label; use
     ``dataSources`` (paths, UUIDs) to work out which file it names.
+
+    DocIds are file-scoped as ``<scope>/<docId>`` (see ``normalize/ids.py``):
+    ``sourceScopedDocId`` uses this file's ``source.scope``; ``target.scopedDocId``
+    uses the provisional ``ds:<data source uuid>`` scope, to be swapped for the
+    target file's UUID once paired. ``target.targetDocId`` is the unscoped id.
     """
     external = [r for r in model.references if r.confidence == "external"]
     return {
@@ -36,6 +41,7 @@ def build_external_references(model: DocumentModel) -> dict:
             "fileName": model.source.file_name,
             "fmpFileName": model.source.fmp_file_name,
             "fileUuid": model.source.file_uuid,
+            "scope": model.source.scope,
             "fileMakerVersion": model.source.file_maker_version,
             "generatedAt": model.source.generated_at.isoformat(),
         },
@@ -59,6 +65,7 @@ def build_external_references(model: DocumentModel) -> dict:
         "references": [
             {
                 "sourceDocId": r.source_doc_id,
+                "sourceScopedDocId": model.scoped(r.source_doc_id),
                 "sourceEntityType": r.source_entity_type,
                 "relationshipType": r.relationship_type,
                 "role": r.role,

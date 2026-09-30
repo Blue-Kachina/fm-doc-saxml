@@ -77,3 +77,55 @@ def theme_doc_id(name: str) -> str:
 
 def file_reference_doc_id(ref_type: str, display_name: str) -> str:
     return f"fileRef:{ref_type}:{display_name}"
+
+
+# ---------------------------------------------------------------------------
+# File-scoped docIds
+#
+# Within one file's model, docIds stay short and unscoped ("script:Name") —
+# they name Markdown files and key every lookup. To make entities from two
+# files unambiguous when merged, or to point at an entity in another file,
+# prefix a *scope*:   <scope>/<docId>     e.g.  "<fileUuid>/script:Name"
+#
+# Scope forms (the text before the first "/", which can never contain one):
+#   <file UUID>         a file whose UUID is known (from the FMSaveAsXML root)
+#   file:<fmp name>     fallback when an export has no file UUID
+#   ds:<data source>    PROVISIONAL: "the file that data source <uuid> names".
+#                       An export knows its data sources but not the target
+#                       file's own UUID; a multi-file run rewrites ds:... to
+#                       the real file UUID once it has paired the files.
+# DocIds themselves may contain "/" (script names can), so always split on
+# the first "/" only, via split_scoped_doc_id().
+# ---------------------------------------------------------------------------
+
+import re as _re
+
+_SCOPE_RE = _re.compile(
+    r"^((?:ds:|file:)[^/]*|[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12})/(.+)$", _re.DOTALL
+)
+
+
+def _escape_scope_text(text: str) -> str:
+    return text.replace("%", "%25").replace("/", "%2F")
+
+
+def file_scope(file_uuid: str | None, fmp_file_name: str | None, fallback_name: str = "") -> str:
+    """Scope identifying a file: its UUID, else ``file:<fmp file name>``."""
+    if file_uuid:
+        return file_uuid
+    return f"file:{_escape_scope_text(fmp_file_name or fallback_name or 'unknown')}"
+
+
+def provisional_scope(data_source_uuid: str | None, data_source_name: str) -> str:
+    """Scope for a file only known through a data source of another file."""
+    return f"ds:{_escape_scope_text(data_source_uuid or data_source_name)}"
+
+
+def scoped_doc_id(scope: str, doc_id: str) -> str:
+    return f"{scope}/{doc_id}"
+
+
+def split_scoped_doc_id(value: str) -> tuple[str | None, str]:
+    """Split ``<scope>/<docId>`` into ``(scope, docId)``; ``(None, value)`` if unscoped."""
+    m = _SCOPE_RE.match(value)
+    return (m.group(1), m.group(2)) if m else (None, value)

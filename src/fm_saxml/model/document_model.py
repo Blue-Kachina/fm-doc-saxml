@@ -44,6 +44,9 @@ class SourceInfo(BaseModel):
     # run uses these to pair an export with the data sources that name it.
     fmp_file_name: Optional[str] = Field(None, alias="fmpFileName")  # e.g. "idiClients.fmp12"
     file_uuid: Optional[str] = Field(None, alias="fileUuid")
+    # Prefix that makes this file's docIds globally unique: "<scope>/<docId>".
+    # The file UUID when known, else "file:<fmp file name>". See normalize/ids.py.
+    scope: Optional[str] = None
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -139,6 +142,10 @@ class DocumentModel(BaseModel):
             if doc_id in em:
                 return em[doc_id]
         return None
+
+    def scoped(self, doc_id: str) -> str:
+        """``doc_id`` qualified with this file's scope, safe to merge with other files' ids."""
+        return f"{self.source.scope}/{doc_id}" if self.source.scope else doc_id
 
     def add_warning(self, code: str, message: str, entity_doc_id: Optional[str] = None, detail: Optional[str] = None) -> None:
         self.warnings.append(Warning(code=code, message=message, entity_doc_id=entity_doc_id, detail=detail))
