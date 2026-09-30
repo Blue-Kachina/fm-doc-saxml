@@ -35,11 +35,21 @@ def _warn_empty_scripts(model: DocumentModel) -> None:
 
 
 def _warn_fields_no_backlinks(model: DocumentModel) -> None:
-    """Note fields that appear to have no inbound references."""
+    """Note fields that appear to have no inbound *usage* references.
+
+    Every field also has a structural ``contains`` backlink from its own
+    table (added by ``_link_fields_to_tables``) purely because it's defined
+    there — that exists regardless of whether the field is ever actually
+    used, so it must not count as evidence of use here.
+    """
     for field in model.entities.fields.values():
-        if field.doc_id not in model.backlinks:
+        usage_backlinks = [
+            b for b in model.backlinks.get(field.doc_id, [])
+            if b.get("relationshipType") != "contains"
+        ]
+        if not usage_backlinks:
             model.add_warning(
                 code="UNUSED_FIELD_CANDIDATE",
-                message=f"Field '{field.qualified_name}' has no detected references — may be unused",
+                message=f"Field '{field.qualified_name}' has no detected usage references — may be unused",
                 entity_doc_id=field.doc_id,
             )

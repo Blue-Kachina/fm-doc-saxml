@@ -172,6 +172,70 @@ def validate(
 
 
 # ---------------------------------------------------------------------------
+# diff: compare two exports (XML or model.json)
+# ---------------------------------------------------------------------------
+
+@app.command()
+def diff(
+    old_input: Annotated[Path, typer.Argument(help="Baseline: a SaveAsXML file or a previously-saved model.json")],
+    new_input: Annotated[Path, typer.Argument(help="Comparison: a SaveAsXML file or a previously-saved model.json")],
+    out: Annotated[Optional[Path], typer.Option("--out", "-o", help="Write a Markdown diff report to this path")] = None,
+    strict: Annotated[bool, typer.Option("--strict", help="Exit non-zero if any difference is found")] = False,
+) -> None:
+    """Compare two FileMaker exports and report what changed between them."""
+    old_input = _normalize_path(old_input)
+    new_input = _normalize_path(new_input)
+    _validate_input(old_input)
+    _validate_input(new_input)
+
+    old_model = _load_model_for_diff(old_input, label="baseline")
+    new_model = _load_model_for_diff(new_input, label="comparison")
+
+    from .analyze.diff import compute_diff
+    result = compute_diff(old_model, new_model)
+
+    _print_diff_summary(result)
+
+    if out:
+        out = _normalize_path(out)
+        from .render.markdown.diff_renderer import render_diff_markdown
+        render_diff_markdown(result, out)
+        console.print(f"[green]Diff report written to {out}[/green]")
+
+    if strict and result.has_changes:
+        err_console.print("[red]--strict: differences were found[/red]")
+        raise typer.Exit(1)
+
+
+def _load_model_for_diff(path: Path, *, label: str):
+    if path.suffix.lower() == ".json":
+        import orjson
+        from .model.document_model import DocumentModel
+        console.print(f"[dim]Loading {label} model from {path}...[/dim]")
+        raw = orjson.loads(path.read_bytes())
+        return DocumentModel.model_validate(raw)
+    return _run_pipeline(path)
+
+
+def _print_diff_summary(result) -> None:
+    tbl = Table(title="Diff Summary", show_header=True)
+    tbl.add_column("Entity Type", style="cyan")
+    tbl.add_column("Added", justify="right", style="green")
+    tbl.add_column("Removed", justify="right", style="red")
+    tbl.add_column("Changed", justify="right", style="yellow")
+    for t in result.types:
+        if t.has_changes:
+            tbl.add_row(t.label, str(len(t.added)), str(len(t.removed)), str(len(t.changed)))
+    console.print(tbl)
+
+    if result.script_step_diffs:
+        console.print(f"[dim]Scripts with step changes: {len(result.script_step_diffs)}[/dim]")
+
+    if not result.has_changes:
+        console.print("[green]No differences detected.[/green]")
+
+
+# ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
 
