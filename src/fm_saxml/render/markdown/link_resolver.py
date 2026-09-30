@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import PurePosixPath
+from urllib.parse import quote
 
 from ...model.document_model import DocumentModel
 from ...normalize.paths import (
@@ -149,7 +150,7 @@ class LinkResolver:
         title = label or self.title_for(target_doc_id)
         if href is None:
             return title
-        return f"[{_esc(title)}]({href})"
+        return f"[{_esc(title)}]({_encode_href(href)})"
 
 
 def _relative(from_path: str, to_path: str) -> str:
@@ -175,3 +176,15 @@ def _relative(from_path: str, to_path: str) -> str:
 
 def _esc(text: str) -> str:
     return text.replace("[", "\\[").replace("]", "\\]")
+
+
+def _encode_href(href: str) -> str:
+    """Percent-encode a relative path for use as a bare Markdown link destination.
+
+    CommonMark only allows a space-free, unescaped sequence inside `(...)` —
+    a literal space (or most other non-alphanumeric characters) ends the
+    destination early, silently truncating the link. FileMaker names
+    routinely contain spaces and parentheses (e.g. "Loadi18n ( idLanguage )"),
+    so every generated href needs this, not just the rare edge case.
+    """
+    return quote(href, safe="/")

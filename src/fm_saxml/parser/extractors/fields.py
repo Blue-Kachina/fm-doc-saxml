@@ -55,11 +55,13 @@ def _parse_field(elem: etree._Element, table_id: str, table_name: str) -> dict[s
     validation = _parse_validation(find_child(elem, "Validation"))
     storage = _parse_storage(find_child(elem, "Storage"))
     calculation_elem = find_child(elem, "Calculation")
+    summary_field = _parse_summary_field(find_child(elem, "SummaryField"), table_name)
 
     return {
         "id": attr(elem, "id", "ID"),
         "name": attr(elem, "name", "Name"),
         "uuid": attr(elem, "uuid", "UUID") or None,
+        "comment": attr(elem, "comment", "Comment") or None,
         # v1 uses dataType/fieldType (camelCase); v2 uses datatype/fieldtype (lower)
         "data_type": attr(elem, "dataType", "DataType", "datatype", "fieldDataType") or "Text",
         "field_type": attr(elem, "fieldType", "FieldType", "fieldtype") or "Normal",
@@ -69,8 +71,29 @@ def _parse_field(elem: etree._Element, table_id: str, table_name: str) -> dict[s
         "auto_enter": auto_enter,
         "validation": validation,
         "storage": storage,
+        "summary_field": summary_field,
         "source_xml_path": xml_path(elem),
     }
+
+
+def _parse_summary_field(elem: etree._Element | None, owning_table_name: str) -> dict[str, str] | None:
+    """A summary field's source: ``<SummaryField><FieldReference/><BaseTableReference/></SummaryField>``.
+
+    A summary field always aggregates a field on its own table, so fall back
+    to the owning field's own table name if no ``<BaseTableReference>`` is
+    present.
+    """
+    if elem is None:
+        return None
+    field_ref = find_child(elem, "FieldReference")
+    if field_ref is None:
+        return None
+    field_name = attr(field_ref, "name", "Name")
+    if not field_name:
+        return None
+    base_table_ref = find_child(elem, "BaseTableReference")
+    table_name = attr(base_table_ref, "name", "Name") if base_table_ref is not None else ""
+    return {"name": field_name, "table": table_name or owning_table_name}
 
 
 def _parse_auto_enter(elem: etree._Element | None) -> dict[str, Any] | None:
@@ -144,12 +167,24 @@ def _parse_validation(elem: etree._Element | None) -> dict[str, Any] | None:
 
 def _parse_storage(elem: etree._Element | None) -> dict[str, Any]:
     if elem is None:
-        return {"global": False, "indexed": False, "maxRepeat": 1}
+        return {"global": False, "indexed": False, "index": "None", "autoIndex": False, "maxRepeat": 1}
     global_val = attr(elem, "global", "Global") == "True"
-    indexed_raw = attr(elem, "index", "Index", "autoIndex", "AutoIndex") or ""
-    indexed = indexed_raw.lower() not in ("", "none", "false")
+    # "index" and "autoIndex" are two distinct attributes (e.g.
+    # `index="Minimal" autoIndex="True"`) — looked up separately so one
+    # doesn't mask the other.
+    index_raw = attr(elem, "index", "Index") or "None"
+    auto_index = attr(elem, "autoIndex", "AutoIndex").lower() == "true"
+    indexed = index_raw.lower() not in ("", "none", "false")
     try:
-        max_repeat = int(attr(elem, "maxRepeat", "MaxRepeat") or "1")
+        # The real SaveAsXML attribute is "maxRepetitions"; "maxRepeat" is
+        # kept as a fallback in case an older export version used it.
+        max_repeat = int(attr(elem, "maxRepetitions", "MaxRepetitions", "maxRepeat", "MaxRepeat") or "1")
     except ValueError:
         max_repeat = 1
-    return {"global": global_val, "indexed": indexed, "maxRepeat": max_repeat}
+    return {
+        "global": global_val,
+        "indexed": indexed,
+        "index": index_raw,
+        "autoIndex": auto_index,
+        "maxRepeat": max_repeat,
+    }

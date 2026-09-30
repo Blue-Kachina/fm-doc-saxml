@@ -13,6 +13,7 @@ source: {{ source_file }}
 |---|---|
 | FMP ID | {{ entity.fmp_id }} |
 {% if entity.uuid %}| UUID | {{ entity.uuid }} |
+{% endif %}{% if entity.comment %}| Comment | {{ entity.comment }} |
 {% endif %}| Field Count | {{ entity.fields | length }} |
 | Table Occurrence Count | {{ entity.table_occurrences | length }} |
 

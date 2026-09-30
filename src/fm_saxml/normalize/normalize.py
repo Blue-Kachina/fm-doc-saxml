@@ -148,6 +148,7 @@ def _normalize_tables(raw: RawModel, model: DocumentModel) -> None:
             name=name,
             fmpId=str(t.get("id", "")),
             uuid=t.get("uuid"),
+            comment=t.get("comment"),
             sourceXml=SourceXmlInfo(path=t.get("source_xml_path", "")) if t.get("source_xml_path") else None,
         )
         model.entities.tables[doc_id] = entity
@@ -172,6 +173,8 @@ def _normalize_fields(raw: RawModel, model: DocumentModel) -> None:
         storage = StorageOptions(**{
             "global": storage_raw.get("global", False),
             "indexed": storage_raw.get("indexed", False),
+            "index": storage_raw.get("index", "None"),
+            "autoIndex": storage_raw.get("autoIndex", False),
             "maxRepeat": storage_raw.get("maxRepeat", 1),
         })
 
@@ -200,6 +203,12 @@ def _normalize_fields(raw: RawModel, model: DocumentModel) -> None:
                 ),
             )
 
+        summary_field_did = None
+        sf_raw = f.get("summary_field")
+        if sf_raw and sf_raw.get("name"):
+            # A summary field always aggregates a field on its own table.
+            summary_field_did = field_doc_id(normalize_name(sf_raw.get("table") or table_name), normalize_name(sf_raw["name"]))
+
         entity = FieldEntity(
             docId=doc_id,
             name=name,
@@ -209,10 +218,12 @@ def _normalize_fields(raw: RawModel, model: DocumentModel) -> None:
             fieldType=f.get("field_type", "Normal"),
             fmpId=str(f.get("id", "")),
             uuid=f.get("uuid"),
+            comment=f.get("comment"),
             calculation=f.get("calculation"),
             autoEnter=auto_enter,
             validation=validation,
             storage=storage,
+            summaryFieldDocId=summary_field_did,
             sourceXml=SourceXmlInfo(path=f.get("source_xml_path", "")) if f.get("source_xml_path") else None,
         )
 
@@ -475,6 +486,20 @@ def _normalize_layout_objects(raw: RawModel, model: DocumentModel) -> None:
                 elif tn and tn in to_name_map:
                     to_did = to_name_map[tn]
 
+            # Button-triggered script. Scripts aren't normalized yet at this
+            # point in the pipeline, so there's no name->doc_id map to check
+            # against — script_doc_id() is a pure function of the normalized
+            # name, so it produces the same doc_id the real script will get.
+            button_script_did: str | None = None
+            button_script_external = None
+            bs = obj.get("button_script")
+            if bs and bs.get("name"):
+                button_script_external = ext.script(bs.get("data_source"), bs["name"], bs.get("id"), bs.get("uuid"))
+                button_script_did = (
+                    button_script_external.scoped_doc_id if button_script_external
+                    else script_doc_id(normalize_name(bs["name"]))
+                )
+
             entity = LayoutObjectEntity(
                 docId=doc_id,
                 layoutDocId=layout_did,
@@ -492,6 +517,8 @@ def _normalize_layout_objects(raw: RawModel, model: DocumentModel) -> None:
                     if obj.get("value_list") else None
                 ),
                 externalTarget=field_external,
+                buttonScriptDocId=button_script_did,
+                buttonScriptExternal=button_script_external,
                 rawText=obj.get("raw_text"),
                 sourceXml=(
                     SourceXmlInfo(path=obj.get("source_xml_path", ""))

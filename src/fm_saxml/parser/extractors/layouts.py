@@ -6,6 +6,7 @@ from typing import Any
 from lxml import etree
 
 from ._helpers import attr, find_child, find_all_children, find_all_descendants, xml_path
+from .scripts import _sibling_data_source
 
 
 def extract_layouts(database_elem: etree._Element) -> list[dict[str, Any]]:
@@ -186,6 +187,19 @@ def _parse_layout_object(
     # Plain text content for "Text" objects
     raw_text = _parse_text_content(find_child(lo, "Text"))
 
+    # Button-triggered script: <Button><action><ScriptReference .../></action></Button>
+    button_script = None
+    button_elem = find_child(lo, "Button")
+    action_elem = find_child(button_elem, "action") if button_elem is not None else None
+    script_ref = find_child(action_elem, "ScriptReference") if action_elem is not None else None
+    if script_ref is not None and attr(script_ref, "name", "Name"):
+        button_script = {
+            "id": attr(script_ref, "id", "ID"),
+            "uuid": attr(script_ref, "uuid", "UUID"),
+            "name": attr(script_ref, "name", "Name"),
+            "data_source": _sibling_data_source(script_ref),
+        }
+
     return {
         "id": obj_id,
         "name": obj_name,
@@ -197,6 +211,7 @@ def _parse_layout_object(
         "field": field_info,
         "value_list": value_list,
         "raw_text": raw_text,
+        "button_script": button_script,
         "fallback_index": fallback_index,
         "source_xml_path": xml_path(lo),
     }

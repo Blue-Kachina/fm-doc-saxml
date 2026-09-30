@@ -20,6 +20,10 @@ class SourceXmlInfo(BaseModel):
 class StorageOptions(BaseModel):
     global_storage: bool = Field(False, alias="global")
     indexed: bool = False
+    # Raw 3-state indexing mode ("None"/"Minimal"/"All") and the separate
+    # auto-index flag — `indexed` above is a derived yes/no view of `index`.
+    index: str = "None"
+    auto_index: bool = Field(False, alias="autoIndex")
     max_repeat: int = Field(1, alias="maxRepeat")
 
     model_config = ConfigDict(populate_by_name=True)
@@ -51,6 +55,7 @@ class TableEntity(BaseModel):
     name: str
     fmp_id: str = Field(alias="fmpId")
     uuid: Optional[str] = None
+    comment: Optional[str] = None
     fields: list[str] = []           # field docIds
     table_occurrences: list[str] = Field([], alias="tableOccurrences")  # TO docIds
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
@@ -68,10 +73,14 @@ class FieldEntity(BaseModel):
     field_type: str = Field(alias="fieldType")
     fmp_id: str = Field(alias="fmpId")
     uuid: Optional[str] = None
+    comment: Optional[str] = None
     calculation: Optional[str] = None
     auto_enter: Optional[AutoEnterOptions] = Field(None, alias="autoEnter")
     validation: Optional[ValidationOptions] = None
     storage: StorageOptions = Field(default_factory=StorageOptions)
+    # The field this one summarizes, when this is itself a summary field
+    # (e.g. a "Total Of" field) — always a field on this same base table.
+    summary_field_doc_id: Optional[str] = Field(None, alias="summaryFieldDocId")
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
     model_config = ConfigDict(populate_by_name=True)
@@ -179,6 +188,8 @@ class LayoutObjectEntity(BaseModel):
     table_occurrence_doc_id: Optional[str] = Field(None, alias="tableOccurrenceDocId")
     value_list_doc_id: Optional[str] = Field(None, alias="valueListDocId")  # value list on the control
     external_target: Optional["ExternalTarget"] = Field(None, alias="externalTarget")  # field lives in another file
+    button_script_doc_id: Optional[str] = Field(None, alias="buttonScriptDocId")  # script this button performs
+    button_script_external: Optional["ExternalTarget"] = Field(None, alias="buttonScriptExternal")
     raw_text: Optional[str] = Field(None, alias="rawText")  # Plain-text label (Text objects)
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 

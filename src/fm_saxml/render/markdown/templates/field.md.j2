@@ -17,6 +17,9 @@ source: {{ source_file }}
 | Field Name | {{ entity.name }} |
 | Field Type | {{ entity.field_type }} |
 | Data Type | {{ entity.data_type }} |
+{% if entity.comment %}| Comment | {{ entity.comment }} |
+{% endif %}{% if entity.summary_field_doc_id %}| Summarizes | {{ link(entity.summary_field_doc_id) }} |
+{% endif %}
 
 ## Storage Options
 
@@ -24,6 +27,8 @@ source: {{ source_file }}
 |---|---|
 | Global | {{ "Yes" if entity.storage.global_storage else "No" }} |
 | Indexed | {{ "Yes" if entity.storage.indexed else "No" }} |
+| Index Mode | {{ entity.storage.index }} |
+| Auto-Index | {{ "Yes" if entity.storage.auto_index else "No" }} |
 | Max Repetitions | {{ entity.storage.max_repeat }} |
 
 ## Calculation

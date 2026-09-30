@@ -19,6 +19,7 @@ source: {{ source_file }}
 {% endif %}{% if entity.uuid %}| UUID | {{ entity.uuid }} |
 {% endif %}{% if entity.field_doc_id %}| Field | {{ link(entity.field_doc_id) }} |
 {% endif %}{% if entity.table_occurrence_doc_id %}| Table Occurrence | {{ link(entity.table_occurrence_doc_id) }} |
+{% endif %}{% if entity.button_script_doc_id %}| Triggers Script | {{ link(entity.button_script_doc_id) }} |
 {% endif %}
 
 {% if entity.bounds %}

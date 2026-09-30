@@ -20,6 +20,7 @@ from .ids import (
 def resolve_references(model: DocumentModel) -> DocumentModel:
     """Populate model.references by resolving entity cross-references."""
     _link_fields_to_tables(model)
+    _link_summary_fields(model)
     _link_tos_to_tables(model)
     _link_relationships(model)
     _link_layouts(model)
@@ -47,6 +48,20 @@ def _link_fields_to_tables(model: DocumentModel) -> None:
                 targetDocId=field.doc_id,
                 targetEntityType="field",
                 relationshipType="contains",
+                confidence="exact",
+            ))
+
+
+def _link_summary_fields(model: DocumentModel) -> None:
+    """A summary field (e.g. "Total Of") → the field it aggregates."""
+    for field in model.entities.fields.values():
+        if field.summary_field_doc_id and field.summary_field_doc_id in model.entities.fields:
+            model.references.append(ReferenceRecord(
+                sourceDocId=field.doc_id,
+                sourceEntityType="field",
+                targetDocId=field.summary_field_doc_id,
+                targetEntityType="field",
+                relationshipType="summarizes",
                 confidence="exact",
             ))
 
@@ -210,6 +225,21 @@ def _link_layout_objects(model: DocumentModel) -> None:
                 targetEntityType="tableOccurrence",
                 relationshipType="basedOnTableOccurrence",
                 confidence="exact",
+            ))
+        if obj.button_script_doc_id:
+            if obj.button_script_external is not None:
+                confidence = "external"
+            else:
+                confidence = "exact" if obj.button_script_doc_id in model.entities.scripts else "unresolved"
+            model.references.append(ReferenceRecord(
+                sourceDocId=obj.doc_id,
+                sourceEntityType="layoutObject",
+                targetDocId=obj.button_script_doc_id,
+                targetEntityType="script",
+                relationshipType="triggersScript",
+                role="button",
+                confidence=confidence,
+                externalTarget=obj.button_script_external,
             ))
 
 

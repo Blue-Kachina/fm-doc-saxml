@@ -25,5 +25,6 @@ def _parse_table(elem: etree._Element) -> dict[str, Any]:
         "id": attr(elem, "id", "ID"),
         "name": attr(elem, "name", "Name"),
         "uuid": attr(elem, "uuid", "UUID") or None,
+        "comment": attr(elem, "comment", "Comment") or None,
         "source_xml_path": xml_path(elem),
     }

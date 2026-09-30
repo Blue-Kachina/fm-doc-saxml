@@ -26,6 +26,8 @@ def _check_field_table_refs(model: DocumentModel) -> None:
 
 def _check_to_base_table_refs(model: DocumentModel) -> None:
     for to in model.entities.table_occurrences.values():
+        if to.external_data_source:
+            continue
         if to.base_table_doc_id not in model.entities.tables:
             model.add_warning(
                 code="UNRESOLVED_TO_TABLE",
