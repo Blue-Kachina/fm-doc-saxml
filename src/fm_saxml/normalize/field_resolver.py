@@ -19,6 +19,25 @@ def _table_name(table_doc_id: str) -> str:
     return table_doc_id.split(":", 1)[1] if ":" in table_doc_id else table_doc_id
 
 
+def build_external_to_lookup(model: DocumentModel) -> Callable[[str], Optional[str]]:
+    """Return ``lookup(to_name) -> data source (file) name | None``.
+
+    A table occurrence declared ``type="External"`` has its base table in
+    another file of a multi-file solution, so anything reached through it is
+    confidently *external* rather than unresolved.
+    """
+    by_name = {
+        to.name.casefold(): to.external_data_source
+        for to in model.entities.table_occurrences.values()
+        if to.external_data_source
+    }
+
+    def lookup(table_name: str) -> Optional[str]:
+        return by_name.get((table_name or "").strip().casefold())
+
+    return lookup
+
+
 def build_field_resolver(model: DocumentModel) -> Callable[[str, str], Optional[str]]:
     """Return ``resolve(table_or_to_name, field_name) -> docId | None``.
 
@@ -37,6 +56,7 @@ def build_field_resolver(model: DocumentModel) -> Callable[[str, str], Optional[
 
     to_base_exact: dict[str, str] = {}
     to_base_folded: dict[str, str] = {}
+    is_external = build_external_to_lookup(model)
     for to in model.entities.table_occurrences.values():
         if not to.base_table_doc_id:
             continue
@@ -49,6 +69,8 @@ def build_field_resolver(model: DocumentModel) -> Callable[[str, str], Optional[
             return None
         table_name = table_name.strip()
         field_name = field_name.strip()
+        if is_external(table_name):
+            return None  # lives in another file; never match a same-named local table
 
         base = to_base_exact.get(table_name)
         if base is not None:

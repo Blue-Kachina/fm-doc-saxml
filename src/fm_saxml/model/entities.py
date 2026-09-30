@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import Any, Optional
 from pydantic import BaseModel, Field, ConfigDict
 
+from .references import ExternalTarget
+
 
 class SourceXmlInfo(BaseModel):
     """Trace back to the originating XML location for debugging."""
@@ -82,6 +84,13 @@ class TableOccurrenceEntity(BaseModel):
     base_table_doc_id: str = Field(alias="baseTableDocId")
     fmp_id: str = Field(alias="fmpId")
     uuid: Optional[str] = None
+    external_data_source: Optional[str] = Field(None, alias="externalDataSource")  # set for type="External" TOs
+    external_data_source_id: Optional[str] = Field(None, alias="externalDataSourceId")
+    external_data_source_uuid: Optional[str] = Field(None, alias="externalDataSourceUuid")
+    # Base table as named in the other file (never a local table)
+    external_base_table: Optional[str] = Field(None, alias="externalBaseTable")
+    external_base_table_id: Optional[str] = Field(None, alias="externalBaseTableId")
+    external_base_table_uuid: Optional[str] = Field(None, alias="externalBaseTableUuid")
     relationships: list[str] = []    # relationship docIds
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
@@ -92,6 +101,9 @@ class RelationshipPredicate(BaseModel):
     left_field_doc_id: str = Field(alias="leftFieldDocId")
     operator: str = "="
     right_field_doc_id: str = Field(alias="rightFieldDocId")
+    # Set when that side of the predicate is a field in another file
+    left_external: Optional["ExternalTarget"] = Field(None, alias="leftExternal")
+    right_external: Optional["ExternalTarget"] = Field(None, alias="rightExternal")
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -165,6 +177,7 @@ class LayoutObjectEntity(BaseModel):
     field_doc_id: Optional[str] = Field(None, alias="fieldDocId")
     table_occurrence_doc_id: Optional[str] = Field(None, alias="tableOccurrenceDocId")
     value_list_doc_id: Optional[str] = Field(None, alias="valueListDocId")  # value list on the control
+    external_target: Optional["ExternalTarget"] = Field(None, alias="externalTarget")  # field lives in another file
     raw_text: Optional[str] = Field(None, alias="rawText")  # Plain-text label (Text objects)
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
@@ -181,7 +194,7 @@ class ScriptStepEntity(BaseModel):
     enabled: bool = True
     raw_text: Optional[str] = Field(None, alias="rawText")
     parameters: dict[str, Any] = {}
-    references: list[dict[str, str]] = []
+    references: list[dict[str, Any]] = []  # values are strings, except "external" (an ExternalTarget)
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -227,6 +240,8 @@ class ValueListEntity(BaseModel):
     values: list[str] = []
     source_field_doc_id: Optional[str] = Field(None, alias="sourceFieldDocId")
     second_field_doc_id: Optional[str] = Field(None, alias="secondFieldDocId")
+    source_field_external: Optional[ExternalTarget] = Field(None, alias="sourceFieldExternal")
+    second_field_external: Optional[ExternalTarget] = Field(None, alias="secondFieldExternal")
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
     model_config = ConfigDict(populate_by_name=True)

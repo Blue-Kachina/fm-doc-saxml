@@ -40,6 +40,22 @@ class SourceInfo(BaseModel):
     # Disambiguated in rendered docs as "XML Created At" vs the model's
     # generated_at timestamp ("Support Documentation Created At").
     source_modified_at: Optional[datetime] = Field(None, alias="sourceModifiedAt")
+    # Identity of the FileMaker file this export describes. A later multi-file
+    # run uses these to pair an export with the data sources that name it.
+    fmp_file_name: Optional[str] = Field(None, alias="fmpFileName")  # e.g. "idiClients.fmp12"
+    file_uuid: Optional[str] = Field(None, alias="fileUuid")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class ExternalDataSource(BaseModel):
+    """An entry of the file's External Data Sources catalog (other files it reaches into)."""
+
+    name: str
+    fmp_id: Optional[str] = Field(None, alias="fmpId")
+    uuid: Optional[str] = None
+    type: str = "FileMaker"
+    paths: list[str] = []  # e.g. ["file:idiClients"]
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -87,6 +103,7 @@ class DocumentModel(BaseModel):
     source: SourceInfo
     solution: SolutionInfo = Field(default_factory=SolutionInfo)
     entities: EntityMaps = Field(default_factory=EntityMaps)
+    external_data_sources: list[ExternalDataSource] = Field([], alias="externalDataSources")
     references: list[ReferenceRecord] = []
     backlinks: dict[str, list[dict]] = {}
     warnings: list[Warning] = []

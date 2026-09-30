@@ -590,6 +590,7 @@ def _render_reports(model: DocumentModel, output_dir: Path, env: Environment, li
         exact_references=sum(1 for r in model.references if r.confidence == "exact"),
         parsed_references=sum(1 for r in model.references if r.confidence == "parsed"),
         unresolved_references=len(unresolved),
+        external_references=sum(1 for r in model.references if r.confidence == "external"),
         warning_counts=dict(warning_counts),
     )
     write_text(reports_dir / "summary.md", content)

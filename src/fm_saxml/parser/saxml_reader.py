@@ -18,6 +18,7 @@ from .extractors.layouts import extract_layouts
 from .extractors.scripts import extract_scripts
 from .extractors.custom_functions import extract_custom_functions
 from .extractors.value_lists import extract_value_lists
+from .extractors.external_data_sources import extract_external_data_sources
 from .extractors.privileges import extract_privilege_sets
 from .extractors.accounts import extract_accounts
 from .extractors.extended_privileges import extract_extended_privileges
@@ -33,6 +34,9 @@ class RawModel:
     file_name: str = ""
     filemaker_version: str = "unknown"
     solution_name: str = ""
+    fmp_file_name: str = ""
+    file_uuid: str = ""
+    external_data_sources: list[dict[str, Any]] = field(default_factory=list)
     tables: list[dict[str, Any]] = field(default_factory=list)
     fields: list[dict[str, Any]] = field(default_factory=list)
     table_occurrences: list[dict[str, Any]] = field(default_factory=list)
@@ -89,6 +93,8 @@ def _parse_v2(xml_path: Path, root, raw: RawModel) -> RawModel:
 
     file_attr = root.get("File", "")
     raw.solution_name = file_attr.replace(".fmp12", "").replace(".fmp7", "") or xml_path.stem
+    raw.fmp_file_name = file_attr
+    raw.file_uuid = root.get("UUID", "") or root.get("uuid", "")
 
     structure = find_child(root, "Structure")
     if structure is None:
@@ -121,6 +127,7 @@ def _parse_v2(xml_path: Path, root, raw: RawModel) -> RawModel:
     raw.custom_menu_sets = extract_custom_menu_sets(container)
     raw.themes = extract_themes(container)
     raw.file_references = extract_file_references(container)
+    raw.external_data_sources = extract_external_data_sources(container)
 
     return raw
 

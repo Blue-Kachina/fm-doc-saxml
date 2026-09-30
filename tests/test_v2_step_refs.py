@@ -29,7 +29,7 @@ def test_v2_step_references_are_extracted():
     step = _parse_step(etree.fromstring(STEP), 0)
     assert step["layout_ref"]["name"] == "Inv"
     assert step["script_ref"]["name"] == "Other"
-    assert step["field_refs"] == [{"id": "12", "name": "total", "table": "LICENCE", "table_id": "1"}]
+    assert step["field_refs"] == [{"id": "12", "uuid": "z", "name": "total", "table": "LICENCE", "table_id": "1"}]
     assert step["value_list_refs"] == [{"id": "2", "name": "VL"}]
     assert step["calculation"] == "LICENCE::expiry"
 

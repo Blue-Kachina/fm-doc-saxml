@@ -6,6 +6,7 @@ from typing import Any
 
 from ..model.document_model import DocumentModel
 from ..model.references import ReferenceRecord
+from .external import ExternalTargets
 from .ids import (
     field_doc_id,
     layout_doc_id,
@@ -83,6 +84,19 @@ def _link_relationships(model: DocumentModel) -> None:
                     confidence="exact",
                 ))
         for pred in rel.predicates:
+            for tgt, fd, role in [(pred.left_external, pred.left_field_doc_id, "left"),
+                                  (pred.right_external, pred.right_field_doc_id, "right")]:
+                if tgt is not None:
+                    model.references.append(ReferenceRecord(
+                        sourceDocId=rel.doc_id,
+                        sourceEntityType="relationship",
+                        targetDocId=fd,
+                        targetEntityType="field",
+                        relationshipType="usesField",
+                        role=role,
+                        confidence="external",
+                        externalTarget=tgt,
+                    ))
             for fd, role in [(pred.left_field_doc_id, "left"), (pred.right_field_doc_id, "right")]:
                 if fd in model.entities.fields:
                     model.references.append(ReferenceRecord(
@@ -163,6 +177,17 @@ def _link_layout_objects(model: DocumentModel) -> None:
                     role="control",
                     confidence="exact",
                 ))
+        if obj.external_target is not None and obj.field_doc_id:
+            model.references.append(ReferenceRecord(
+                sourceDocId=obj.doc_id,
+                sourceEntityType="layoutObject",
+                targetDocId=obj.field_doc_id,
+                targetEntityType="field",
+                relationshipType="usesField",
+                role="display",
+                confidence="external",
+                externalTarget=obj.external_target,
+            ))
         if obj.field_doc_id and obj.field_doc_id in model.entities.fields:
             model.references.append(ReferenceRecord(
                 sourceDocId=obj.doc_id,
@@ -211,7 +236,12 @@ def _link_scripts(model: DocumentModel) -> None:
                 }
                 rel_type = rel_type_map.get(kind, "usesField")
                 entity_exists = model.get_entity(target) is not None
-                confidence = "exact" if entity_exists else "unresolved"
+                external_target = ref.get("external")
+                if external_target:
+                    # Target lives in another file of a multi-file solution
+                    confidence = "external"
+                else:
+                    confidence = "exact" if entity_exists else "unresolved"
                 model.references.append(ReferenceRecord(
                     sourceDocId=step_doc_id,
                     sourceEntityType="scriptStep",
@@ -221,6 +251,7 @@ def _link_scripts(model: DocumentModel) -> None:
                     role=ref.get("role"),
                     confidence=confidence,
                     rawText=ref.get("rawText"),
+                    externalTarget=external_target or None,
                 ))
 
 
@@ -254,6 +285,19 @@ def _link_extended_privileges_to_privilege_sets(model: DocumentModel) -> None:
 def _link_value_lists(model: DocumentModel) -> None:
     """Value list → source / second field (usage evidence for those fields)."""
     for vl in model.entities.value_lists.values():
+        for tgt, fd, role in [(vl.source_field_external, vl.source_field_doc_id, "source"),
+                              (vl.second_field_external, vl.second_field_doc_id, "second")]:
+            if tgt is not None and fd:
+                model.references.append(ReferenceRecord(
+                    sourceDocId=vl.doc_id,
+                    sourceEntityType="valueList",
+                    targetDocId=fd,
+                    targetEntityType="field",
+                    relationshipType="usesField",
+                    role=role,
+                    confidence="external",
+                    externalTarget=tgt,
+                ))
         for fd, role in [(vl.source_field_doc_id, "source"), (vl.second_field_doc_id, "second")]:
             if fd and fd in model.entities.fields:
                 model.references.append(ReferenceRecord(
@@ -273,6 +317,7 @@ def _link_field_calculations(model: DocumentModel) -> None:
     Also links a field to the value list used by its "member of value list" validation.
     """
     from ..analyze.calculations import extract_calc_references
+    ext = ExternalTargets(model)
     for field in model.entities.fields.values():
         vl = field.validation.value_list_doc_id if field.validation else None
         if vl and vl in model.entities.value_lists:
@@ -302,7 +347,15 @@ def _link_field_calculations(model: DocumentModel) -> None:
                     relationshipType=ref["relationshipType"],
                     confidence=ref["confidence"],
                     rawText=ref.get("rawText"),
+                    externalTarget=_calc_external_target(ext, ref),
                 ))
+
+
+def _calc_external_target(ext: ExternalTargets, ref: dict):
+    """ExternalTarget for a calculation-derived reference that points into another file."""
+    if ref.get("confidence") != "external":
+        return None
+    return ext.field(ref.get("table"), ref.get("field", ""))
 
 
 def _link_custom_functions(model: DocumentModel) -> None:
@@ -312,6 +365,7 @@ def _link_custom_functions(model: DocumentModel) -> None:
         if not cf.calculation:
             continue
         refs = extract_calc_references(cf.calculation, model)
+        ext = ExternalTargets(model)
         for ref in refs:
             model.references.append(ReferenceRecord(
                 sourceDocId=cf.doc_id,
@@ -321,4 +375,5 @@ def _link_custom_functions(model: DocumentModel) -> None:
                 relationshipType=ref["relationshipType"],
                 confidence=ref["confidence"],
                 rawText=ref.get("rawText"),
+                externalTarget=_calc_external_target(ext, ref),
             ))

@@ -178,14 +178,17 @@ def _extract_v2_step_refs(
             to_ref = find_child(node, "TableOccurrenceReference")
             field_refs.append({
                 "id": attr(node, "id", "ID"),
+                "uuid": attr(node, "uuid", "UUID"),
                 "name": name,
                 "table": attr(to_ref, "name", "Name") if to_ref is not None else "",
                 "table_id": attr(to_ref, "id", "ID") if to_ref is not None else "",
             })
         elif tag == "LayoutReference" and name and layout_ref is None:
-            layout_ref = {"id": attr(node, "id", "ID"), "name": name}
+            layout_ref = {"id": attr(node, "id", "ID"), "uuid": attr(node, "uuid", "UUID"),
+                          "name": name, "via_to": _related_context_to(node)}
         elif tag == "ScriptReference" and name and script_ref is None:
-            script_ref = {"id": attr(node, "id", "ID"), "name": name}
+            script_ref = {"id": attr(node, "id", "ID"), "uuid": attr(node, "uuid", "UUID"),
+                          "name": name, "data_source": _sibling_data_source(node)}
         elif tag == "ValueListReference" and name:
             value_list_refs.append({"id": attr(node, "id", "ID"), "name": name})
         elif tag == "Calculation" and find_child(node, "Text") is not None:
@@ -194,6 +197,34 @@ def _extract_v2_step_refs(
                 calcs.append(text)
 
     return layout_ref, field_refs, script_ref, "\n".join(calcs) or None, value_list_refs
+
+
+def _sibling_data_source(script_ref: etree._Element) -> str | None:
+    """File name from a ``<DataSourceReference>`` beside a ScriptReference (Perform Script "from file").
+
+    "Current File" (id 0) means the script is local.
+    """
+    parent = script_ref.getparent()
+    ds = find_child(parent, "DataSourceReference") if parent is not None else None
+    if ds is None:
+        return None
+    name = attr(ds, "name", "Name")
+    if not name or name == "Current File" or attr(ds, "id", "ID") in ("", "0"):
+        return None
+    return name
+
+
+def _related_context_to(layout_ref: etree._Element) -> str | None:
+    """TO name given as the context of a "Go to Related Record" step, if the layout ref belongs to one.
+
+    Structure: ``<Parameter type="Related"><TableOccurrenceReference/><LayoutReferenceContainer><LayoutReference/>``
+    """
+    container = layout_ref.getparent()
+    param = container.getparent() if container is not None else None
+    if param is None or attr(param, "type", "Type") != "Related":
+        return None
+    to_ref = find_child(param, "TableOccurrenceReference")
+    return attr(to_ref, "name", "Name") if to_ref is not None else None
 
 
 def _extract_layout_ref(elem: etree._Element) -> dict[str, Any] | None:

@@ -27,8 +27,9 @@ def extract_calc_references(
     if not calculation:
         return []
 
-    from ..normalize.field_resolver import build_field_resolver
+    from ..normalize.field_resolver import build_external_to_lookup, build_field_resolver
     resolve_field = resolver or build_field_resolver(model)
+    is_external = build_external_to_lookup(model)
 
     refs: list[dict[str, Any]] = []
     seen: set[str] = set()
@@ -44,6 +45,8 @@ def extract_calc_references(
         resolved = resolve_field(table_name, field_name)
         candidate_doc_id = resolved or field_doc_id(table_name, field_name)
         confidence = "parsed" if resolved else "unresolved"
+        if not resolved and is_external(table_name):
+            confidence = "external"  # TO belongs to another file
         if candidate_doc_id in seen:
             continue
         seen.add(candidate_doc_id)
@@ -54,6 +57,8 @@ def extract_calc_references(
             "relationshipType": "usesField",
             "confidence": confidence,
             "rawText": raw_text,
+            "table": table_name,
+            "field": field_name,
         })
 
     # ValueListItems ( file ; "Value List Name" ) — value list referenced by name

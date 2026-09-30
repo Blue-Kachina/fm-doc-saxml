@@ -394,7 +394,8 @@ def _print_summary(model, verbose: bool = False) -> None:
     console.print(tbl)
 
     unresolved = sum(1 for r in model.references if r.confidence == "unresolved")
-    console.print(f"[dim]References: {len(model.references)} total, {unresolved} unresolved[/dim]")
+    external = sum(1 for r in model.references if r.confidence == "external")
+    console.print(f"[dim]References: {len(model.references)} total, {unresolved} unresolved, {external} external[/dim]")
     console.print(f"[dim]Warnings: {len(model.warnings)}[/dim]")
 
     if verbose and model.warnings:

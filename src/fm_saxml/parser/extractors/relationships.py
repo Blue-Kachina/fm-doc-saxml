@@ -98,9 +98,11 @@ def _parse_predicate(elem: etree._Element) -> dict[str, Any]:
     return {
         "left_field_id": _field_ref_id(left_field_wrapper),
         "left_field_name": _field_ref_name(left_field_wrapper),
+        "left_field_uuid": _field_ref_uuid(left_field_wrapper),
         "left_table_name": _field_ref_to_name(left_field_wrapper),
         "right_field_id": _field_ref_id(right_field_wrapper),
         "right_field_name": _field_ref_name(right_field_wrapper),
+        "right_field_uuid": _field_ref_uuid(right_field_wrapper),
         "right_table_name": _field_ref_to_name(right_field_wrapper),
         "operator": operator,
     }
@@ -116,6 +118,13 @@ def _field_ref_id(wrapper: etree._Element | None) -> str:
     # v2: <FieldReference id="..."> child
     ref = find_child(wrapper, "FieldReference")
     return attr(ref, "id", "ID") if ref is not None else ""
+
+
+def _field_ref_uuid(wrapper: etree._Element | None) -> str:
+    if wrapper is None:
+        return ""
+    ref = find_child(wrapper, "FieldReference")
+    return attr(ref, "uuid", "UUID") if ref is not None else ""
 
 
 def _field_ref_name(wrapper: etree._Element | None) -> str:
