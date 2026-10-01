@@ -24,6 +24,7 @@ from ..model.entities import (
     ValueListEntity,
     PrivilegeSetEntity,
     AccountEntity,
+    ModificationInfo,
     ExtendedPrivilegeEntity,
     CustomMenuEntity,
     CustomMenuItem,
@@ -149,6 +150,7 @@ def _normalize_tables(raw: RawModel, model: DocumentModel) -> None:
             fmpId=str(t.get("id", "")),
             uuid=t.get("uuid"),
             comment=t.get("comment"),
+            modified=ModificationInfo.model_validate(t["modified"]) if t.get("modified") else None,
             sourceXml=SourceXmlInfo(path=t.get("source_xml_path", "")) if t.get("source_xml_path") else None,
         )
         model.entities.tables[doc_id] = entity
@@ -224,6 +226,7 @@ def _normalize_fields(raw: RawModel, model: DocumentModel) -> None:
             validation=validation,
             storage=storage,
             summaryFieldDocId=summary_field_did,
+            modified=ModificationInfo.model_validate(f["modified"]) if f.get("modified") else None,
             sourceXml=SourceXmlInfo(path=f.get("source_xml_path", "")) if f.get("source_xml_path") else None,
         )
 
@@ -275,6 +278,7 @@ def _normalize_table_occurrences(raw: RawModel, model: DocumentModel) -> None:
             externalBaseTableUuid=to.get("external_base_table_uuid"),
             fmpId=str(to.get("id", "")),
             uuid=to.get("uuid"),
+            modified=ModificationInfo.model_validate(to["modified"]) if to.get("modified") else None,
             sourceXml=SourceXmlInfo(path=to.get("source_xml_path", "")) if to.get("source_xml_path") else None,
         )
         model.entities.table_occurrences[doc_id] = entity
@@ -350,6 +354,7 @@ def _normalize_relationships(raw: RawModel, model: DocumentModel) -> None:
             rightTableOccurrenceDocId=right_to_doc,
             predicates=predicates,
             options=options,
+            modified=ModificationInfo.model_validate(rel["modified"]) if rel.get("modified") else None,
             sourceXml=SourceXmlInfo(path=rel.get("source_xml_path", "")) if rel.get("source_xml_path") else None,
         )
         model.entities.relationships[doc_id] = entity
@@ -418,6 +423,7 @@ def _normalize_layouts(raw: RawModel, model: DocumentModel) -> None:
             theme=layout.get("theme"),
             folderPath=layout.get("folder_path"),
             referencedFields=ref_field_doc_ids,
+            modified=ModificationInfo.model_validate(layout["modified"]) if layout.get("modified") else None,
             sourceXml=SourceXmlInfo(path=layout.get("source_xml_path", "")) if layout.get("source_xml_path") else None,
         )
         model.entities.layouts[doc_id] = entity
@@ -568,6 +574,7 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
             fmpId=str(s.get("id", "")),
             uuid=s.get("uuid"),
             folderPath=s.get("folder_path"),
+            modified=ModificationInfo.model_validate(s["modified"]) if s.get("modified") else None,
             sourceXml=SourceXmlInfo(path=s.get("source_xml_path", "")) if s.get("source_xml_path") else None,
         )
         model.entities.scripts[doc_id] = entity
@@ -687,6 +694,7 @@ def _normalize_custom_functions(raw: RawModel, model: DocumentModel) -> None:
             uuid=cf.get("uuid"),
             parameters=cf.get("parameters", []),
             calculation=cf.get("calculation"),
+            modified=ModificationInfo.model_validate(cf["modified"]) if cf.get("modified") else None,
             sourceXml=SourceXmlInfo(path=cf.get("source_xml_path", "")) if cf.get("source_xml_path") else None,
         )
         model.entities.custom_functions[doc_id] = entity
@@ -740,6 +748,7 @@ def _normalize_value_lists(raw: RawModel, model: DocumentModel) -> None:
             secondFieldDocId=second_field_doc,
             sourceFieldExternal=source_external,
             secondFieldExternal=second_external,
+            modified=ModificationInfo.model_validate(vl["modified"]) if vl.get("modified") else None,
             sourceXml=SourceXmlInfo(path=vl.get("source_xml_path", "")) if vl.get("source_xml_path") else None,
         )
         model.entities.value_lists[doc_id] = entity
@@ -760,6 +769,7 @@ def _normalize_privilege_sets(raw: RawModel, model: DocumentModel) -> None:
             name=name,
             fmpId=str(ps.get("id", "")),
             description=ps.get("description"),
+            modified=ModificationInfo.model_validate(ps["modified"]) if ps.get("modified") else None,
             sourceXml=SourceXmlInfo(path=ps.get("source_xml_path", "")) if ps.get("source_xml_path") else None,
         )
         model.entities.privilege_sets[doc_id] = entity
@@ -787,6 +797,7 @@ def _normalize_accounts(raw: RawModel, model: DocumentModel) -> None:
             description=acct.get("description"),
             privilegeSetDocId=ps_doc_id,
             privilegeSetName=ps_name or None,
+            modified=ModificationInfo.model_validate(acct["modified"]) if acct.get("modified") else None,
             sourceXml=SourceXmlInfo(path=acct.get("source_xml_path", "")) if acct.get("source_xml_path") else None,
         )
         model.entities.accounts[doc_id] = entity
@@ -815,6 +826,7 @@ def _normalize_extended_privileges(raw: RawModel, model: DocumentModel) -> None:
             fmpId=str(ep.get("id", "")),
             description=ep.get("description"),
             privilegeSetDocIds=ps_doc_ids,
+            modified=ModificationInfo.model_validate(ep["modified"]) if ep.get("modified") else None,
             sourceXml=SourceXmlInfo(path=ep.get("source_xml_path", "")) if ep.get("source_xml_path") else None,
         )
         model.entities.extended_privileges[doc_id] = entity
@@ -858,6 +870,7 @@ def _normalize_custom_menus(raw: RawModel, model: DocumentModel) -> None:
             findMode=cm.get("find_mode", True),
             previewMode=cm.get("preview_mode", True),
             items=items,
+            modified=ModificationInfo.model_validate(cm["modified"]) if cm.get("modified") else None,
             sourceXml=SourceXmlInfo(path=cm.get("source_xml_path", "")) if cm.get("source_xml_path") else None,
         )
         model.entities.custom_menus[doc_id] = entity
@@ -883,6 +896,7 @@ def _normalize_custom_menu_sets(raw: RawModel, model: DocumentModel) -> None:
             name=name,
             fmpId=str(cms.get("id", "")),
             menuDocIds=menu_doc_ids,
+            modified=ModificationInfo.model_validate(cms["modified"]) if cms.get("modified") else None,
             sourceXml=SourceXmlInfo(path=cms.get("source_xml_path", "")) if cms.get("source_xml_path") else None,
         )
         model.entities.custom_menu_sets[doc_id] = entity
@@ -905,6 +919,7 @@ def _normalize_themes(raw: RawModel, model: DocumentModel) -> None:
             displayName=th.get("display_name", ""),
             group=th.get("group"),
             defaultTheme=th.get("default_theme", False),
+            modified=ModificationInfo.model_validate(th["modified"]) if th.get("modified") else None,
             sourceXml=SourceXmlInfo(path=th.get("source_xml_path", "")) if th.get("source_xml_path") else None,
         )
         model.entities.themes[doc_id] = entity

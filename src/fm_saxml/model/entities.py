@@ -49,9 +49,21 @@ class ValidationOptions(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+class ModificationInfo(BaseModel):
+    """Who last changed an item, and when (from the SaXML ``<UUID>`` stamp)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    user_name: Optional[str] = Field(None, alias="userName")  # OS/host user
+    account_name: Optional[str] = Field(None, alias="accountName")  # FileMaker account
+    timestamp: Optional[str] = None
+    modifications: Optional[int] = None  # change counter
+
+
 class TableEntity(BaseModel):
     doc_id: str = Field(alias="docId")
     entity_type: str = Field("table", alias="entityType")
+    modified: Optional[ModificationInfo] = None
     name: str
     fmp_id: str = Field(alias="fmpId")
     uuid: Optional[str] = None
@@ -66,6 +78,7 @@ class TableEntity(BaseModel):
 class FieldEntity(BaseModel):
     doc_id: str = Field(alias="docId")
     entity_type: str = Field("field", alias="entityType")
+    modified: Optional[ModificationInfo] = None
     name: str
     qualified_name: str = Field(alias="qualifiedName")
     base_table_doc_id: str = Field(alias="baseTableDocId")
@@ -89,6 +102,7 @@ class FieldEntity(BaseModel):
 class TableOccurrenceEntity(BaseModel):
     doc_id: str = Field(alias="docId")
     entity_type: str = Field("tableOccurrence", alias="entityType")
+    modified: Optional[ModificationInfo] = None
     name: str
     base_table_doc_id: str = Field(alias="baseTableDocId")
     fmp_id: str = Field(alias="fmpId")
@@ -128,6 +142,7 @@ class RelationshipOptions(BaseModel):
 class RelationshipEntity(BaseModel):
     doc_id: str = Field(alias="docId")
     entity_type: str = Field("relationship", alias="entityType")
+    modified: Optional[ModificationInfo] = None
     name: str
     fmp_id: str = Field(alias="fmpId")
     left_table_occurrence_doc_id: str = Field(alias="leftTableOccurrenceDocId")
@@ -142,6 +157,7 @@ class RelationshipEntity(BaseModel):
 class LayoutEntity(BaseModel):
     doc_id: str = Field(alias="docId")
     entity_type: str = Field("layout", alias="entityType")
+    modified: Optional[ModificationInfo] = None
     name: str
     fmp_id: str = Field(alias="fmpId")
     uuid: Optional[str] = None
@@ -214,6 +230,7 @@ class ScriptStepEntity(BaseModel):
 class ScriptEntity(BaseModel):
     doc_id: str = Field(alias="docId")
     entity_type: str = Field("script", alias="entityType")
+    modified: Optional[ModificationInfo] = None
     name: str
     fmp_id: str = Field(alias="fmpId")
     uuid: Optional[str] = None
@@ -231,6 +248,7 @@ class ScriptEntity(BaseModel):
 class CustomFunctionEntity(BaseModel):
     doc_id: str = Field(alias="docId")
     entity_type: str = Field("customFunction", alias="entityType")
+    modified: Optional[ModificationInfo] = None
     name: str
     fmp_id: str = Field(alias="fmpId")
     uuid: Optional[str] = None
@@ -245,6 +263,7 @@ class CustomFunctionEntity(BaseModel):
 class ValueListEntity(BaseModel):
     doc_id: str = Field(alias="docId")
     entity_type: str = Field("valueList", alias="entityType")
+    modified: Optional[ModificationInfo] = None
     name: str
     fmp_id: str = Field(alias="fmpId")
     uuid: Optional[str] = None
@@ -262,6 +281,7 @@ class ValueListEntity(BaseModel):
 class PrivilegeSetEntity(BaseModel):
     doc_id: str = Field(alias="docId")
     entity_type: str = Field("privilegeSet", alias="entityType")
+    modified: Optional[ModificationInfo] = None
     name: str
     fmp_id: str = Field(alias="fmpId")
     description: Optional[str] = None
@@ -273,6 +293,7 @@ class PrivilegeSetEntity(BaseModel):
 class AccountEntity(BaseModel):
     doc_id: str = Field(alias="docId")
     entity_type: str = Field("account", alias="entityType")
+    modified: Optional[ModificationInfo] = None
     name: str
     fmp_id: str = Field(alias="fmpId")
     account_type: str = Field("FileMaker", alias="accountType")
@@ -288,6 +309,7 @@ class AccountEntity(BaseModel):
 class ExtendedPrivilegeEntity(BaseModel):
     doc_id: str = Field(alias="docId")
     entity_type: str = Field("extPriv", alias="entityType")
+    modified: Optional[ModificationInfo] = None
     name: str
     fmp_id: str = Field(alias="fmpId")
     description: Optional[str] = None
@@ -313,6 +335,7 @@ class CustomMenuItem(BaseModel):
 class CustomMenuEntity(BaseModel):
     doc_id: str = Field(alias="docId")
     entity_type: str = Field("customMenu", alias="entityType")
+    modified: Optional[ModificationInfo] = None
     name: str
     fmp_id: str = Field(alias="fmpId")
     base_menu_name: Optional[str] = Field(None, alias="baseMenuName")
@@ -329,6 +352,7 @@ class CustomMenuEntity(BaseModel):
 class CustomMenuSetEntity(BaseModel):
     doc_id: str = Field(alias="docId")
     entity_type: str = Field("customMenuSet", alias="entityType")
+    modified: Optional[ModificationInfo] = None
     name: str
     fmp_id: str = Field(alias="fmpId")
     menu_doc_ids: list[str] = Field([], alias="menuDocIds")
@@ -340,6 +364,7 @@ class CustomMenuSetEntity(BaseModel):
 class ThemeEntity(BaseModel):
     doc_id: str = Field(alias="docId")
     entity_type: str = Field("theme", alias="entityType")
+    modified: Optional[ModificationInfo] = None
     name: str
     fmp_id: str = Field(alias="fmpId")
     display_name: str = Field("", alias="displayName")

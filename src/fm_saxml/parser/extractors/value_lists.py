@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, find_child, find_all_children, find_all_descendants, text_of, xml_path
+from ._helpers import attr, find_child, find_all_children, find_all_descendants, text_of, xml_path, modification_info
 
 
 def extract_value_lists(
@@ -146,5 +146,6 @@ def _parse_value_list(elem: etree._Element, options_map: dict[str, dict]) -> dic
         "source_field": source_field,
         "second_field": second_field,
         "source_table_name": source_table_name,
+        "modified": modification_info(elem),
         "source_xml_path": xml_path(elem),
     }

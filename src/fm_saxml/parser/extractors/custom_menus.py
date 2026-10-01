@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, find_child, find_all_descendants, text_of, calc_text_of, xml_path
+from ._helpers import attr, find_child, find_all_descendants, text_of, calc_text_of, xml_path, modification_info
 
 
 def extract_custom_menus(container: etree._Element) -> list[dict[str, Any]]:
@@ -50,6 +50,7 @@ def extract_custom_menus(container: etree._Element) -> list[dict[str, Any]]:
             "find_mode": find_mode,
             "preview_mode": preview_mode,
             "items": items,
+            "modified": modification_info(menu_elem),
             "source_xml_path": xml_path(menu_elem),
         })
     return results
@@ -112,6 +113,7 @@ def extract_custom_menu_sets(container: etree._Element) -> list[dict[str, Any]]:
             "id": attr(set_elem, "id", "ID"),
             "name": attr(set_elem, "name", "Name"),
             "menu_refs": menu_refs,
+            "modified": modification_info(set_elem),
             "source_xml_path": xml_path(set_elem),
         })
     return results

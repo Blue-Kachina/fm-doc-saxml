@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, find_child, find_all_descendants, xml_path
+from ._helpers import attr, find_child, find_all_descendants, xml_path, modification_info
 
 
 def extract_themes(container: etree._Element) -> list[dict[str, Any]]:
@@ -24,6 +24,7 @@ def extract_themes(container: etree._Element) -> list[dict[str, Any]]:
             "display_name": attr(theme_elem, "Display", "display", "displayName", default=""),
             "group": attr(theme_elem, "Group", "group") or None,
             "default_theme": default_theme,
+            "modified": modification_info(theme_elem),
             "source_xml_path": xml_path(theme_elem),
         })
     return results

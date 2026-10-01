@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, calc_text_of, find_child, find_all_descendants, text_of, xml_path
+from ._helpers import attr, calc_text_of, find_child, find_all_descendants, text_of, xml_path, modification_info
 
 
 def extract_scripts(
@@ -100,6 +100,7 @@ def _parse_script(elem: etree._Element, folder_path: str, steps_map: dict[str, l
         "uuid": attr(elem, "uuid", "UUID") or None,
         "folder_path": folder_path or None,
         "steps": steps,
+        "modified": modification_info(elem),
         "source_xml_path": xml_path(elem),
     }
 

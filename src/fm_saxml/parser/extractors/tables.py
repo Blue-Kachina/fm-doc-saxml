@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, find_child, find_all_descendants, xml_path
+from ._helpers import attr, find_child, find_all_descendants, xml_path, modification_info
 
 
 def extract_tables(database_elem: etree._Element) -> list[dict[str, Any]]:
@@ -26,5 +26,6 @@ def _parse_table(elem: etree._Element) -> dict[str, Any]:
         "name": attr(elem, "name", "Name"),
         "uuid": attr(elem, "uuid", "UUID") or None,
         "comment": attr(elem, "comment", "Comment") or None,
+        "modified": modification_info(elem),
         "source_xml_path": xml_path(elem),
     }

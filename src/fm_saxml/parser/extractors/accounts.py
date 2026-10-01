@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, find_child, find_all_descendants, text_of, xml_path
+from ._helpers import attr, find_child, find_all_descendants, text_of, xml_path, modification_info
 
 
 def extract_accounts(container: etree._Element) -> list[dict[str, Any]]:
@@ -41,6 +41,7 @@ def extract_accounts(container: etree._Element) -> list[dict[str, Any]]:
             "description": description or None,
             "privilege_set_id": privilege_set_id,
             "privilege_set_name": privilege_set_name,
+            "modified": modification_info(acct_elem),
             "source_xml_path": xml_path(acct_elem),
         })
     return results

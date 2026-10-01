@@ -95,3 +95,25 @@ def _local(tag: str) -> str:
     if tag.startswith("{"):
         return tag.split("}", 1)[1]
     return tag
+
+
+def modification_info(elem: etree._Element) -> dict[str, object] | None:
+    """Last-modified metadata from the ``<UUID>`` child of a v2 catalog item, if present.
+
+    SaXML stamps ``modifications``, ``userName``, ``accountName`` and ``timestamp``
+    attributes on the ``<UUID>`` element. Note ``userName`` is the OS/host user and
+    ``accountName`` the FileMaker account that made the last change.
+    """
+    uuid_elem = find_child(elem, "UUID")
+    if uuid_elem is None or "timestamp" not in uuid_elem.attrib and "accountName" not in uuid_elem.attrib:
+        return None
+    try:
+        count: int | None = int(attr(uuid_elem, "modifications"))
+    except ValueError:
+        count = None
+    return {
+        "user_name": attr(uuid_elem, "userName") or None,
+        "account_name": attr(uuid_elem, "accountName") or None,
+        "timestamp": attr(uuid_elem, "timestamp") or None,
+        "modifications": count,
+    }

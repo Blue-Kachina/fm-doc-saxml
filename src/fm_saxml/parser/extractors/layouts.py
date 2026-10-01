@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, find_child, find_all_children, find_all_descendants, xml_path
+from ._helpers import attr, find_child, find_all_children, find_all_descendants, xml_path, modification_info
 from .scripts import _sibling_data_source
 
 
@@ -96,6 +96,7 @@ def _parse_layout(elem: etree._Element) -> dict[str, Any]:
         "theme": theme,
         "referenced_fields": referenced_fields,
         "layout_objects": layout_objects,
+        "modified": modification_info(elem),
         "source_xml_path": xml_path(elem),
     }
 

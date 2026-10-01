@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, find_child, find_all_descendants, text_of, xml_path
+from ._helpers import attr, find_child, find_all_descendants, text_of, xml_path, modification_info
 
 
 def extract_privilege_sets(database_elem: etree._Element) -> list[dict[str, Any]]:
@@ -28,6 +28,7 @@ def extract_privilege_sets(database_elem: etree._Element) -> list[dict[str, Any]
             "id": attr(ps_elem, "id", "ID"),
             "name": attr(ps_elem, "name", "Name"),
             "description": description,
+            "modified": modification_info(ps_elem),
             "source_xml_path": xml_path(ps_elem),
         })
     return results

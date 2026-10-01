@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, find_child, find_all_descendants, xml_path
+from ._helpers import attr, find_child, find_all_descendants, xml_path, modification_info
 
 
 def extract_table_occurrences(database_elem: etree._Element) -> list[dict[str, Any]]:
@@ -29,6 +29,7 @@ def extract_table_occurrences(database_elem: etree._Element) -> list[dict[str, A
             "uuid": attr(to_elem, "uuid", "UUID") or None,
             "base_table_id": base_table_id,
             **_external_details(to_elem),
+            "modified": modification_info(to_elem),
             "source_xml_path": xml_path(to_elem),
         })
     return results

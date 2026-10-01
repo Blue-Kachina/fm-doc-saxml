@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, find_child, find_all_descendants, xml_path
+from ._helpers import attr, find_child, find_all_descendants, xml_path, modification_info
 
 _OPERATOR_MAP = {
     "0": "=",
@@ -59,6 +59,7 @@ def _parse_relationship(elem: etree._Element) -> dict[str, Any]:
         "allow_create_related": attr(options_elem or elem, "allowCreateRelatedRecords", "createRelated") == "True" if options_elem is not None else False,
         "delete_related": attr(options_elem or elem, "deleteRelatedRecords", "deleteRelated") == "True" if options_elem is not None else False,
         "sort_related": attr(options_elem or elem, "sortRelatedRecords", "sortRelated") == "True" if options_elem is not None else False,
+        "modified": modification_info(elem),
         "source_xml_path": xml_path(elem),
     }
 

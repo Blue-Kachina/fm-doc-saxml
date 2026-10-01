@@ -12,7 +12,9 @@ source: {{ source_file }}
 | Name | Value |
 |---|---|
 | FMP ID | {{ entity.fmp_id }} |
-| Keyword | `{{ entity.name }}` |
+{% if entity.modified %}| Last Modified By | {{ entity.modified.account_name or entity.modified.user_name }}{% if entity.modified.user_name and entity.modified.user_name != entity.modified.account_name %} (user: {{ entity.modified.user_name }}){% endif %} |
+| Last Modified | {{ entity.modified.timestamp }} |
+{% endif %}| Keyword | `{{ entity.name }}` |
 {% if entity.description %}| Description | {{ entity.description }} |
 {% endif %}
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, find_child, find_all_children, find_all_descendants, calc_text_of, xml_path
+from ._helpers import attr, find_child, find_all_children, find_all_descendants, calc_text_of, xml_path, modification_info
 
 
 def extract_fields(
@@ -72,6 +72,7 @@ def _parse_field(elem: etree._Element, table_id: str, table_name: str) -> dict[s
         "validation": validation,
         "storage": storage,
         "summary_field": summary_field,
+        "modified": modification_info(elem),
         "source_xml_path": xml_path(elem),
     }
 
