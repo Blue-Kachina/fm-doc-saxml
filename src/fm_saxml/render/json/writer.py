@@ -43,7 +43,6 @@ def build_external_references(model: DocumentModel) -> dict:
             "fileUuid": model.source.file_uuid,
             "scope": model.source.scope,
             "fileMakerVersion": model.source.file_maker_version,
-            "generatedAt": model.source.generated_at.isoformat(),
         },
         "dataSources": [ds.model_dump(by_alias=True, mode="json") for ds in model.external_data_sources],
         "externalTableOccurrences": [
