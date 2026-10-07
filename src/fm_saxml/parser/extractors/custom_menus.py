@@ -6,9 +6,21 @@ from typing import Any
 from lxml import etree
 
 from ._helpers import attr, find_child, find_all_descendants, text_of, calc_text_of, xml_path, modification_info
+from .chunk_lists import ChunkLists, collect_calcs
 
 
-def extract_custom_menus(container: etree._Element) -> list[dict[str, Any]]:
+def _menu_calc_role(path: list[str]) -> str:
+    """Role of a calc inside a ``<CustomMenu>``, from the tags leading to it."""
+    in_item = "CustomMenuItem" in path or "MenuItem" in path
+    if "Install" in path:
+        return "itemInstallCondition" if in_item else "installCondition"
+    if "action" in path:
+        return "menuItemAction"
+    named = [t for t in path if t != "Calculation"]
+    return named[-1][:1].lower() + named[-1][1:] if named else "calculation"
+
+
+def extract_custom_menus(container: etree._Element, chunk_lists: ChunkLists | None = None) -> list[dict[str, Any]]:
     catalog = find_child(container, "CustomMenuCatalog")
     if catalog is None:
         return []
@@ -50,6 +62,7 @@ def extract_custom_menus(container: etree._Element) -> list[dict[str, Any]]:
             "find_mode": find_mode,
             "preview_mode": preview_mode,
             "items": items,
+            "calculations": collect_calcs(menu_elem, chunk_lists, _menu_calc_role),
             "modified": modification_info(menu_elem),
             "source_xml_path": xml_path(menu_elem),
         })

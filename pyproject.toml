@@ -7,6 +7,9 @@ name = "fm-saxml-converter"
 version = "0.1.0"
 description = "Convert FileMaker Pro Save As XML exports into structured Markdown / JSON documentation"
 requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Matthew Leering" }]
 dependencies = [
     "lxml>=5.0",
     "pydantic>=2.0",
@@ -24,7 +27,7 @@ dev = [
 ]
 
 [project.scripts]
-fm-saxml = "fm_saxml.cli:app"
+fm-saxml = "fm_saxml.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/fm_saxml"]

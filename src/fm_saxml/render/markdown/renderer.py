@@ -9,13 +9,7 @@ from typing import Any
 from jinja2 import Environment, PackageLoader, select_autoescape, Undefined
 
 from ...model.document_model import DocumentModel
-from ...normalize.paths import (
-    table_path, field_path, table_occurrence_path, relationship_path,
-    layout_path, layout_object_path, script_path, custom_function_path,
-    value_list_path, privilege_set_path, account_path, extended_privilege_path,
-    custom_menu_path, custom_menu_set_path, theme_path, file_reference_path,
-    relative_md_link,
-)
+from ...normalize.paths import relative_md_link
 from ...utils.file_writer import write_text
 from .link_resolver import LinkResolver
 
@@ -144,7 +138,7 @@ def _render_tables(model: DocumentModel, output_dir: Path, env: Environment, lin
     )
 
     for entity in entities:
-        rel_path = table_path(entity.name)
+        rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
         ctx["global_fields"] = [
             f for f in model.entities.fields.values()
@@ -164,9 +158,7 @@ def _render_fields(model: DocumentModel, output_dir: Path, env: Environment, lin
     # Group fields by table for index files
     by_table: dict[str, list] = {}
     for field in model.entities.fields.values():
-        table_name = model.entities.tables.get(field.base_table_doc_id, None)
-        t_name = table_name.name if table_name else field.base_table_doc_id.split(":", 1)[-1]
-        by_table.setdefault(t_name, []).append(field)
+        by_table.setdefault(field.base_table_doc_id, []).append(field)
 
     # Top-level fields index
     all_fields = list(model.entities.fields.values())
@@ -181,23 +173,23 @@ def _render_fields(model: DocumentModel, output_dir: Path, env: Environment, lin
     )
 
     # Per-table field index pages
-    for table_name, fields in by_table.items():
-        from ...normalize.names import safe_slug
+    for table_doc_id, fields in by_table.items():
+        table = model.entities.tables.get(table_doc_id)
+        table_name = table.name if table else table_doc_id.split(":", 1)[-1]
+        field_dir = links.field_dir_for(table_doc_id)
         _render_section_index(
             fields,
-            output_dir / "Fields" / safe_slug(table_name) / "index.md",
+            output_dir / field_dir / "index.md",
             section_title=f"Fields: {table_name}",
             entity_type_label="field",
             extra_header="Type",
             extra_col_fn=lambda e: f"{e.data_type} / {e.field_type}",
-            index_path=f"Fields/{safe_slug(table_name)}/index.md",
+            index_path=f"{field_dir}/index.md",
             links=links,
         )
 
     for entity in model.entities.fields.values():
-        t_entity = model.entities.tables.get(entity.base_table_doc_id)
-        t_name = t_entity.name if t_entity else entity.base_table_doc_id.split(":", 1)[-1]
-        rel_path = field_path(t_name, entity.name)
+        rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
@@ -222,7 +214,7 @@ def _render_table_occurrences(model: DocumentModel, output_dir: Path, env: Envir
         links=links,
     )
     for entity in entities:
-        rel_path = table_occurrence_path(entity.name)
+        rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
@@ -247,7 +239,7 @@ def _render_relationships(model: DocumentModel, output_dir: Path, env: Environme
         links=links,
     )
     for entity in entities:
-        rel_path = relationship_path(entity.name)
+        rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
@@ -272,7 +264,7 @@ def _render_layouts(model: DocumentModel, output_dir: Path, env: Environment, li
         links=links,
     )
     for entity in entities:
-        rel_path = layout_path(entity.name)
+        rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
@@ -336,7 +328,7 @@ def _render_scripts(model: DocumentModel, output_dir: Path, env: Environment, li
         links=links,
     )
     for entity in entities:
-        rel_path = script_path(entity.name, entity.folder_path)
+        rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
@@ -361,7 +353,7 @@ def _render_custom_functions(model: DocumentModel, output_dir: Path, env: Enviro
         links=links,
     )
     for entity in entities:
-        rel_path = custom_function_path(entity.name)
+        rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
@@ -386,7 +378,7 @@ def _render_value_lists(model: DocumentModel, output_dir: Path, env: Environment
         links=links,
     )
     for entity in entities:
-        rel_path = value_list_path(entity.name)
+        rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
@@ -400,7 +392,7 @@ def _render_privilege_sets(model: DocumentModel, output_dir: Path, env: Environm
     if not model.entities.privilege_sets:
         return
     for entity in model.entities.privilege_sets.values():
-        rel_path = privilege_set_path(entity.name)
+        rel_path = links.path_for(entity.doc_id)
         content = f"---\ndocId: {entity.doc_id}\nentityType: privilegeSet\nname: {entity.name}\n---\n\n# Privilege Set: {entity.name}\n\n| Name | Value |\n|---|---|\n| FMP ID | {entity.fmp_id} |\n"
         if entity.description:
             content += f"| Description | {entity.description} |\n"
@@ -437,7 +429,7 @@ def _render_accounts(model: DocumentModel, output_dir: Path, env: Environment, l
         links=links,
     )
     for entity in entities:
-        rel_path = account_path(entity.name)
+        rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
@@ -462,7 +454,7 @@ def _render_extended_privileges(model: DocumentModel, output_dir: Path, env: Env
         links=links,
     )
     for entity in entities:
-        rel_path = extended_privilege_path(entity.name)
+        rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
@@ -487,7 +479,7 @@ def _render_custom_menus(model: DocumentModel, output_dir: Path, env: Environmen
         links=links,
     )
     for entity in entities:
-        rel_path = custom_menu_path(entity.name)
+        rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
@@ -512,7 +504,7 @@ def _render_custom_menu_sets(model: DocumentModel, output_dir: Path, env: Enviro
         links=links,
     )
     for entity in entities:
-        rel_path = custom_menu_set_path(entity.name)
+        rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
@@ -537,7 +529,7 @@ def _render_themes(model: DocumentModel, output_dir: Path, env: Environment, lin
         links=links,
     )
     for entity in entities:
-        rel_path = theme_path(entity.name)
+        rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
@@ -562,7 +554,7 @@ def _render_file_references(model: DocumentModel, output_dir: Path, env: Environ
         links=links,
     )
     for entity in entities:
-        rel_path = file_reference_path(entity.doc_id)
+        rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
@@ -631,8 +623,6 @@ def _render_section_index(
     sort_key=None,
     name_fn=None,
 ) -> None:
-    from ...normalize.names import safe_slug
-
     if sort_key is None:
         sort_key = lambda x: (getattr(x, "name", "") or "").lower()
     if name_fn is None:

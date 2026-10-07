@@ -1,3 +1,23 @@
 .idea
 .claude
 .env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Generated documentation output
+saxml2doc/
+*_docs/
+
+# Local scratch files and client exports (EverythingBagel.xml is a tracked fixture)
+_*.txt
+_ddr_*.py
+NEXUS_saxml.xml
+disRenewalUniverse.xml

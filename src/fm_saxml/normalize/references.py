@@ -6,7 +6,6 @@ from typing import Any
 
 from ..model.document_model import DocumentModel
 from ..model.references import ReferenceRecord
-from .external import ExternalTargets
 from .ids import (
     field_doc_id,
     layout_doc_id,
@@ -26,10 +25,11 @@ def resolve_references(model: DocumentModel) -> DocumentModel:
     _link_layouts(model)
     _link_layout_objects(model)
     _link_scripts(model)
-    _link_custom_functions(model)
+    _link_script_triggers(model)
     _link_value_lists(model)
     _link_custom_menus(model)
-    _link_field_calculations(model)
+    _link_field_validation_value_lists(model)
+    _link_calculations(model)
     _link_accounts_to_privilege_sets(model)
     _link_extended_privileges_to_privilege_sets(model)
     return model
@@ -226,6 +226,8 @@ def _link_layout_objects(model: DocumentModel) -> None:
                 relationshipType="basedOnTableOccurrence",
                 confidence="exact",
             ))
+        # Single-step button targets, portal sort fields
+        _link_entity_refs(model, obj.doc_id, "layoutObject", obj.references)
         if obj.button_script_doc_id:
             if obj.button_script_external is not None:
                 confidence = "external"
@@ -247,42 +249,68 @@ def _link_layout_objects(model: DocumentModel) -> None:
 # Script → Layout / Field / Script
 # ---------------------------------------------------------------------------
 
+_REL_TYPE_FOR_KIND = {
+    "field": "usesField",
+    "layout": "usesLayout",
+    "script": "usesScript",
+    "customFunction": "usesCustomFunction",
+    "valueList": "usesValueList",
+}
+
+
+def _link_entity_refs(model: DocumentModel, source_doc_id: str, source_type: str, refs: list[dict]) -> None:
+    """ReferenceRecords for an entity's ``references`` list (``{"kind", "targetDocId", "role", ...}``)."""
+    for ref in refs:
+        kind = ref.get("kind")
+        target = ref.get("targetDocId", "")
+        if not target:
+            continue
+        external_target = ref.get("external")
+        if external_target:
+            # Target lives in another file of a multi-file solution
+            confidence = "external"
+        else:
+            confidence = "exact" if model.get_entity(target) is not None else "unresolved"
+        model.references.append(ReferenceRecord(
+            sourceDocId=source_doc_id,
+            sourceEntityType=source_type,
+            targetDocId=target,
+            targetEntityType=kind or "unknown",
+            relationshipType=_REL_TYPE_FOR_KIND.get(kind, "usesField"),
+            role=ref.get("role"),
+            confidence=confidence,
+            rawText=ref.get("rawText"),
+            externalTarget=external_target or None,
+        ))
+
+
 def _link_scripts(model: DocumentModel) -> None:
     for script in model.entities.scripts.values():
         for step_doc_id in script.steps:
             step = model.entities.script_steps.get(step_doc_id)
-            if step is None:
-                continue
-            for ref in step.references:
-                kind = ref.get("kind")
-                target = ref.get("targetDocId", "")
-                if not target:
-                    continue
-                rel_type_map = {
-                    "field": "usesField",
-                    "layout": "usesLayout",
-                    "script": "usesScript",
-                    "customFunction": "usesCustomFunction",
-                    "valueList": "usesValueList",
-                }
-                rel_type = rel_type_map.get(kind, "usesField")
-                entity_exists = model.get_entity(target) is not None
-                external_target = ref.get("external")
-                if external_target:
-                    # Target lives in another file of a multi-file solution
+            if step is not None:
+                _link_entity_refs(model, step_doc_id, "scriptStep", step.references)
+
+
+def _link_script_triggers(model: DocumentModel) -> None:
+    """Layout / layout object -> the script each of its script triggers runs (role: the event)."""
+    sources = [("layout", model.entities.layouts), ("layoutObject", model.entities.layout_objects)]
+    for source_type, entities in sources:
+        for entity in entities.values():
+            for trig in entity.script_triggers:
+                if trig.script_external is not None:
                     confidence = "external"
                 else:
-                    confidence = "exact" if entity_exists else "unresolved"
+                    confidence = "exact" if trig.script_doc_id in model.entities.scripts else "unresolved"
                 model.references.append(ReferenceRecord(
-                    sourceDocId=step_doc_id,
-                    sourceEntityType="scriptStep",
-                    targetDocId=target,
-                    targetEntityType=kind or "unknown",
-                    relationshipType=rel_type,
-                    role=ref.get("role"),
+                    sourceDocId=entity.doc_id,
+                    sourceEntityType=source_type,
+                    targetDocId=trig.script_doc_id,
+                    targetEntityType="script",
+                    relationshipType="triggersScript",
+                    role=trig.event or None,
                     confidence=confidence,
-                    rawText=ref.get("rawText"),
-                    externalTarget=external_target or None,
+                    externalTarget=trig.script_external,
                 ))
 
 
@@ -375,13 +403,8 @@ def _link_value_lists(model: DocumentModel) -> None:
                 ))
 
 
-def _link_field_calculations(model: DocumentModel) -> None:
-    """Calculation / auto-enter calculation fields → fields, value lists and custom functions they use.
-
-    Also links a field to the value list used by its "member of value list" validation.
-    """
-    from ..analyze.calculations import extract_calc_references
-    ext = ExternalTargets(model)
+def _link_field_validation_value_lists(model: DocumentModel) -> None:
+    """A field -> the value list used by its "member of value list" validation."""
     for field in model.entities.fields.values():
         vl = field.validation.value_list_doc_id if field.validation else None
         if vl and vl in model.entities.value_lists:
@@ -394,57 +417,52 @@ def _link_field_calculations(model: DocumentModel) -> None:
                 role="validation",
                 confidence="exact",
             ))
-        calcs = [field.calculation]
-        if field.auto_enter is not None:
-            calcs.append(field.auto_enter.calculation)
-        for calc in calcs:
-            if not calc:
-                continue
-            for ref in extract_calc_references(calc, model):
-                if ref["confidence"] == "unresolved" or ref["targetDocId"] == field.doc_id:
-                    continue
-                et = _calc_external_target(ext, ref)
-                model.references.append(ReferenceRecord(
-                    sourceDocId=field.doc_id,
-                    sourceEntityType="field",
-                    targetDocId=_calc_target_doc_id(ref, et),
-                    targetEntityType=ref["entityType"],
-                    relationshipType=ref["relationshipType"],
-                    confidence=ref["confidence"],
-                    rawText=ref.get("rawText"),
-                    externalTarget=et,
-                ))
 
 
-def _calc_external_target(ext: ExternalTargets, ref: dict):
-    """ExternalTarget for a calculation-derived reference that points into another file."""
-    if ref.get("confidence") != "external":
-        return None
-    return ext.field(ref.get("table"), ref.get("field", ""))
+def _link_calculations(model: DocumentModel) -> None:
+    """Entities -> the fields, custom functions and value lists their calculations use.
 
+    Covers field formulas / auto-enter / validation, custom function bodies, layout
+    script-trigger parameters, every calc on a layout object (hide condition, conditional
+    formatting, tooltip, button parameter, ...) and custom menu install conditions. The
+    role is what the calc is for. A layout object's uses are also rolled up to its
+    layout, so "which layouts use this field" includes hide conditions and the like.
+    """
+    from .calc_refs import CalcRefResolver, RELATIONSHIP_FOR_KIND
 
-def _calc_target_doc_id(ref: dict, external_target) -> str:
-    """DocId a calculation reference points at: the scoped id when it lives in another file."""
-    return external_target.scoped_doc_id if external_target else ref["targetDocId"]
-
-
-def _link_custom_functions(model: DocumentModel) -> None:
-    """Parse calculation text of custom functions and add parsed references."""
-    from ..analyze.calculations import extract_calc_references
-    ext = ExternalTargets(model)
-    for cf in model.entities.custom_functions.values():
-        if not cf.calculation:
-            continue
-        refs = extract_calc_references(cf.calculation, model)
-        for ref in refs:
-            et = _calc_external_target(ext, ref)
-            model.references.append(ReferenceRecord(
-                sourceDocId=cf.doc_id,
-                sourceEntityType="customFunction",
-                targetDocId=_calc_target_doc_id(ref, et),
-                targetEntityType=ref["entityType"],
-                relationshipType=ref["relationshipType"],
-                confidence=ref["confidence"],
-                rawText=ref.get("rawText"),
-                externalTarget=et,
-            ))
+    resolver = CalcRefResolver(model)
+    sources = [
+        ("field", model.entities.fields),
+        ("customFunction", model.entities.custom_functions),
+        ("layout", model.entities.layouts),
+        ("layoutObject", model.entities.layout_objects),
+        ("customMenu", model.entities.custom_menus),
+    ]
+    rolled_up: set[tuple[str, str, str]] = set()
+    for source_type, entities in sources:
+        for entity in entities.values():
+            seen: set[tuple[str, str]] = set()
+            for calc in entity.calculations:
+                for use in resolver.uses(calc.text, calc.chunk_refs):
+                    if source_type == "field" and use.target_doc_id == entity.doc_id:
+                        continue  # a field naming itself (e.g. in its own auto-enter calc)
+                    if (use.target_doc_id, calc.role) in seen:
+                        continue
+                    seen.add((use.target_doc_id, calc.role))
+                    record = dict(
+                        targetDocId=use.target_doc_id,
+                        targetEntityType=use.kind,
+                        relationshipType=RELATIONSHIP_FOR_KIND[use.kind],
+                        role=calc.role,
+                        confidence=use.confidence,
+                        rawText=use.raw_text,
+                        externalTarget=use.external,
+                    )
+                    model.references.append(ReferenceRecord(
+                        sourceDocId=entity.doc_id, sourceEntityType=source_type, **record))
+                    layout_did = getattr(entity, "layout_doc_id", None) if source_type == "layoutObject" else None
+                    key = (layout_did, use.target_doc_id, calc.role)
+                    if layout_did in model.entities.layouts and key not in rolled_up:
+                        rolled_up.add(key)
+                        model.references.append(ReferenceRecord(
+                            sourceDocId=layout_did, sourceEntityType="layout", **record))

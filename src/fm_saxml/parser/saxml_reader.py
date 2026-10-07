@@ -16,6 +16,7 @@ from .extractors.table_occurrences import extract_table_occurrences
 from .extractors.relationships import extract_relationships
 from .extractors.layouts import extract_layouts
 from .extractors.scripts import extract_scripts
+from .extractors.chunk_lists import extract_chunk_lists
 from .extractors.custom_functions import extract_custom_functions
 from .extractors.value_lists import extract_value_lists
 from .extractors.external_data_sources import extract_external_data_sources
@@ -112,18 +113,21 @@ def _parse_v2(xml_path: Path, root, raw: RawModel) -> RawModel:
     calcs_for_cf = find_child(container, "CalcsForCustomFunctions")
     steps_for_scripts = find_child(container, "StepsForScripts")
 
+    # Tokenized calcs with FileMaker's own resolution of the fields / custom functions they use
+    chunk_lists = extract_chunk_lists(root)
+
     raw.tables = extract_tables(container)
-    raw.fields = extract_fields(container, v2_fields_elem=fields_for_tables)
+    raw.fields = extract_fields(container, v2_fields_elem=fields_for_tables, chunk_lists=chunk_lists)
     raw.table_occurrences = extract_table_occurrences(container)
     raw.relationships = extract_relationships(container)
-    raw.layouts = extract_layouts(container)
-    raw.scripts = extract_scripts(container, v2_steps_elem=steps_for_scripts)
-    raw.custom_functions = extract_custom_functions(container, v2_calcs_elem=calcs_for_cf)
+    raw.layouts = extract_layouts(container, chunk_lists=chunk_lists)
+    raw.scripts = extract_scripts(container, v2_steps_elem=steps_for_scripts, chunk_lists=chunk_lists)
+    raw.custom_functions = extract_custom_functions(container, v2_calcs_elem=calcs_for_cf, chunk_lists=chunk_lists)
     raw.value_lists = extract_value_lists(container, v2_options_elem=options_for_vl)
     raw.privilege_sets = extract_privilege_sets(container)
     raw.accounts = extract_accounts(container)
     raw.extended_privileges = extract_extended_privileges(container)
-    raw.custom_menus = extract_custom_menus(container)
+    raw.custom_menus = extract_custom_menus(container, chunk_lists=chunk_lists)
     raw.custom_menu_sets = extract_custom_menu_sets(container)
     raw.themes = extract_themes(container)
     raw.file_references = extract_file_references(container)

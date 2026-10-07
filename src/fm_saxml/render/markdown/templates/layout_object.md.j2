@@ -19,7 +19,32 @@ source: {{ source_file }}
 {% endif %}{% if entity.uuid %}| UUID | {{ entity.uuid }} |
 {% endif %}{% if entity.field_doc_id %}| Field | {{ link(entity.field_doc_id) }} |
 {% endif %}{% if entity.table_occurrence_doc_id %}| Table Occurrence | {{ link(entity.table_occurrence_doc_id) }} |
+{% endif %}{% if entity.parent_object_doc_id %}| Inside | {{ link(entity.parent_object_doc_id) }} |
 {% endif %}{% if entity.button_script_doc_id %}| Triggers Script | {{ link(entity.button_script_doc_id) }} |
+{% endif %}{% if entity.button_step %}| Button Action | {{ entity.button_step | cell }} |
+{% endif %}
+
+{% if entity.script_triggers %}
+## Script Triggers
+
+| Event | Script |
+|---|---|
+{% for t in entity.script_triggers %}
+| {{ t.event }} | {{ link(t.script_doc_id) }} |
+{% endfor %}
+{% endif %}
+
+{% if entity.calculations %}
+## Calculations
+
+{% for c in entity.calculations %}
+### {{ c.role }}
+
+```
+{{ c.text }}
+```
+
+{% endfor %}
 {% endif %}
 
 {% if entity.bounds %}

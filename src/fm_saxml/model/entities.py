@@ -8,6 +8,40 @@ from pydantic import BaseModel, Field, ConfigDict
 from .references import ExternalTarget
 
 
+class CalcChunkRef(BaseModel):
+    """A field or custom function FileMaker itself resolved inside a calculation (a ChunkList token)."""
+
+    type: str                          # field | customFunction
+    name: str
+    table: Optional[str] = None        # for fields: the table occurrence it is reached through
+    fmp_id: Optional[str] = Field(None, alias="fmpId")
+    uuid: Optional[str] = None
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class EntityCalculation(BaseModel):
+    """A calculation an entity owns: a field's formula, a layout object's hide condition, ..."""
+
+    role: str  # calculation, autoEnter, validation, hideCondition, tooltip, buttonParameter, ...
+    text: str
+    # None when there was no ChunkList (v1 export, or a calc FileMaker could not tokenize):
+    # its references are then parsed from the text instead.
+    chunk_refs: Optional[list[CalcChunkRef]] = Field(None, alias="chunkRefs")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class ScriptTriggerInfo(BaseModel):
+    """A script trigger on a layout or layout object, e.g. OnLayoutEnter -> script."""
+
+    event: str
+    script_doc_id: str = Field(alias="scriptDocId")
+    script_external: Optional[ExternalTarget] = Field(None, alias="scriptExternal")  # script in another file
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
 class SourceXmlInfo(BaseModel):
     """Trace back to the originating XML location for debugging."""
 
@@ -94,6 +128,7 @@ class FieldEntity(BaseModel):
     # The field this one summarizes, when this is itself a summary field
     # (e.g. a "Total Of" field) — always a field on this same base table.
     summary_field_doc_id: Optional[str] = Field(None, alias="summaryFieldDocId")
+    calculations: list[EntityCalculation] = []  # formula, auto-enter, validation, storage location
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
     model_config = ConfigDict(populate_by_name=True)
@@ -166,6 +201,8 @@ class LayoutEntity(BaseModel):
     folder_path: Optional[str] = Field(None, alias="folderPath")  # layout folder(s), e.g. "DEV/Old"
     referenced_fields: list[str] = Field([], alias="referencedFields")
     layout_objects: list[str] = Field([], alias="layoutObjects")  # LayoutObject docIds
+    script_triggers: list[ScriptTriggerInfo] = Field([], alias="scriptTriggers")
+    calculations: list[EntityCalculation] = []  # script trigger parameters
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
     model_config = ConfigDict(populate_by_name=True)
@@ -206,10 +243,25 @@ class LayoutObjectEntity(BaseModel):
     external_target: Optional["ExternalTarget"] = Field(None, alias="externalTarget")  # field lives in another file
     button_script_doc_id: Optional[str] = Field(None, alias="buttonScriptDocId")  # script this button performs
     button_script_external: Optional["ExternalTarget"] = Field(None, alias="buttonScriptExternal")
+    button_step: Optional[str] = Field(None, alias="buttonStep")  # single-step button's step, e.g. "Go to Layout [ X ]"
+    # Container object (portal, tab/slide panel, button bar, popover) this one sits in
+    parent_object_doc_id: Optional[str] = Field(None, alias="parentObjectDocId")
+    script_triggers: list[ScriptTriggerInfo] = Field([], alias="scriptTriggers")
+    calculations: list[EntityCalculation] = []  # hide condition, conditional formatting, tooltip, ...
+    # Direct targets of the button step and a portal's sort fields; same shape as ScriptStepEntity.references
+    references: list[dict[str, Any]] = []
     raw_text: Optional[str] = Field(None, alias="rawText")  # Plain-text label (Text objects)
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
     model_config = ConfigDict(populate_by_name=True)
+
+
+class StepCalculation(BaseModel):
+    """One calculated parameter of a script step, e.g. Set Variable's value or repetition."""
+    position: Optional[int] = None    # FileMaker's ordinal for the calc within the step
+    parameter: Optional[str] = None   # <Parameter type>: Variable, Calculation, Message, WindowReference...
+    slot: Optional[str] = None        # element holding the calc in that parameter: value, repetition, top...
+    text: str
 
 
 class ScriptStepEntity(BaseModel):
@@ -222,6 +274,7 @@ class ScriptStepEntity(BaseModel):
     enabled: bool = True
     raw_text: Optional[str] = Field(None, alias="rawText")
     parameters: dict[str, Any] = {}
+    calculations: list[StepCalculation] = []
     references: list[dict[str, Any]] = []  # values are strings, except "external" (an ExternalTarget)
 
     model_config = ConfigDict(populate_by_name=True)
@@ -254,6 +307,7 @@ class CustomFunctionEntity(BaseModel):
     uuid: Optional[str] = None
     parameters: list[str] = []
     calculation: Optional[str] = None
+    calculations: list[EntityCalculation] = []
     references: list[str] = []
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
@@ -344,6 +398,7 @@ class CustomMenuEntity(BaseModel):
     find_mode: bool = Field(True, alias="findMode")
     preview_mode: bool = Field(True, alias="previewMode")
     items: list[CustomMenuItem] = []
+    calculations: list[EntityCalculation] = []  # menu / item install conditions, item actions
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
     model_config = ConfigDict(populate_by_name=True)

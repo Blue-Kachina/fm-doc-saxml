@@ -1,0 +1,30 @@
+I opened the raw XML behind each row to get ground truth rather than guessing. All 43 rows fall into exactly 3 categories — and every single one traces back to the same root cause: this file is one of 11 files in the multi-file solution, and these 43 references point at fields/layouts/scripts that live in the other 10 files (per DDR/Summary.xml: idiClients, idiDemandes, idiItems, etc.). They're correctly unresolvable — this file's XML genuinely doesn't contain the target.
+
+Category 1 — External table fields (28 rows)
+
+Script steps reference fields via table occurrences named LICENSES_TBL, CLIENTS/CLIENT, ITEMS, CONTACT — none of which are among this file's 13 actual base tables (Billet, Contrat, ContratDevis, I18N, Interface, LANGUAGE, Licence, LienDownload, SysVersion, TESTS, x_ListEtatContrat, x_ListEtatDevis, x_ListTypeContrat).
+
+Proof: docs/TableOccurrences/contrat__LICENSES_TBL__contratNo.md shows a blank "Base Table" — this TO has no resolvable base table in this file at all. And separately, in docs/entities.json, a relationship predicate on the exact same "Code_client" field resolves as field:idiClients::Code_client — the tool's own relationship-parsing code already recognizes Code_client as belonging to the external idiClients file, confirming these tables live in the sibling files.
+
+- contrat__LICENSES_TBL__contratNo::* (11 rows) — from idiFactures/licensing file
+- contrat__CLIENTS__idClient::* and bare CLIENT::* (7 rows) — from idiClients
+- contrat__CONTACT__idIndividu::* and bare CONTACT::* (5 rows) — from idiClients
+- contrat__ITEMS__cre::* (3 rows) — from idiItems
+- contrat__contratDevis__devis__ITEMS__idDevis::* (3 rows, deeper relationship chain to the same external items table)
+
+Category 2 — Cross-file layout navigation (4 rows)
+
+layout:Coordonnees, layout:Saisie, layout:Individu. Checked the raw script step text directly:
+Go to Related Record [ From table: "idiClients"; External; Using layout: "Coordonnees" (idiClients) ]
+That's a Go to Related Record [External] step, whose whole point is jumping to a layout in a different file (idiClients). None of these 3 names appear in this file's 33 layouts — correctly so, they're not supposed to.
+
+Category 3 — Cross-file script calls (11 rows)
+
+script:Open Script, script:CreerDevis[], script:DupliquerDevis_EXT[], script:SupprimerDevis_EXT[], script:CreerNouvelleCommande_EXT[], script:ImprimerDevis_EXT[], script:MAJFournisseurDevis_EXT[], script:SupprimerItemDevis_EXT[], script:    [P2] - layout - Comptes Onglet Licences. Raw text confirms every one:
+Perform Script [ "DupliquerDevis_EXT[]" from file: "idiDemandes"; Parameter: ... ]
+Perform Script [ "Open Script" from file: "idiClients" ]
+[] is literally part of these scripts' real names in the target file — not a parsing artifact. "Open Script" (capital S) is a genuinely different script than the locally-existing "Open script" (lowercase) — coincidental near-match, not a bug, confirmed by the from file: "idiClients" tag.
+
+Bottom line
+
+None of these 43 are bugs, and none are stale/broken FileMaker references needing cleanup — they're all legitimate cross-file relationships that simply can't be resolved from a single-file export. If it'd be useful, I could suggest (not implement, unless you want it) a small improvement to fm-saxml-converter: detect the from file:/External; signal already visible in the raw step text and tag these as a distinct confidence: "external" rather than lumping them in with "unresolved"

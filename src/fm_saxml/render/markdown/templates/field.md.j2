@@ -50,7 +50,12 @@ _None._
 |---|---|
 | Type | {{ entity.auto_enter.type }} |
 {% if entity.auto_enter.value %}| Value | `{{ entity.auto_enter.value }}` |
-{% endif %}{% if entity.auto_enter.calculation %}| Calculation | `{{ entity.auto_enter.calculation[:200] }}` |
+{% endif %}
+{% if entity.auto_enter.calculation %}
+
+```
+{{ entity.auto_enter.calculation }}
+```
 {% endif %}
 {% else %}
 _None._
@@ -82,20 +87,20 @@ _None._
 {% if script_bl %}
 ### Scripts
 
-| Script Step | Relationship |
-|---|---|
+| Script Step | Relationship | Role |
+|---|---|---|
 {% for b in script_bl %}
-| {{ link(b.sourceDocId) }} | {{ b.relationshipType }} |
+| {{ link(b.sourceDocId) }} | {{ b.relationshipType }} | {{ b.role or '' }} |
 {% endfor %}
 {% endif %}
 
 {% if layout_bl %}
 ### Layouts
 
-| Layout | Relationship |
-|---|---|
+| Layout | Relationship | Role |
+|---|---|---|
 {% for b in layout_bl %}
-| {{ link(b.sourceDocId) }} | {{ b.relationshipType }} |
+| {{ link(b.sourceDocId) }} | {{ b.relationshipType }} | {{ b.role or '' }} |
 {% endfor %}
 {% endif %}
 

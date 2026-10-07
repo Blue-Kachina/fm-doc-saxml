@@ -63,9 +63,9 @@ source: {{ source_file }}
 {% if bl %}
 ## Called By
 
-| Source | Type |
-|---|---|
+| Source | Type | Role |
+|---|---|---|
 {% for b in bl %}
-| {{ link(b.sourceDocId) }} | {{ b.sourceEntityType }} |
+| {{ link(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.role or '' }} |
 {% endfor %}
 {% endif %}

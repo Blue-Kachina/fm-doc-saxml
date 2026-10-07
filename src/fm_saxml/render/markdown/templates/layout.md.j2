@@ -31,6 +31,29 @@ source: {{ source_file }}
 {% endfor %}
 {% endif %}
 
+{% if entity.script_triggers %}
+## Script Triggers
+
+| Event | Script |
+|---|---|
+{% for t in entity.script_triggers %}
+| {{ t.event }} | {{ link(t.script_doc_id) }} |
+{% endfor %}
+{% endif %}
+
+{% if entity.calculations %}
+## Calculations
+
+{% for c in entity.calculations %}
+### {{ c.role }}
+
+```
+{{ c.text }}
+```
+
+{% endfor %}
+{% endif %}
+
 {% if entity.layout_objects %}
 ## Layout Objects
 

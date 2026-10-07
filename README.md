@@ -45,7 +45,33 @@ Reference-graph analysis (layouts, table occurrences, relationships, backlinks) 
 - Python 3.11+
 - A FileMaker Pro `Save a Copy as XML` export (UTF-16 LE encoded)
 
+## Quick start
+
+1. In FileMaker Pro: **Tools → Save a Copy as XML…**
+2. Run the converter on that file:
+
+   ```bash
+   fm-saxml MySolution.xml
+   ```
+
+   (On Windows you can also drag the XML file onto `fm-saxml.exe`.)
+3. Open the new `MySolution_docs` folder that appears next to your XML file.
+
+Add `--open` to have the folder opened for you. Run `fm-saxml doctor` if something doesn't work and include its output in any bug report.
+
 ## Installation
+
+**Easiest — no Python needed:** download the `fm-saxml` executable for Windows, macOS or Linux from the project's Releases page.
+
+**With Python 3.11+:**
+
+```bash
+pipx install fm-saxml-converter      # or: uvx fm-saxml-converter MySolution.xml
+```
+
+*(Requires the package to be published to PyPI; until then, use one of the source installs below.)*
+
+### From source
 
 The project uses [uv](https://docs.astral.sh/uv/) for environment and dependency management.
 
@@ -66,9 +92,11 @@ pip install -e ".[dev]"
 
 ## Usage
 
-The CLI is exposed as `fm-saxml`. The `--out` option is **optional** for the `build` and `render` commands — when omitted, output is written to a directory named `saxml2doc` next to the current working directory.
+The CLI is exposed as `fm-saxml`. `fm-saxml file.xml` is shorthand for `fm-saxml build file.xml`. The `--out` option is **optional** — for `build`, output defaults to `<input name>_docs` next to the input file; for `render` (which starts from a `model.json`), it defaults to `./saxml2doc`.
 
-If the output directory already exists and is non-empty, you'll be prompted to overwrite or cancel; pass `--force` (or `-f`) to skip the prompt in non-interactive contexts.
+If the output directory already exists and is non-empty, you'll be prompted to overwrite or cancel (with an extra warning if the folder wasn't created by `fm-saxml`); pass `--force` (or `-f`) to skip the prompt in non-interactive contexts.
+
+Errors are shown as a single readable line. Set `FM_SAXML_DEBUG=1` to get the full traceback.
 
 Paths are platform-flexible — Windows drive letters and UNC paths, macOS, and Linux paths all work. `~` and environment variables (`$HOME`, `%USERPROFILE%`) are expanded automatically.
 
@@ -92,7 +120,7 @@ fm-saxml validate ./MySolution.xml
 
 ### Custom output location
 
-Use `--out` (or `-o`) to write somewhere other than `./saxml2doc`:
+Use `--out` (or `-o`) to write somewhere other than `<input name>_docs`:
 
 ```bash
 fm-saxml build ./MySolution.xml --out ./docs/MySolution
@@ -106,6 +134,7 @@ fm-saxml build ./MySolution.xml --out ./docs/MySolution
 | `--include-json` / `--no-include-json` | `build` | Write `entities.json`/`references.json` into the output dir (default: on) |
 | `--strict` | `build` | Exit non-zero if any reference is left `unresolved` after resolution |
 | `--yes` / `-y` | `build`, `render` | Same as `--force`/`-f` — skip the overwrite-confirmation prompt |
+| `--open` | `build` | Open the output folder when finished |
 
 ### Comparing two exports (`diff`)
 
@@ -151,6 +180,8 @@ saxml2doc/
    ├─ warnings.md
    └─ unresolved-references.md
 ```
+
+File names are safe on Windows, macOS and Linux: invalid characters and Windows reserved names (`CON`, `NUL`, …) are replaced, long names are truncated with a short hash, and names that would collide on a case-insensitive file system (`Invoices` vs `invoices`, or an entity named `index`) get a `-2`, `-3`… suffix. Links always point at the final file names.
 
 Every Markdown page carries YAML front matter with `docId`, `entityType`, and source metadata so the output is friendly to static site generators and AI indexers. The top-level `index.md` records two timestamps for clarity: **XML Created At** (mtime of the source export) and **Support Documentation Created At** (when the docs were generated).
 
@@ -229,4 +260,4 @@ Major milestones from the plan:
 
 ## License
 
-To be determined.
+[MIT](./LICENSE)

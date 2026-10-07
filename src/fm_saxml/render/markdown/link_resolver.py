@@ -6,13 +6,15 @@ from pathlib import PurePosixPath
 from urllib.parse import quote
 
 from ...model.document_model import DocumentModel
+from ...normalize.names import safe_slug
 from ...normalize.paths import (
+    dedupe_paths,
     table_path,
-    field_path,
+    field_path_in,
     table_occurrence_path,
     relationship_path,
     layout_path,
-    layout_object_path,
+    layout_object_path_in,
     script_path,
     custom_function_path,
     value_list_path,
@@ -33,7 +35,18 @@ class LinkResolver:
         self._model = model
         self._path_by_doc_id: dict[str, str] = {}
         self._title_by_doc_id: dict[str, str] = {}
+        self._field_dir_by_table: dict[str, str] = {}
         self._build_index()
+
+    @property
+    def page_count(self) -> int:
+        """Number of entity pages (excludes section indexes and reports)."""
+        return len(self._path_by_doc_id)
+
+    def _stem_of(self, doc_id: str, fallback_name: str) -> str:
+        """File-name stem of a parent's resolved page (its children's folder name)."""
+        path = self._path_by_doc_id.get(doc_id)
+        return PurePosixPath(path).stem if path else safe_slug(fallback_name)
 
     def _build_index(self) -> None:
         em = self._model.entities
@@ -42,12 +55,6 @@ class LinkResolver:
             p = table_path(e.name)
             self._path_by_doc_id[e.doc_id] = p
             self._title_by_doc_id[e.doc_id] = e.name
-
-        for e in em.fields.values():
-            table_name = em.tables[e.base_table_doc_id].name if e.base_table_doc_id in em.tables else e.base_table_doc_id.split(":", 1)[-1]
-            p = field_path(table_name, e.name)
-            self._path_by_doc_id[e.doc_id] = p
-            self._title_by_doc_id[e.doc_id] = e.qualified_name
 
         for e in em.table_occurrences.values():
             p = table_occurrence_path(e.name)
@@ -63,15 +70,6 @@ class LinkResolver:
             p = layout_path(e.name)
             self._path_by_doc_id[e.doc_id] = p
             self._title_by_doc_id[e.doc_id] = e.name
-
-        for e in em.layout_objects.values():
-            layout = em.layouts.get(e.layout_doc_id)
-            layout_name = layout.name if layout else e.layout_doc_id.split(":", 1)[-1]
-            obj_label = e.object_id or e.doc_id.split("::", 1)[-1]
-            p = layout_object_path(layout_name, obj_label)
-            self._path_by_doc_id[e.doc_id] = p
-            display = e.name or e.raw_text or e.object_type or obj_label
-            self._title_by_doc_id[e.doc_id] = f"{layout_name} · {display}"
 
         for e in em.scripts.values():
             p = script_path(e.name, e.folder_path)
@@ -123,6 +121,31 @@ class LinkResolver:
             self._path_by_doc_id[e.doc_id] = p
             self._title_by_doc_id[e.doc_id] = e.name
 
+        # Make top-level pages unique even on case-insensitive file systems.
+        self._path_by_doc_id = dedupe_paths(self._path_by_doc_id)
+
+        # Fields and layout objects live in a folder named after their parent's
+        # final page name, so de-duplicated parents get distinct folders too.
+        children: dict[str, str] = {}
+        for e in em.fields.values():
+            parent = em.tables.get(e.base_table_doc_id)
+            parent_name = parent.name if parent else e.base_table_doc_id.split(":", 1)[-1]
+            table_dir = self._stem_of(e.base_table_doc_id, parent_name)
+            self._field_dir_by_table[e.base_table_doc_id] = f"Fields/{table_dir}"
+            children[e.doc_id] = field_path_in(table_dir, e.name)
+            self._title_by_doc_id[e.doc_id] = e.qualified_name
+
+        for e in em.layout_objects.values():
+            layout = em.layouts.get(e.layout_doc_id)
+            layout_name = layout.name if layout else e.layout_doc_id.split(":", 1)[-1]
+            obj_label = e.object_id or e.doc_id.split("::", 1)[-1]
+            layout_dir = self._stem_of(e.layout_doc_id, layout_name)
+            children[e.doc_id] = layout_object_path_in(layout_dir, obj_label)
+            display = e.name or e.raw_text or e.object_type or obj_label
+            self._title_by_doc_id[e.doc_id] = f"{layout_name} · {display}"
+
+        self._path_by_doc_id.update(dedupe_paths(children))
+
         # Targets in other files have no page here; show them readably, not as a raw scoped id
         for ref in self._model.references:
             t = ref.external_target
@@ -131,6 +154,10 @@ class LinkResolver:
                 if t.target_type == "field" and (t.base_table or t.table_occurrence):
                     label = f"{t.base_table or t.table_occurrence}::{t.name}"
                 self._title_by_doc_id[ref.target_doc_id] = f"{label} ({t.data_source})"
+
+    def field_dir_for(self, table_doc_id: str) -> str | None:
+        """Folder (e.g. ``Fields/Customers``) holding a table's field pages."""
+        return self._field_dir_by_table.get(table_doc_id)
 
     def path_for(self, doc_id: str) -> str | None:
         return self._path_by_doc_id.get(doc_id)

@@ -6,15 +6,17 @@ from typing import Any
 from lxml import etree
 
 from ._helpers import attr, find_child, find_all_children, find_all_descendants, calc_text_of, xml_path, modification_info
+from .chunk_lists import ChunkLists, collect_calcs
 
 
 def extract_fields(
     database_elem: etree._Element,
     v2_fields_elem: etree._Element | None = None,
+    chunk_lists: ChunkLists | None = None,
 ) -> list[dict[str, Any]]:
     """Return a list of raw field dicts, each tagged with its parent table id/name."""
     if v2_fields_elem is not None:
-        return _extract_fields_v2(v2_fields_elem)
+        return _extract_fields_v2(v2_fields_elem, chunk_lists)
     return _extract_fields_v1(database_elem)
 
 
@@ -35,7 +37,7 @@ def _extract_fields_v1(database_elem: etree._Element) -> list[dict[str, Any]]:
     return fields
 
 
-def _extract_fields_v2(fields_for_tables: etree._Element) -> list[dict[str, Any]]:
+def _extract_fields_v2(fields_for_tables: etree._Element, chunk_lists: ChunkLists | None) -> list[dict[str, Any]]:
     """v2: <FieldsForTables><FieldCatalog><BaseTableReference id name>...<ObjectList><Field...>"""
     fields = []
     for fc in find_all_children(fields_for_tables, "FieldCatalog"):
@@ -46,11 +48,24 @@ def _extract_fields_v2(fields_for_tables: etree._Element) -> list[dict[str, Any]
         if obj_list is None:
             continue
         for field_elem in find_all_children(obj_list, "Field"):
-            fields.append(_parse_field(field_elem, table_id, table_name))
+            fields.append(_parse_field(field_elem, table_id, table_name, chunk_lists))
     return fields
 
 
-def _parse_field(elem: etree._Element, table_id: str, table_name: str) -> dict[str, Any]:
+def _field_calc_role(path: list[str]) -> str:
+    """Role of a calc inside a ``<Field>``, from the tags leading to it."""
+    for tag, role in (("AutoEnter", "autoEnter"), ("Validation", "validation"), ("Storage", "storageLocation")):
+        if tag in path:
+            return role
+    return "calculation"
+
+
+def _parse_field(
+    elem: etree._Element,
+    table_id: str,
+    table_name: str,
+    chunk_lists: ChunkLists | None = None,
+) -> dict[str, Any]:
     auto_enter = _parse_auto_enter(find_child(elem, "AutoEnter"))
     validation = _parse_validation(find_child(elem, "Validation"))
     storage = _parse_storage(find_child(elem, "Storage"))
@@ -68,6 +83,7 @@ def _parse_field(elem: etree._Element, table_id: str, table_name: str) -> dict[s
         "table_id": table_id,
         "table_name": table_name,
         "calculation": calc_text_of(calculation_elem) or None,
+        "calculations": collect_calcs(elem, chunk_lists, _field_calc_role),
         "auto_enter": auto_enter,
         "validation": validation,
         "storage": storage,
@@ -104,6 +120,10 @@ def _parse_auto_enter(elem: etree._Element | None) -> dict[str, Any] | None:
     value = None
     calculation = None
 
+    v2_type = attr(elem, "type")  # v2: type="Calculated" | "ConstantData" | "SerialNumber" | "CreationTimestamp" ...
+    if v2_type:
+        return _parse_auto_enter_v2(elem, v2_type)
+
     if attr(elem, "serial", "Serial") == "True":
         ae_type = "serial"
     elif attr(elem, "lookup", "Lookup") == "True":
@@ -125,6 +145,43 @@ def _parse_auto_enter(elem: etree._Element | None) -> dict[str, Any] | None:
         "value": value,
         "calculation": calculation,
         "no_modify_auto_enter": attr(elem, "allowEditing", "AllowEditing") == "False",
+    }
+
+
+def _parse_auto_enter_v2(elem: etree._Element, v2_type: str) -> dict[str, Any]:
+    """v2 auto-enter: the kind is the ``type`` attribute, its detail a child named after it.
+
+    ``<AutoEnter type="Calculated"><Calculated><Calculation><Text/>``,
+    ``<AutoEnter type="ConstantData"><ConstantData>1</ConstantData>``.
+    """
+    value = None
+    calculation = None
+    if v2_type == "Calculated":
+        ae_type = "calculation"
+        calculated = find_child(elem, "Calculated")
+        calculation = calc_text_of(find_child(calculated, "Calculation")) if calculated is not None else ""
+        calculation = calculation or None
+    elif v2_type == "ConstantData":
+        ae_type = "data"
+        constant = find_child(elem, "ConstantData")
+        value = (constant.text or "").strip() if constant is not None else None
+    elif v2_type == "SerialNumber":
+        ae_type = "serial"
+    elif v2_type == "Lookup":
+        ae_type = "lookup"
+    elif v2_type.startswith("Creation"):
+        ae_type = "creation"
+        value = v2_type[len("Creation"):] or None  # what is stamped: Timestamp, AccountName ...
+    elif v2_type.startswith("Modification"):
+        ae_type = "modification"
+        value = v2_type[len("Modification"):] or None
+    else:
+        ae_type = v2_type[:1].lower() + v2_type[1:]  # e.g. LastVisited -> lastVisited
+    return {
+        "type": ae_type,
+        "value": value,
+        "calculation": calculation,
+        "no_modify_auto_enter": attr(elem, "prohibitModification").lower() == "true",
     }
 
 

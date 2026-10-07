@@ -19,6 +19,9 @@ from ..model.entities import (
     LayoutObjectEntity,
     LayoutObjectBounds,
     ScriptStepEntity,
+    StepCalculation,
+    EntityCalculation,
+    ScriptTriggerInfo,
     ScriptEntity,
     CustomFunctionEntity,
     ValueListEntity,
@@ -59,6 +62,7 @@ from .ids import (
 from .names import normalize_name, qualified_name
 from .field_resolver import build_field_resolver, resolve_field_or_fallback
 from .external import ExternalTargets
+from .calc_refs import CalcRefResolver, chunk_ref_models
 from ..model.document_model import ExternalDataSource
 
 
@@ -156,6 +160,36 @@ def _normalize_tables(raw: RawModel, model: DocumentModel) -> None:
         model.entities.tables[doc_id] = entity
 
 
+def _entity_calcs(
+    raw_calcs: Optional[list[dict]],
+    fallbacks: list[tuple[str, Optional[str]]] = (),
+) -> list[EntityCalculation]:
+    """Raw ``{"role", "text", "references"}`` calcs -> models.
+
+    ``fallbacks`` are ``(role, text)`` pairs used when the extractor found none, e.g. v1
+    exports (or hand-built raw dicts) that only carry a calc's text.
+    """
+    if not raw_calcs:
+        raw_calcs = [{"role": role, "text": text} for role, text in fallbacks if text]
+    return [
+        EntityCalculation(role=c["role"], text=c["text"], chunkRefs=chunk_ref_models(c.get("references")))
+        for c in raw_calcs
+    ]
+
+
+def _script_triggers(raw_triggers: Optional[list[dict]], ext: ExternalTargets) -> list[ScriptTriggerInfo]:
+    triggers = []
+    for t in raw_triggers or []:
+        sref = t["script"]
+        s_ext = ext.script(sref.get("data_source"), sref["name"], sref.get("id"), sref.get("uuid"))
+        triggers.append(ScriptTriggerInfo(
+            event=t.get("event") or "",
+            scriptDocId=s_ext.scoped_doc_id if s_ext else script_doc_id(normalize_name(sref["name"])),
+            scriptExternal=s_ext,
+        ))
+    return triggers
+
+
 # ---------------------------------------------------------------------------
 # Fields
 # ---------------------------------------------------------------------------
@@ -226,6 +260,10 @@ def _normalize_fields(raw: RawModel, model: DocumentModel) -> None:
             validation=validation,
             storage=storage,
             summaryFieldDocId=summary_field_did,
+            calculations=_entity_calcs(f.get("calculations"), [
+                ("calculation", f.get("calculation")),
+                ("autoEnter", (ae_raw or {}).get("calculation")),
+            ]),
             modified=ModificationInfo.model_validate(f["modified"]) if f.get("modified") else None,
             sourceXml=SourceXmlInfo(path=f.get("source_xml_path", "")) if f.get("source_xml_path") else None,
         )
@@ -387,6 +425,7 @@ def _normalize_layouts(raw: RawModel, model: DocumentModel) -> None:
             base_to_map[base_name] = to.doc_id
 
     resolve_field = build_field_resolver(model)
+    ext = ExternalTargets(model)
 
     for layout in raw.layouts:
         name = normalize_name(layout.get("name", ""))
@@ -423,6 +462,8 @@ def _normalize_layouts(raw: RawModel, model: DocumentModel) -> None:
             theme=layout.get("theme"),
             folderPath=layout.get("folder_path"),
             referencedFields=ref_field_doc_ids,
+            scriptTriggers=_script_triggers(layout.get("script_triggers"), ext),
+            calculations=_entity_calcs(layout.get("calculations")),
             modified=ModificationInfo.model_validate(layout["modified"]) if layout.get("modified") else None,
             sourceXml=SourceXmlInfo(path=layout.get("source_xml_path", "")) if layout.get("source_xml_path") else None,
         )
@@ -443,6 +484,7 @@ def _normalize_layout_objects(raw: RawModel, model: DocumentModel) -> None:
     resolve_field = build_field_resolver(model)
     to_id_map = {to.fmp_id: to.doc_id for to in model.entities.table_occurrences.values()}
     to_name_map = {to.name: to.doc_id for to in model.entities.table_occurrences.values()}
+    layout_name_map = {ly.name: ly.doc_id for ly in model.entities.layouts.values()}
     ext = ExternalTargets(model)
 
     for raw_layout in raw.layouts:
@@ -492,6 +534,22 @@ def _normalize_layout_objects(raw: RawModel, model: DocumentModel) -> None:
                 elif tn and tn in to_name_map:
                     to_did = to_name_map[tn]
 
+            # A portal shows records of its own table occurrence, sorted by its sort fields
+            portal = obj.get("portal")
+            if portal:
+                to_did = (to_id_map.get(str(portal.get("to_id") or ""))
+                          or to_name_map.get(portal.get("to_name") or "") or to_did)
+
+            # Single-step button: its layout / fields / value lists; portal sort fields
+            obj_refs: list[dict] = []
+            if obj.get("button_step"):
+                obj_refs += _step_target_refs(obj["button_step"], "buttonAction", resolve_field, ext, layout_name_map)
+            if portal:
+                sort_step = {"field_refs": [{"name": sf["field_name"], "table": sf["table_name"],
+                                             "id": sf["field_id"], "uuid": sf["field_uuid"]}
+                                            for sf in portal.get("sort_fields", [])]}
+                obj_refs += _step_target_refs(sort_step, "portalSort", resolve_field, ext, layout_name_map)
+
             # Button-triggered script. Scripts aren't normalized yet at this
             # point in the pipeline, so there's no name->doc_id map to check
             # against — script_doc_id() is a pure function of the normalized
@@ -525,6 +583,13 @@ def _normalize_layout_objects(raw: RawModel, model: DocumentModel) -> None:
                 externalTarget=field_external,
                 buttonScriptDocId=button_script_did,
                 buttonScriptExternal=button_script_external,
+                buttonStep=(obj.get("button_step") or {}).get("raw_text"),
+                parentObjectDocId=(
+                    layout_object_doc_id(layout_name, str(obj["parent_id"])) if obj.get("parent_id") else None
+                ),
+                scriptTriggers=_script_triggers(obj.get("script_triggers"), ext),
+                calculations=_entity_calcs(obj.get("calculations")),
+                references=obj_refs,
                 rawText=obj.get("raw_text"),
                 sourceXml=(
                     SourceXmlInfo(path=obj.get("source_xml_path", ""))
@@ -584,6 +649,7 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
     # Second pass — process steps (now all script docIds are known)
     resolve_field = build_field_resolver(model)
     ext = ExternalTargets(model)
+    calc_resolver = CalcRefResolver(model, resolve_field, ext)
 
     for s, script_entity in script_entities:
         step_doc_ids = []
@@ -593,56 +659,29 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
 
         for raw_step in s.get("steps", []):
             step_doc = script_step_doc_id(script_entity.name, raw_step.get("index", 0))
-            step_refs = []
+            calcs = raw_step.get("calculations")
+            if calcs is None:  # raw step with only the joined calculation text
+                calcs = [{"text": raw_step["calculation"]}] if raw_step.get("calculation") else []
 
-            # Layout reference
-            lr = raw_step.get("layout_ref")
-            if lr and lr.get("name"):
-                # Go to Related Record through an External TO -> layout is in the other file
-                l_ext = ext.layout(lr.get("via_to"), lr["name"], lr.get("id"), lr.get("uuid"))
-                if l_ext:
-                    ld = l_ext.scoped_doc_id
-                else:
-                    ld = layout_name_map.get(lr["name"]) or layout_doc_id(lr["name"])
-                step_refs.append({"kind": "layout", "targetDocId": ld, "role": "target", **_ext(l_ext)})
-                if ld not in ref_layouts:
-                    ref_layouts.append(ld)
-                    script_entity.referenced_layouts.append(ld)
+            # The step's layout, fields and value lists
+            step_refs = _step_target_refs(raw_step, "target", resolve_field, ext, layout_name_map)
+            for r in step_refs:
+                if r["kind"] == "layout" and r["targetDocId"] not in ref_layouts:
+                    ref_layouts.append(r["targetDocId"])
+                    script_entity.referenced_layouts.append(r["targetDocId"])
+                elif r["kind"] == "field" and r["targetDocId"] not in ref_fields:
+                    ref_fields.append(r["targetDocId"])
+                    script_entity.referenced_fields.append(r["targetDocId"])
 
-            # Field references
-            for fr in raw_step.get("field_refs", []):
-                fn = fr.get("name", "")
-                tn = fr.get("table", "")
-                if fn:
-                    f_ext = ext.field(tn, fn, fr.get("id"), fr.get("uuid"))
-                    fd = f_ext.scoped_doc_id if f_ext else (resolve_field(tn, fn) or field_doc_id(tn, fn))
-                    step_refs.append({"kind": "field", "targetDocId": fd, "role": "target",
-                                      "rawText": f"{tn}::{fn}", **_ext(f_ext)})
-                    if fd not in ref_fields:
-                        ref_fields.append(fd)
-                        script_entity.referenced_fields.append(fd)
-
-            # Value lists used by the step (e.g. Sort Records by value list)
-            for vr in raw_step.get("value_list_refs", []) or []:
-                vd = value_list_doc_id(normalize_name(vr["name"]))
-                if not any(r["kind"] == "valueList" and r["targetDocId"] == vd for r in step_refs):
-                    step_refs.append({"kind": "valueList", "targetDocId": vd, "role": "sort"})
-
-            # Fields / value lists referenced from within the step's calculation text
-            if raw_step.get("calculation"):
-                from ..analyze.calculations import extract_calc_references
-                for cref in extract_calc_references(raw_step["calculation"], model, resolve_field):
-                    if cref["entityType"] not in ("field", "valueList") or cref["confidence"] == "unresolved":
-                        continue
-                    kind, target = cref["entityType"], cref["targetDocId"]
-                    c_ext = ext.field(cref.get("table"), cref.get("field", "")) if cref["confidence"] == "external" else None
-                    if c_ext:
-                        target = c_ext.scoped_doc_id
+            # Fields / custom functions / value lists used inside the step's calculations
+            for calc in calcs:
+                for use in calc_resolver.uses(calc["text"], calc.get("references")):
+                    kind, target = use.kind, use.target_doc_id
                     if any(r["kind"] == kind and r["targetDocId"] == target for r in step_refs):
                         continue
                     step_refs.append({"kind": kind, "targetDocId": target, "role": "calculation",
-                                      "rawText": cref.get("rawText"),
-                                      **_ext(c_ext)})
+                                      "rawText": use.raw_text, "calculationPosition": calc.get("position"),
+                                      **_ext(use.external)})
                     if kind == "field" and target not in ref_fields:
                         ref_fields.append(target)
                         script_entity.referenced_fields.append(target)
@@ -669,12 +708,53 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
                 name=raw_step.get("name", ""),
                 enabled=raw_step.get("enabled", True),
                 rawText=raw_step.get("raw_text"),
+                calculations=[
+                    StepCalculation(position=c.get("position"), parameter=c.get("parameter"),
+                                    slot=c.get("slot"), text=c["text"])
+                    for c in calcs
+                ],
                 references=step_refs,
             )
             model.entities.script_steps[step_doc] = step_entity
             step_doc_ids.append(step_doc)
 
         script_entity.steps = step_doc_ids
+
+
+def _step_target_refs(
+    step: dict,
+    role: str,
+    resolve_field,
+    ext: ExternalTargets,
+    layout_name_map: dict[str, str],
+) -> list[dict]:
+    """References a script step (or a single-step button's step) makes directly.
+
+    Its target layout, fields and value lists — not what its calculations use.
+    """
+    refs: list[dict] = []
+
+    lr = step.get("layout_ref")
+    if lr and lr.get("name"):
+        # Go to Related Record through an External TO -> layout is in the other file
+        l_ext = ext.layout(lr.get("via_to"), lr["name"], lr.get("id"), lr.get("uuid"))
+        ld = l_ext.scoped_doc_id if l_ext else (layout_name_map.get(lr["name"]) or layout_doc_id(lr["name"]))
+        refs.append({"kind": "layout", "targetDocId": ld, "role": role, **_ext(l_ext)})
+
+    for fr in step.get("field_refs", []):
+        fn = fr.get("name", "")
+        tn = fr.get("table", "")
+        if fn:
+            f_ext = ext.field(tn, fn, fr.get("id"), fr.get("uuid"))
+            fd = f_ext.scoped_doc_id if f_ext else (resolve_field(tn, fn) or field_doc_id(tn, fn))
+            refs.append({"kind": "field", "targetDocId": fd, "role": role, "rawText": f"{tn}::{fn}", **_ext(f_ext)})
+
+    # Value lists used by the step (e.g. Sort Records by value list)
+    for vr in step.get("value_list_refs", []) or []:
+        vd = value_list_doc_id(normalize_name(vr["name"]))
+        if not any(r["kind"] == "valueList" and r["targetDocId"] == vd for r in refs):
+            refs.append({"kind": "valueList", "targetDocId": vd, "role": "sort"})
+    return refs
 
 
 # ---------------------------------------------------------------------------
@@ -694,6 +774,7 @@ def _normalize_custom_functions(raw: RawModel, model: DocumentModel) -> None:
             uuid=cf.get("uuid"),
             parameters=cf.get("parameters", []),
             calculation=cf.get("calculation"),
+            calculations=_entity_calcs(cf.get("calculations"), [("calculation", cf.get("calculation"))]),
             modified=ModificationInfo.model_validate(cf["modified"]) if cf.get("modified") else None,
             sourceXml=SourceXmlInfo(path=cf.get("source_xml_path", "")) if cf.get("source_xml_path") else None,
         )
@@ -870,6 +951,7 @@ def _normalize_custom_menus(raw: RawModel, model: DocumentModel) -> None:
             findMode=cm.get("find_mode", True),
             previewMode=cm.get("preview_mode", True),
             items=items,
+            calculations=_entity_calcs(cm.get("calculations"), [("installCondition", cm.get("install_condition"))]),
             modified=ModificationInfo.model_validate(cm["modified"]) if cm.get("modified") else None,
             sourceXml=SourceXmlInfo(path=cm.get("source_xml_path", "")) if cm.get("source_xml_path") else None,
         )

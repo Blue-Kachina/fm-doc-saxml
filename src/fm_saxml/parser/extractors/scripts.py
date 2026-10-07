@@ -6,13 +6,19 @@ from typing import Any
 from lxml import etree
 
 from ._helpers import attr, calc_text_of, find_child, find_all_descendants, text_of, xml_path, modification_info
+from .chunk_lists import chunk_refs_for
 
 
 def extract_scripts(
     database_elem: etree._Element,
     v2_steps_elem: etree._Element | None = None,
+    chunk_lists: dict[str, list[dict]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Return a list of raw script dicts (each containing their steps)."""
+    """Return a list of raw script dicts (each containing their steps).
+
+    ``chunk_lists`` (v2, from ``extract_chunk_lists``) supplies the resolved field /
+    custom function references of each step calculation.
+    """
     catalog = find_child(database_elem, "ScriptCatalog")
     if catalog is None:
         return []
@@ -29,7 +35,7 @@ def extract_scripts(
             steps = []
             if obj_list is not None:
                 for idx, step_elem in enumerate(find_all_descendants(obj_list, "Step")):
-                    steps.append(_parse_step(step_elem, idx))
+                    steps.append(_parse_step(step_elem, idx, chunk_lists))
             steps_map[sc_id] = steps
 
     results = []
@@ -105,7 +111,11 @@ def _parse_script(elem: etree._Element, folder_path: str, steps_map: dict[str, l
     }
 
 
-def _parse_step(elem: etree._Element, fallback_index: int) -> dict[str, Any]:
+def _parse_step(
+    elem: etree._Element,
+    fallback_index: int,
+    chunk_lists: dict[str, list[dict]] | None = None,
+) -> dict[str, Any]:
     # FileMaker uses 'id' for the step type (e.g., 68 = Go to Layout), 'index' for position
     step_type_id = attr(elem, "id", "ID") or ""
     index = attr(elem, "index", "Index")
@@ -122,13 +132,15 @@ def _parse_step(elem: etree._Element, fallback_index: int) -> dict[str, Any]:
     # Collect step parameters — layout refs, field refs, script refs, calculations
     if find_child(elem, "ParameterValues") is not None:
         # v2: references are nested in <ParameterValues><Parameter> as *Reference elements
-        layout_ref, field_refs, script_ref, calc, value_list_refs = _extract_v2_step_refs(elem)
+        layout_ref, field_refs, script_ref, calcs, value_list_refs = _extract_v2_step_refs(elem, chunk_lists)
     else:
         layout_ref = _extract_layout_ref(elem)
         field_refs = _extract_field_refs(elem)
         script_ref = _extract_script_ref(elem)
-        calc = _extract_calculation(elem)
+        v1_calc = _extract_calculation(elem)
+        calcs = [_calc_entry(v1_calc)] if v1_calc else []
         value_list_refs = []
+    calc = "\n".join(c["text"] for c in calcs) or None
 
     # Build raw_text from available info
     raw_parts = [name]
@@ -153,13 +165,27 @@ def _parse_step(elem: etree._Element, fallback_index: int) -> dict[str, Any]:
         "script_ref": script_ref,
         "value_list_refs": value_list_refs,
         "calculation": calc,
+        "calculations": calcs,
     }
+
+
+def _calc_entry(
+    text: str,
+    position: int | None = None,
+    parameter: str | None = None,
+    slot: str | None = None,
+    references: list[dict] | None = None,
+) -> dict[str, Any]:
+    """One calculated step parameter. ``references`` is None when it has no ChunkList."""
+    return {"position": position, "parameter": parameter, "slot": slot,
+            "text": text, "references": references}
 
 
 def _extract_v2_step_refs(
     elem: etree._Element,
-) -> tuple[dict | None, list[dict], dict | None, str | None, list[dict]]:
-    """Pull layout / field / script / value-list references and calc text from a v2 step.
+    chunk_lists: dict[str, list[dict]] | None = None,
+) -> tuple[dict | None, list[dict], dict | None, list[dict], list[dict]]:
+    """Pull layout / field / script / value-list references and calculations from a v2 step.
 
     In v2 a field reference's table half is a ``<TableOccurrenceReference>``
     child of ``<FieldReference>`` (i.e. a table *occurrence* name).
@@ -168,7 +194,7 @@ def _extract_v2_step_refs(
     script_ref = None
     field_refs: list[dict] = []
     value_list_refs: list[dict] = []
-    calcs: list[str] = []
+    calcs: list[dict] = []
 
     for node in elem.iter():
         if not isinstance(node.tag, str):
@@ -195,9 +221,40 @@ def _extract_v2_step_refs(
         elif tag == "Calculation" and find_child(node, "Text") is not None:
             text = calc_text_of(node)
             if text:
-                calcs.append(text)
+                calcs.append(_v2_calc_entry(node, text, chunk_lists))
 
-    return layout_ref, field_refs, script_ref, "\n".join(calcs) or None, value_list_refs
+    return layout_ref, field_refs, script_ref, calcs, value_list_refs
+
+
+def _v2_calc_entry(
+    calc: etree._Element,
+    text: str,
+    chunk_lists: dict[str, list[dict]] | None,
+) -> dict[str, Any]:
+    """Describe where a step calculation sits, plus the references from its ChunkList.
+
+    Structure: ``<Parameter type="Variable"><value><Calculation position="1"><Calculation>
+    <DDRREF kind="ChunkList">key</DDRREF><Text/>``. ``slot`` is the element holding the
+    calc inside its parameter (``value``, ``repetition``, ``top`` ...), or None when the
+    calc is the parameter itself.
+    """
+    outer = calc.getparent()
+    if outer is not None and _local(outer.tag) == "Calculation":
+        holder = outer.getparent()
+        position = attr(outer, "position")
+    else:
+        holder, position = outer, ""
+    slot = _local(holder.tag) if holder is not None else None
+    param = next((a for a in calc.iterancestors()
+                  if isinstance(a.tag, str) and _local(a.tag) == "Parameter"), None)
+
+    return _calc_entry(
+        text,
+        position=int(position) if position.isdigit() else None,
+        parameter=(attr(param, "type", "Type") or None) if param is not None else None,
+        slot=None if slot == "Parameter" else slot,
+        references=chunk_refs_for(calc, chunk_lists),
+    )
 
 
 def _sibling_data_source(script_ref: etree._Element) -> str | None:

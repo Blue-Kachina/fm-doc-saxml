@@ -6,10 +6,11 @@ from typing import Any
 from lxml import etree
 
 from ._helpers import attr, find_child, find_all_children, find_all_descendants, xml_path, modification_info
-from .scripts import _sibling_data_source
+from .chunk_lists import ChunkLists, collect_calcs
+from .scripts import _parse_step, _sibling_data_source
 
 
-def extract_layouts(database_elem: etree._Element) -> list[dict[str, Any]]:
+def extract_layouts(database_elem: etree._Element, chunk_lists: ChunkLists | None = None) -> list[dict[str, Any]]:
     """Return a list of raw layout dicts.
 
     Each layout dict carries:
@@ -17,7 +18,8 @@ def extract_layouts(database_elem: etree._Element) -> list[dict[str, Any]]:
     - id, name, uuid, theme
     - table_occurrence_id, table_occurrence_name
     - referenced_fields: deduplicated list of {field_id, field_name, table_name}
-    - layout_objects: list of object dicts (one per LayoutObject in the XML)
+    - layout_objects: list of object dicts (one per LayoutObject in the XML, nested ones included)
+    - script_triggers / calculations: layout-level triggers and their parameter calcs
     - source_xml_path
     """
     catalog = find_child(database_elem, "LayoutCatalog")
@@ -25,11 +27,16 @@ def extract_layouts(database_elem: etree._Element) -> list[dict[str, Any]]:
         return []
 
     results: list[dict[str, Any]] = []
-    _walk_layout_catalog(catalog, "", results)
+    _walk_layout_catalog(catalog, "", results, chunk_lists)
     return results
 
 
-def _walk_layout_catalog(elem: etree._Element, folder_path: str, results: list[dict[str, Any]]) -> None:
+def _walk_layout_catalog(
+    elem: etree._Element,
+    folder_path: str,
+    results: list[dict[str, Any]],
+    chunk_lists: ChunkLists | None = None,
+) -> None:
     """Collect layouts, skipping folders and dividers (which are ``<Layout>`` elements too).
 
     v2 catalogs are flat: ``<Layout isFolder="True">`` opens a folder, its items
@@ -42,7 +49,7 @@ def _walk_layout_catalog(elem: etree._Element, folder_path: str, results: list[d
         if not isinstance(child.tag, str):
             continue
         if _local(child.tag) != "Layout":
-            _walk_layout_catalog(child, folder_path, results)  # wrapper elements (older formats)
+            _walk_layout_catalog(child, folder_path, results, chunk_lists)  # wrapper elements (older formats)
             continue
         is_folder = attr(child, "isFolder", "IsFolder").lower()
         if attr(child, "isSeparatorItem", "IsSeparatorItem").lower() == "true":
@@ -54,7 +61,7 @@ def _walk_layout_catalog(elem: etree._Element, folder_path: str, results: list[d
         if is_folder == "true":
             open_folders.append(attr(child, "name", "Name"))
             continue
-        layout = _parse_layout(child)
+        layout = _parse_layout(child, chunk_lists)
         layout["folder_path"] = "/".join(p for p in [folder_path, *open_folders] if p) or None
         results.append(layout)
 
@@ -63,7 +70,7 @@ def _local(tag: str) -> str:
     return tag.split("}", 1)[1] if tag.startswith("{") else tag
 
 
-def _parse_layout(elem: etree._Element) -> dict[str, Any]:
+def _parse_layout(elem: etree._Element, chunk_lists: ChunkLists | None = None) -> dict[str, Any]:
     # v1: tableOccurrenceID is a direct attribute
     # v2: <TableOccurrenceReference id="..." name="..."> child element
     to_id = attr(elem, "tableOccurrenceID", "tableOccurrenceId", "tableID")
@@ -82,7 +89,8 @@ def _parse_layout(elem: etree._Element) -> dict[str, Any]:
             theme = attr(theme_ref, "name", "Name") or None
 
     # Collect every LayoutObject inside this layout (across all parts)
-    layout_objects = _collect_layout_objects(elem)
+    layout_objects = _collect_layout_objects(elem, chunk_lists)
+    triggers_elem = find_child(elem, "ScriptTriggers")
 
     # Backward-compatible referenced_fields list (deduped) — derived from objects
     referenced_fields = _dedupe_field_refs(layout_objects)
@@ -96,6 +104,11 @@ def _parse_layout(elem: etree._Element) -> dict[str, Any]:
         "theme": theme,
         "referenced_fields": referenced_fields,
         "layout_objects": layout_objects,
+        "script_triggers": _parse_script_triggers(elem),
+        "calculations": (
+            collect_calcs(triggers_elem, chunk_lists, lambda _path: "scriptTriggerParameter")
+            if triggers_elem is not None else []
+        ),
         "modified": modification_info(elem),
         "source_xml_path": xml_path(elem),
     }
@@ -112,16 +125,35 @@ def _layout_uuid(elem: etree._Element) -> str | None:
     return None
 
 
-def _collect_layout_objects(layout_elem: etree._Element) -> list[dict[str, Any]]:
+def _collect_layout_objects(
+    layout_elem: etree._Element,
+    chunk_lists: ChunkLists | None = None,
+) -> list[dict[str, Any]]:
     """Walk every <LayoutObject> (or legacy v1 <Object type="...">) under this layout.
 
     The SaveAsXML v2 format wraps objects in ``<Part><ObjectList><LayoutObject>``.
+    Objects nest: a portal's fields, a tab or slide panel's contents, a button bar's
+    segments and a popover's panel are ``<LayoutObject>`` elements inside their
+    container object; each is collected with ``parent_id`` set to its container.
     Older v1 exports use ``<Object type="FieldObj">`` / ``<Object type="Field">``.
     Both are handled here.
     """
     results: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
     fallback_index = 0
+
+    def collect(lo: etree._Element, part_label: str, parent_id: str | None) -> None:
+        nonlocal fallback_index
+        fallback_index += 1
+        obj = _parse_layout_object(lo, part_label, fallback_index, chunk_lists)
+        obj["parent_id"] = parent_id
+        obj_key = obj["id"] or f"_idx{fallback_index}"
+        if obj_key in seen_ids:
+            return
+        seen_ids.add(obj_key)
+        results.append(obj)
+        for child in _nested_objects(lo):
+            collect(child, part_label, obj["id"] or None)
 
     # v2 path — <PartsList><Part><ObjectList><LayoutObject>
     parts_list = find_child(layout_elem, "PartsList")
@@ -132,13 +164,7 @@ def _collect_layout_objects(layout_elem: etree._Element) -> list[dict[str, Any]]
             if obj_list is None:
                 continue
             for lo in find_all_children(obj_list, "LayoutObject"):
-                fallback_index += 1
-                obj = _parse_layout_object(lo, part_label, fallback_index)
-                obj_key = obj["id"] or f"_idx{fallback_index}"
-                if obj_key in seen_ids:
-                    continue
-                seen_ids.add(obj_key)
-                results.append(obj)
+                collect(lo, part_label, None)
         if results:
             return results
 
@@ -160,10 +186,104 @@ def _collect_layout_objects(layout_elem: etree._Element) -> list[dict[str, Any]]
     return results
 
 
+def _nested_objects(lo: etree._Element) -> list[etree._Element]:
+    """LayoutObjects directly contained by ``lo`` (not those nested deeper inside them)."""
+    found: list[etree._Element] = []
+
+    def walk(node: etree._Element) -> None:
+        for child in node:
+            if not isinstance(child.tag, str):
+                continue
+            if _local(child.tag) == "LayoutObject":
+                found.append(child)
+            else:
+                walk(child)
+
+    walk(lo)
+    return found
+
+
+# Role of a calc inside a layout object: the first of these tags found on the path to it.
+# Anything else is named after the element holding it (e.g. a portal <Filter> -> "filter").
+_OBJECT_CALC_ROLES = (
+    ("ScriptTrigger", "scriptTriggerParameter"),
+    ("Hide", "hideCondition"),
+    ("Formatting", "conditionalFormatting"),
+    ("Tooltip", "tooltip"),
+    ("Placeholder", "placeholder"),
+    ("WebViewer", "webViewer"),
+    ("Step", "buttonAction"),        # a calc in a single-step button's step (e.g. Set Field)
+    ("action", "buttonParameter"),   # the script parameter of a Perform Script button
+    ("Label", "label"),
+    ("Title", "popoverTitle"),
+    ("Select", "activeSegment"),
+    ("TabPanel", "tabLabel"),
+)
+
+
+def _object_calc_role(path: list[str]) -> str:
+    for tag, role in _OBJECT_CALC_ROLES:
+        if tag in path:
+            return role
+    named = [t for t in path if t != "Calculation"]
+    return named[-1][:1].lower() + named[-1][1:] if named else "calculation"
+
+
+def _script_ref_dict(script_ref: etree._Element) -> dict[str, Any]:
+    return {
+        "id": attr(script_ref, "id", "ID"),
+        "uuid": attr(script_ref, "uuid", "UUID"),
+        "name": attr(script_ref, "name", "Name"),
+        "data_source": _sibling_data_source(script_ref),
+    }
+
+
+def _parse_script_triggers(elem: etree._Element) -> list[dict[str, Any]]:
+    """``<ScriptTriggers><ScriptTrigger action="OnLayoutEnter"><ScriptReference/>`` on a layout or object."""
+    container = find_child(elem, "ScriptTriggers")
+    triggers = []
+    for trig in find_all_children(container, "ScriptTrigger") if container is not None else []:
+        script_ref = find_child(trig, "ScriptReference")
+        if script_ref is None or not attr(script_ref, "name", "Name"):
+            continue
+        triggers.append({"event": attr(trig, "action", "Action"), "script": _script_ref_dict(script_ref)})
+    return triggers
+
+
+def _field_ref_dict(fr: etree._Element) -> dict[str, str]:
+    to_ref = find_child(fr, "TableOccurrenceReference")
+    return {
+        "field_id": attr(fr, "id", "ID") or "",
+        "field_name": attr(fr, "name", "Name") or "",
+        "field_uuid": attr(fr, "uuid", "UUID") or "",
+        "table_name": attr(to_ref, "name", "Name") if to_ref is not None else "",
+        "to_id": attr(to_ref, "id", "ID") if to_ref is not None else "",
+    }
+
+
+def _parse_portal(portal: etree._Element | None) -> dict[str, Any] | None:
+    """A portal's table occurrence and the fields it sorts by."""
+    if portal is None:
+        return None
+    to_ref = find_child(portal, "TableOccurrenceReference")
+    sort_spec = find_child(portal, "SortSpecification")
+    sort_fields = [
+        _field_ref_dict(fr)
+        for fr in (find_all_descendants(sort_spec, "FieldReference") if sort_spec is not None else [])
+        if attr(fr, "name", "Name")
+    ]
+    return {
+        "to_id": attr(to_ref, "id", "ID") if to_ref is not None else "",
+        "to_name": attr(to_ref, "name", "Name") if to_ref is not None else "",
+        "sort_fields": sort_fields,
+    }
+
+
 def _parse_layout_object(
     lo: etree._Element,
     part_label: str,
     fallback_index: int,
+    chunk_lists: ChunkLists | None = None,
 ) -> dict[str, Any]:
     """Parse a v2 <LayoutObject>."""
     obj_type = attr(lo, "type", "Type")
@@ -188,18 +308,21 @@ def _parse_layout_object(
     # Plain text content for "Text" objects
     raw_text = _parse_text_content(find_child(lo, "Text"))
 
-    # Button-triggered script: <Button><action><ScriptReference .../></action></Button>
+    # Button action: <Button><action><ScriptReference/> (Perform Script) or <action><Step/> (single step).
+    # Popover buttons carry the same <action>.
     button_script = None
-    button_elem = find_child(lo, "Button")
+    button_step = None
+    button_elem = find_child(lo, "Button", "PopoverButton")
     action_elem = find_child(button_elem, "action") if button_elem is not None else None
     script_ref = find_child(action_elem, "ScriptReference") if action_elem is not None else None
     if script_ref is not None and attr(script_ref, "name", "Name"):
-        button_script = {
-            "id": attr(script_ref, "id", "ID"),
-            "uuid": attr(script_ref, "uuid", "UUID"),
-            "name": attr(script_ref, "name", "Name"),
-            "data_source": _sibling_data_source(script_ref),
-        }
+        button_script = _script_ref_dict(script_ref)
+    step_elem = find_child(action_elem, "Step") if action_elem is not None else None
+    if step_elem is not None:
+        step = _parse_step(step_elem, 0)  # its calcs are collected below with the object's own
+        button_step = {k: step[k] for k in ("name", "raw_text", "layout_ref", "field_refs", "value_list_refs")}
+        if button_script is None and step["script_ref"]:
+            button_script = step["script_ref"]
 
     return {
         "id": obj_id,
@@ -213,6 +336,10 @@ def _parse_layout_object(
         "value_list": value_list,
         "raw_text": raw_text,
         "button_script": button_script,
+        "button_step": button_step,
+        "portal": _parse_portal(find_child(lo, "Portal")),
+        "script_triggers": _parse_script_triggers(lo),
+        "calculations": collect_calcs(lo, chunk_lists, _object_calc_role, stop_at=("LayoutObject",)),
         "fallback_index": fallback_index,
         "source_xml_path": xml_path(lo),
     }
