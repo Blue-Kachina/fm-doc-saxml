@@ -1,18 +1,33 @@
 name: Release
 
-# Push a tag like v0.2.0 to build standalone executables for each OS and
-# attach them to a GitHub Release. PyPI publishing is a separate job that
-# only runs once a PYPI_API_TOKEN secret exists.
+# Push a tag like v0.2.0 to:
+#   1. verify the tag matches the package version,
+#   2. build standalone executables for each OS and attach them to a GitHub Release,
+#   3. publish to PyPI via Trusted Publishing (no stored token) once the
+#      PUBLISH_TO_PYPI repo variable is set to "true".
+# See pypi_first_steps.md for the one-time setup.
 
 on:
   push:
     tags: ["v*"]
 
-permissions:
-  contents: write
-
 jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag must match __version__
+        run: |
+          version=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' src/fm_saxml/__init__.py)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match __version__ v$version" >&2
+            exit 1
+          fi
+
   executables:
+    needs: verify
+    permissions:
+      contents: write
     strategy:
       matrix:
         include:
@@ -50,16 +65,17 @@ jobs:
           files: ${{ matrix.asset }}
 
   pypi:
-    runs-on: ubuntu-latest
-    needs: executables
+    needs: [verify, executables]
     if: ${{ vars.PUBLISH_TO_PYPI == 'true' }}
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write   # required for Trusted Publishing
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python -m pip install build twine && python -m build
-      - run: python -m twine upload dist/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      - run: python -m pip install build && python -m build
+      - uses: pypa/gh-action-pypi-publish@release/v1

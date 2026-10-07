@@ -66,10 +66,24 @@ Add `--open` to have the folder opened for you. Run `fm-saxml doctor` if somethi
 **With Python 3.11+:**
 
 ```bash
-pipx install fm-saxml-converter      # or: uvx fm-saxml-converter MySolution.xml
+pipx install fm-saxml-converter      # or run without installing: uvx --from fm-saxml-converter fm-saxml MySolution.xml
 ```
 
 *(Requires the package to be published to PyPI; until then, use one of the source installs below.)*
+
+### Updating
+
+Check your version with `fm-saxml --version`, then upgrade the same way you installed:
+
+| Installed with | Update command |
+|---|---|
+| `pipx` | `pipx upgrade fm-saxml-converter` |
+| `uv tool install` | `uv tool upgrade fm-saxml-converter` |
+| `pip` | `pip install -U fm-saxml-converter` |
+| `uvx` | `uvx --from fm-saxml-converter@latest fm-saxml ...` |
+| Executable | Download the new file from the Releases page |
+
+When a newer version exists, `fm-saxml` prints a one-line notice after a run (checked at most once a day, never blocks, silent in CI and when output is piped). Disable it with `FM_SAXML_NO_UPDATE_CHECK=1`.
 
 ### From source
 

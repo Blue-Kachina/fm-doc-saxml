@@ -4,12 +4,26 @@ build-backend = "hatchling.build"
 
 [project]
 name = "fm-saxml-converter"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Convert FileMaker Pro Save As XML exports into structured Markdown / JSON documentation"
+readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Matthew Leering" }]
+keywords = ["filemaker", "documentation", "saxml", "xml", "markdown"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Documentation",
+]
 dependencies = [
     "lxml>=5.0",
     "pydantic>=2.0",
@@ -26,8 +40,15 @@ dev = [
     "pytest-cov>=5.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/Blue-Kachina/fm-doc-saxml"
+Issues = "https://github.com/Blue-Kachina/fm-doc-saxml/issues"
+
 [project.scripts]
 fm-saxml = "fm_saxml.cli:main"
+
+[tool.hatch.version]
+path = "src/fm_saxml/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/fm_saxml"]

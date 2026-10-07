@@ -48,6 +48,24 @@ console = Console()
 err_console = Console(stderr=True)
 
 
+def _version_callback(value: bool) -> None:
+    if value:
+        from . import __version__
+
+        typer.echo(f"fm-saxml {__version__}")
+        raise typer.Exit()
+
+
+@app.callback()
+def _root(
+    version: Annotated[
+        bool,
+        typer.Option("--version", "-V", callback=_version_callback, is_eager=True, help="Show the version and exit"),
+    ] = False,
+) -> None:
+    """Generate structured documentation from FileMaker Pro Save As XML exports."""
+
+
 # ---------------------------------------------------------------------------
 # Defaults
 # ---------------------------------------------------------------------------
@@ -551,12 +569,9 @@ def doctor() -> None:
 
 
 def _package_version() -> str:
-    from importlib.metadata import PackageNotFoundError, version
+    from . import __version__
 
-    try:
-        return version("fm-saxml-converter")
-    except PackageNotFoundError:
-        return "unknown (not installed)"
+    return __version__
 
 
 # ---------------------------------------------------------------------------
@@ -565,6 +580,11 @@ def _package_version() -> str:
 
 def main() -> None:
     """Console entry point: friendly one-line errors instead of tracebacks."""
+    from . import __version__
+    from .utils import update_check
+    from .version import REPO_URL
+
+    notifier = update_check.start(__version__, REPO_URL)
     try:
         app()
     except KeyboardInterrupt:
@@ -575,6 +595,13 @@ def main() -> None:
         err_console.print(f"[red]Error:[/red] {exc}")
         err_console.print("[dim]Set FM_SAXML_DEBUG=1 for the full traceback.[/dim]")
         sys.exit(1)
+    finally:
+        # Runs after normal exits too (Typer exits via SystemExit).
+        if notifier and sys.exc_info()[0] in (None, SystemExit):
+            notice = notifier.message()
+            if notice:
+                err_console.print(f"[dim]{notice}[/dim]")
+                err_console.print("[dim]Set FM_SAXML_NO_UPDATE_CHECK=1 to stop these checks.[/dim]")
 
 
 if __name__ == "__main__":
