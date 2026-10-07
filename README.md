@@ -1,5 +1,11 @@
 # fm-saxml-converter
 
+[![PyPI version](https://img.shields.io/pypi/v/fm-saxml-converter)](https://pypi.org/project/fm-saxml-converter/)
+[![Python versions](https://img.shields.io/pypi/pyversions/fm-saxml-converter)](https://pypi.org/project/fm-saxml-converter/)
+[![License: MIT](https://img.shields.io/pypi/l/fm-saxml-converter)](LICENSE)
+[![CI](https://github.com/Blue-Kachina/fm-doc-saxml/actions/workflows/ci.yml/badge.svg)](https://github.com/Blue-Kachina/fm-doc-saxml/actions/workflows/ci.yml)
+[![Release](https://github.com/Blue-Kachina/fm-doc-saxml/actions/workflows/release.yml/badge.svg)](https://github.com/Blue-Kachina/fm-doc-saxml/actions/workflows/release.yml)
+
 Generate structured, navigable documentation from FileMaker Pro **Save a Copy as XML** exports.
 
 `fm-saxml-converter` turns a FileMaker `SaveAsXML` file into a normalized JSON model of the solution and a folder of cross-linked Markdown pages — one file per table, field, layout, layout object, script, relationship, custom function, and value list. The JSON model is the canonical output; Markdown is the first of several planned renderers (HTML/Vue, search index, AI corpus, diff reports).
