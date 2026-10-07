@@ -581,6 +581,7 @@ def _render_reports(model: DocumentModel, output_dir: Path, env: Environment, li
     from ...version import get_self_updated_at_display, REPO_URL, REPO_LABEL
     content = tmpl.render(
         generated_at=model.source.generated_at.strftime("%Y-%m-%d %H:%M UTC"),
+        source_file=model.source.file_name,
         xml_modified_at=xml_modified_at,
         fm_saxml_updated_at=get_self_updated_at_display(),
         fm_saxml_repo_url=REPO_URL,
