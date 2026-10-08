@@ -5,7 +5,9 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, calc_text_of, find_child, find_all_descendants, text_of, xml_path, modification_info
+from ._helpers import (
+    attr, calc_text_of, find_all_children, find_all_descendants, find_child, modification_info, text_of, xml_path,
+)
 from .chunk_lists import chunk_refs_for
 
 
@@ -166,7 +168,21 @@ def _parse_step(
         "value_list_refs": value_list_refs,
         "calculation": calc,
         "calculations": calcs,
+        "variable": _variable_name(elem),
     }
+
+
+def _variable_name(elem: etree._Element) -> str | None:
+    """Set Variable's target, from v2 ``<Parameter type="Variable"><Name value="$x"/>``."""
+    pv = find_child(elem, "ParameterValues")
+    if pv is None:
+        return None
+    for param in find_all_children(pv, "Parameter"):
+        if attr(param, "type", "Type") == "Variable":
+            name = find_child(param, "Name")
+            value = attr(name, "value", "Value") if name is not None else ""
+            return value or None
+    return None
 
 
 def _calc_entry(

@@ -708,6 +708,7 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
                 name=raw_step.get("name", ""),
                 enabled=raw_step.get("enabled", True),
                 rawText=raw_step.get("raw_text"),
+                parameters={"variable": raw_step["variable"]} if raw_step.get("variable") else {},
                 calculations=[
                     StepCalculation(position=c.get("position"), parameter=c.get("parameter"),
                                     slot=c.get("slot"), text=c["text"])

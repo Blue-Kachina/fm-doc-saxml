@@ -78,6 +78,103 @@ DEFAULT_OUT_DIR = Path(DEFAULT_OUT_DIR_NAME)
 OUTPUT_MARKER = ".fm-saxml"
 
 
+# ---------------------------------------------------------------------------
+# Scrubbing options (shared by every command that writes output)
+# ---------------------------------------------------------------------------
+
+from .scrub.policy import ScrubLevel  # noqa: E402
+
+DisableScrubbingOpt = Annotated[bool, typer.Option(
+    "--disable-scrubbing",
+    help="Don't redact credentials, internal hosts or personal data. The output will contain them as-is.",
+)]
+ScrubLevelOpt = Annotated[ScrubLevel, typer.Option(
+    "--scrub-level", case_sensitive=False,
+    help="secrets: credentials only. standard: also internal hosts, home-folder usernames, emails, card numbers. "
+         "strict: also random-looking strings and account / modified-by names.",
+)]
+ScrubKeywordOpt = Annotated[Optional[list[str]], typer.Option(
+    "--scrub-keyword", help="Extra credential keyword, e.g. 'licence' (repeatable)",
+)]
+ScrubAllowOpt = Annotated[Optional[list[str]], typer.Option(
+    "--scrub-allow", help="Regex for values that must never be redacted (repeatable)",
+)]
+
+
+# Secret salt for fingerprint placeholders (stable across runs). An environment
+# variable rather than a flag, so it doesn't land in shell history.
+SALT_ENV = "FM_SAXML_SCRUB_SALT"
+
+FailOnSecretsOpt = Annotated[bool, typer.Option(
+    "--fail-on-secrets",
+    help="Exit with status 1 if the export contains hardcoded credentials (redacted or flagged). For CI.",
+)]
+
+
+def _check_fail_on_secrets(enabled: bool, *summaries) -> None:
+    """Run after all output is written, so the report is there to explain the failure."""
+    if not enabled:
+        return
+    from .scrub.policy import CREDENTIAL_CATEGORIES
+
+    if any(s is None or not s.applied for s in summaries):
+        err_console.print("[yellow]--fail-on-secrets has no effect with --disable-scrubbing: nothing was checked.[/yellow]")
+    found = [f for s in summaries if s is not None for f in s.findings
+             if f.category in CREDENTIAL_CATEGORIES and f.action != "allowed"]
+    if found:
+        redacted = sum(1 for f in found if f.action == "redacted")
+        err_console.print(
+            f"[red]--fail-on-secrets: {redacted} hardcoded credential(s) redacted, "
+            f"{len(found) - redacted} flagged for review.[/red]"
+        )
+        raise typer.Exit(1)
+
+
+def _make_scrubber(disable: bool, level: ScrubLevel, keywords: Optional[list[str]], allow: Optional[list[str]]):
+    if disable:
+        err_console.print(
+            "[bold red]Scrubbing disabled:[/bold red] credentials, internal hosts and personal data "
+            "in the export will be written to the output as-is."
+        )
+        return None
+    from .scrub import PlaceholderRegistry, ScrubPolicy, Scrubber
+    from .scrub.placeholders import MIN_SALT_LENGTH
+
+    try:
+        policy = ScrubPolicy(level=level, extra_keywords=keywords or [], allow_patterns=allow or [])
+    except ValueError as exc:
+        _fail(str(exc))
+    salt = os.environ.get(SALT_ENV) or None
+    if salt and len(salt) < MIN_SALT_LENGTH:
+        _fail(f"{SALT_ENV} must be at least {MIN_SALT_LENGTH} characters: a short salt would let "
+              "fingerprints of weak passwords be brute-forced.")
+    return Scrubber(policy, PlaceholderRegistry(salt))
+
+
+def _guard_output(scrubber, *targets: Optional[Path]) -> None:
+    """Fail the run if any value the scrubber redacted still appears in a written file."""
+    if scrubber is None:
+        return
+    from .scrub import guard_output
+
+    values = scrubber.guard_values()
+    leaks = [leak for t in targets if t is not None for leak in guard_output(t, values)]
+    if not leaks:
+        return
+    err_console.print(
+        f"[bold red]Scrubbing guard failed:[/bold red] {len(leaks)} redacted value(s) still appear in the output."
+    )
+    for leak in leaks[:10]:
+        err_console.print(f"  {leak.path}:{leak.line}  (the value behind {leak.placeholder})")
+    if len(leaks) > 10:
+        err_console.print(f"  ... and {len(leaks) - 10} more")
+    err_console.print(
+        "[dim]These files were written but are not safe to share. This is a bug in fm-saxml: please report it. "
+        "If a match is a false positive, exclude the value with --scrub-allow.[/dim]"
+    )
+    raise typer.Exit(2)
+
+
 def _default_out_dir(input_xml: Path) -> Path:
     """Default output: ``<input name>_docs`` next to the input file."""
     return input_xml.parent / f"{input_xml.stem}_docs"
@@ -119,15 +216,21 @@ def build(
     force: Annotated[bool, typer.Option("--force", "-f", help="Overwrite the output directory without prompting")] = False,
     yes: Annotated[bool, typer.Option("--yes", "-y", help="Assume yes to all interactive prompts")] = False,
     open_when_done: Annotated[bool, typer.Option("--open", help="Open the output folder when finished")] = False,
+    disable_scrubbing: DisableScrubbingOpt = False,
+    scrub_level: ScrubLevelOpt = ScrubLevel.STANDARD,
+    scrub_keyword: ScrubKeywordOpt = None,
+    scrub_allow: ScrubAllowOpt = None,
+    fail_on_secrets: FailOnSecretsOpt = False,
 ) -> None:
     """Parse a FileMaker XML export and render Markdown documentation."""
     input_xml = _normalize_path(input_xml)
     out = _normalize_path(out) if out else _default_out_dir(input_xml)
 
     _validate_input(input_xml)
+    scrubber = _make_scrubber(disable_scrubbing, scrub_level, scrub_keyword, scrub_allow)
     _confirm_output_directory(out, force=force or yes)
 
-    model = _run_pipeline(input_xml)
+    model = _run_pipeline(input_xml, scrubber)
 
     if model_out:
         model_out = _normalize_path(model_out)
@@ -145,6 +248,7 @@ def build(
 
     (out / OUTPUT_MARKER).write_text("Generated by fm-saxml. Safe to overwrite.\n", encoding="utf-8")
 
+    _guard_output(scrubber, out, model_out)
     _print_summary(model)
     if model.warnings:
         console.print(f"[dim]See {out / 'Reports' / 'warnings.md'} for details.[/dim]")
@@ -154,6 +258,8 @@ def build(
         if unresolved:
             err_console.print(f"[red]--strict: {unresolved} unresolved references found[/red]")
             raise typer.Exit(1)
+
+    _check_fail_on_secrets(fail_on_secrets, model.scrubbing)
 
     if open_when_done:
         _open_folder(out)
@@ -167,18 +273,26 @@ def build(
 def parse(
     input_xml: Annotated[Path, typer.Argument(help="FileMaker SaveAsXML file")],
     out: Annotated[Path, typer.Option("--out", "-o", help="Output model.json path")] = Path("./build/model.json"),
+    disable_scrubbing: DisableScrubbingOpt = False,
+    scrub_level: ScrubLevelOpt = ScrubLevel.STANDARD,
+    scrub_keyword: ScrubKeywordOpt = None,
+    scrub_allow: ScrubAllowOpt = None,
+    fail_on_secrets: FailOnSecretsOpt = False,
 ) -> None:
     """Parse a FileMaker XML export and save the normalized model as JSON."""
     input_xml = _normalize_path(input_xml)
     out = _normalize_path(out)
 
     _validate_input(input_xml)
-    model = _run_pipeline(input_xml)
+    scrubber = _make_scrubber(disable_scrubbing, scrub_level, scrub_keyword, scrub_allow)
+    model = _run_pipeline(input_xml, scrubber)
 
     from .render.json.writer import write_model_json
     write_model_json(model, out)
     console.print(f"[green]Model JSON written to {out}[/green]")
+    _guard_output(scrubber, out)
     _print_summary(model)
+    _check_fail_on_secrets(fail_on_secrets, model.scrubbing)
 
 
 # ---------------------------------------------------------------------------
@@ -192,6 +306,11 @@ def render(
     out: Annotated[Path, typer.Option("--out", "-o", help="Output directory (defaults to ./saxml2doc)")] = DEFAULT_OUT_DIR,
     force: Annotated[bool, typer.Option("--force", "-f", help="Overwrite the output directory without prompting")] = False,
     yes: Annotated[bool, typer.Option("--yes", "-y", help="Assume yes to all interactive prompts")] = False,
+    disable_scrubbing: DisableScrubbingOpt = False,
+    scrub_level: ScrubLevelOpt = ScrubLevel.STANDARD,
+    scrub_keyword: ScrubKeywordOpt = None,
+    scrub_allow: ScrubAllowOpt = None,
+    fail_on_secrets: FailOnSecretsOpt = False,
 ) -> None:
     """Render an existing model.json into documentation."""
     model_json = _normalize_path(model_json)
@@ -200,21 +319,18 @@ def render(
     if not model_json.exists():
         err_console.print(f"[red]Model file not found: {model_json}[/red]")
         raise typer.Exit(1)
-
-    _confirm_output_directory(out, force=force or yes)
-
-    import orjson
-    from .model.document_model import DocumentModel
-
-    raw = orjson.loads(model_json.read_bytes())
-    model = DocumentModel.model_validate(raw)
-
-    if format.lower() == "markdown":
-        _render_markdown_with_progress(model, out)
-        console.print(f"[green]Markdown documentation written to {out}[/green]")
-    else:
+    if format.lower() != "markdown":
         err_console.print(f"[red]Unknown format '{format}'. Supported: markdown[/red]")
         raise typer.Exit(1)
+
+    scrubber = _make_scrubber(disable_scrubbing, scrub_level, scrub_keyword, scrub_allow)
+    _confirm_output_directory(out, force=force or yes)
+
+    model = _load_model_json(model_json, scrubber)
+    _render_markdown_with_progress(model, out)
+    console.print(f"[green]Markdown documentation written to {out}[/green]")
+    _guard_output(scrubber, out)
+    _check_fail_on_secrets(fail_on_secrets, model.scrubbing)
 
 
 # ---------------------------------------------------------------------------
@@ -228,7 +344,7 @@ def inspect(
     """Parse a FileMaker XML export and print entity counts and warnings."""
     input_xml = _normalize_path(input_xml)
     _validate_input(input_xml)
-    model = _run_pipeline(input_xml)
+    model = _run_pipeline(input_xml, _make_scrubber(False, ScrubLevel.STANDARD, None, None))
     _print_summary(model, verbose=True)
 
 
@@ -243,7 +359,7 @@ def validate(
     """Parse and validate a FileMaker XML export, reporting any issues."""
     input_xml = _normalize_path(input_xml)
     _validate_input(input_xml)
-    model = _run_pipeline(input_xml)
+    model = _run_pipeline(input_xml, _make_scrubber(False, ScrubLevel.STANDARD, None, None))
 
     error_warnings = [w for w in model.warnings if w.code not in ("UNUSED_FIELD_CANDIDATE",)]
     if error_warnings:
@@ -265,6 +381,11 @@ def diff(
     new_input: Annotated[Path, typer.Argument(help="Comparison: a SaveAsXML file or a previously-saved model.json")],
     out: Annotated[Optional[Path], typer.Option("--out", "-o", help="Write a Markdown diff report to this path")] = None,
     strict: Annotated[bool, typer.Option("--strict", help="Exit non-zero if any difference is found")] = False,
+    disable_scrubbing: DisableScrubbingOpt = False,
+    scrub_level: ScrubLevelOpt = ScrubLevel.STANDARD,
+    scrub_keyword: ScrubKeywordOpt = None,
+    scrub_allow: ScrubAllowOpt = None,
+    fail_on_secrets: FailOnSecretsOpt = False,
 ) -> None:
     """Compare two FileMaker exports and report what changed between them."""
     old_input = _normalize_path(old_input)
@@ -272,8 +393,14 @@ def diff(
     _validate_input(old_input)
     _validate_input(new_input)
 
-    old_model = _load_model_for_diff(old_input, label="baseline")
-    new_model = _load_model_for_diff(new_input, label="comparison")
+    # One scrubber for both sides: a value present in both gets the same
+    # placeholder, so an unchanged secret doesn't show as a change and a
+    # changed one shows as a different placeholder.
+    scrubber = _make_scrubber(disable_scrubbing, scrub_level, scrub_keyword, scrub_allow)
+    old_model = _load_model_for_diff(old_input, label="baseline", scrubber=scrubber)
+    new_model = _load_model_for_diff(new_input, label="comparison", scrubber=scrubber)
+    if scrubber is not None:
+        _warn_incomparable_placeholders(old_input, old_model, new_input, new_model)
 
     from .analyze.diff import compute_diff
     result = compute_diff(old_model, new_model)
@@ -285,20 +412,118 @@ def diff(
         from .render.markdown.diff_renderer import render_diff_markdown
         render_diff_markdown(result, out)
         console.print(f"[green]Diff report written to {out}[/green]")
+        _guard_output(scrubber, out)
+
+    _check_fail_on_secrets(fail_on_secrets, old_model.scrubbing, new_model.scrubbing)
 
     if strict and result.has_changes:
         err_console.print("[red]--strict: differences were found[/red]")
         raise typer.Exit(1)
 
 
-def _load_model_for_diff(path: Path, *, label: str):
+def _load_model_for_diff(path: Path, *, label: str, scrubber=None):
     if path.suffix.lower() == ".json":
-        import orjson
-        from .model.document_model import DocumentModel
         console.print(f"[dim]Loading {label} model from {path}...[/dim]")
-        raw = orjson.loads(path.read_bytes())
-        return DocumentModel.model_validate(raw)
-    return _run_pipeline(path)
+        return _load_model_json(path, scrubber)
+    return _run_pipeline(path, scrubber)
+
+
+@app.command()
+def scrub(
+    input_xml: Annotated[Path, typer.Argument(help="FileMaker Save a Copy as XML export to scrub")],
+    out: Annotated[Optional[Path], typer.Option("--out", "-o", help="Scrubbed copy (defaults to <input name>.scrubbed.xml next to the input)")] = None,
+    report: Annotated[Optional[Path], typer.Option("--report", help="Also write a Markdown redaction report here")] = None,
+    force: Annotated[bool, typer.Option("--force", "-f", help="Overwrite the output file without prompting")] = False,
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Assume yes to all interactive prompts")] = False,
+    scrub_level: ScrubLevelOpt = ScrubLevel.STANDARD,
+    scrub_keyword: ScrubKeywordOpt = None,
+    scrub_allow: ScrubAllowOpt = None,
+    fail_on_secrets: FailOnSecretsOpt = False,
+) -> None:
+    """Write a copy of a Save a Copy as XML export with credentials and personal data redacted.
+
+    Use it to share the raw XML itself (with an AI tool, another developer, a bug report).
+    Every copy of each value is replaced: the calculation, its tokenized ChunkList and the
+    rendered step text in DDR_INFO. Content hashes of changed elements are removed.
+    """
+    from .scrub.xml_writer import UnsupportedFormat, scrub_xml_file
+
+    input_xml = _normalize_path(input_xml)
+    _validate_input(input_xml)
+    out = _normalize_path(out) if out else input_xml.with_name(f"{input_xml.stem}.scrubbed{input_xml.suffix}")
+    if out.resolve() == input_xml.resolve():
+        _fail("The output would overwrite the input export.", "Choose another path with --out.")
+    if out.exists() and not (force or yes):
+        if not typer.confirm(f"{out} already exists. Overwrite it?", default=False):
+            console.print("[yellow]Cancelled. No files were written.[/yellow]")
+            raise typer.Exit(0)
+
+    scrubber = _make_scrubber(False, scrub_level, scrub_keyword, scrub_allow)
+    with console.status(f"Scrubbing {input_xml.name}"):
+        try:
+            result = scrub_xml_file(input_xml, out, scrubber)
+        except UnsupportedFormat as exc:
+            _fail(f"'{input_xml.name}': {exc}", EXPORT_HINT)
+        except ValueError as exc:
+            _fail(f"'{input_xml.name}' is {exc}.", EXPORT_HINT)
+
+    console.print(
+        f"[green]Scrubbed copy written to {out}[/green] "
+        f"[dim]({result.nodes_changed} element(s) changed, {result.hashes_removed} content hash(es) removed)[/dim]"
+    )
+    if result.reformatted:
+        console.print("[yellow]Note: some edits couldn't be patched into the original text exactly, so the file was "
+                      "re-serialized. It's equivalent XML, but formatting differs from the input, so a plain "
+                      "diff will show more than the redactions.[/yellow]")
+    if report:
+        report = _normalize_path(report)
+        from .render.markdown.renderer import _make_jinja_env
+        from .utils.file_writer import write_text
+
+        write_text(report, _make_jinja_env().get_template("reports/redactions.md.j2").render(scrubbing=result.summary))
+        console.print(f"[dim]Redaction report written to {report}[/dim]")
+
+    if result.leaks:
+        # Same failure as the build guard, for the file we just wrote.
+        _guard_output(scrubber, out)
+    _guard_output(scrubber, report)
+    _print_scrubbing(result.summary, report=str(report) if report else "")
+    _check_fail_on_secrets(fail_on_secrets, result.summary)
+
+
+def _warn_incomparable_placeholders(old_path: Path, old_model, new_path: Path, new_model) -> None:
+    """A model.json scrubbed in an earlier run numbered its placeholders on its own,
+    so [REDACTED:password#1] on each side may be different values (or the same one)."""
+    if old_path.suffix.lower() != ".json" and new_path.suffix.lower() != ".json":
+        return  # both scrubbed just now, by one shared registry
+    a, b = old_model.scrubbing, new_model.scrubbing
+    same_salt = (a and b and a.placeholder_style == b.placeholder_style == "fingerprint"
+                 and a.salt_id and a.salt_id == b.salt_id)
+    if not same_salt:
+        console.print(
+            "[yellow]Note: at least one side is a saved model.json, so redacted values on the two sides "
+            f"can't be compared: a changed secret may show as unchanged, or the reverse. Set {SALT_ENV} "
+            "to the same private value for every run to get comparable fingerprint placeholders.[/yellow]"
+        )
+
+
+def _load_model_json(path: Path, scrubber):
+    """Load a saved model, scrubbing it first if it was saved unscrubbed or by an older engine."""
+    import orjson
+    from .model.document_model import DocumentModel
+
+    data = orjson.loads(path.read_bytes())
+    previous = data.get("scrubbing") or {}
+    if scrubber is not None:
+        from .scrub import ENGINE_VERSION
+
+        if not previous.get("applied") or previous.get("engineVersion") != ENGINE_VERSION:
+            reason = "was saved without scrubbing" if not previous.get("applied") else "was scrubbed by an older version"
+            console.print(f"[dim]{path.name} {reason}; scrubbing it now.[/dim]")
+            scrubber.scrub_model_data(data)
+            if previous.get("applied"):
+                data["scrubbing"]["findings"] = previous.get("findings", []) + data["scrubbing"]["findings"]
+    return DocumentModel.model_validate(data)
 
 
 def _print_diff_summary(result) -> None:
@@ -428,16 +653,18 @@ def _wipe_directory(out_dir: Path) -> None:
                 raise typer.Exit(1)
 
 
-def _run_pipeline(input_xml: Path):
+def _run_pipeline(input_xml: Path, scrubber=None):
+    """Parse → scrub → normalize → resolve → analyze. ``scrubber=None`` means scrubbing is disabled."""
     from .parser.saxml_reader import parse_savexml
     from .normalize.normalize import normalize
     from .normalize.references import resolve_references
     from .analyze.backlinks import generate_backlinks
     from .analyze.warnings import generate_warnings
+    from .model.document_model import ScrubSummary
     from .model.validation import validate_model
 
     with _progress() as progress:
-        task = progress.add_task(f"Parsing {input_xml.name}", total=6)
+        task = progress.add_task(f"Parsing {input_xml.name}", total=7)
         raw = parse_savexml(input_xml)
 
         xml_errors = [w for w in raw.parse_warnings if w.startswith("XML parse error")]
@@ -446,8 +673,19 @@ def _run_pipeline(input_xml: Path):
         if not (raw.tables or raw.scripts or raw.layouts or raw.fields):
             _fail(f"'{input_xml.name}' doesn't contain any FileMaker tables, scripts or layouts.", EXPORT_HINT)
 
+        # Scrub the raw records before normalization copies their strings into
+        # entities, references and warnings.
+        progress.update(task, advance=1, description="Scrubbing secrets")
+        source_file = str(input_xml)
+        if scrubber is not None:
+            source_file = scrubber.scrub_text(source_file, "Source file")
+            scrub_summary = scrubber.scrub_raw(raw)
+        else:
+            scrub_summary = ScrubSummary(applied=False)
+
         progress.update(task, advance=1, description="Normalizing")
-        model = normalize(raw, source_file=str(input_xml), source_path=input_xml)
+        model = normalize(raw, source_file=source_file, source_path=input_xml)
+        model.scrubbing = scrub_summary
 
         progress.update(task, advance=1, description="Resolving references")
         model = resolve_references(model)
@@ -534,12 +772,35 @@ def _print_summary(model, verbose: bool = False) -> None:
     console.print(f"[dim]References: {len(model.references)} total, {unresolved} unresolved, {external} external[/dim]")
     console.print(f"[dim]Warnings: {len(model.warnings)}[/dim]")
 
+    _print_scrubbing(model.scrubbing)
+
     if verbose and model.warnings:
         console.print("\n[yellow]Warnings:[/yellow]")
         from collections import Counter
         by_code = Counter(w.code for w in model.warnings)
         for code, count in by_code.most_common():
             console.print(f"  {code}: {count}")
+
+
+def _print_scrubbing(scrubbing, report: str = "Reports/redactions.md") -> None:
+    if scrubbing is not None and scrubbing.applied:
+        if scrubbing.redactions:
+            by_category = ", ".join(f"{n} {cat}" for cat, n in scrubbing.counts.items())
+            console.print(
+                f"[cyan]Scrubbed {scrubbing.distinct_values} value(s) in {len(scrubbing.redactions)} place(s) "
+                f"({by_category}).{f' See {report}.' if report else ''}[/cyan]"
+            )
+        elif not scrubbing.flagged:
+            console.print("[dim]Scrubbing: nothing needed redacting.[/dim]")
+        if scrubbing.flagged:
+            console.print(
+                f"[yellow]{len(scrubbing.flagged)} possible credential(s) flagged for review "
+                f"(left unchanged).{f' See {report}.' if report else ''}[/yellow]"
+            )
+        if scrubbing.allowed:
+            console.print(f"[dim]{len(scrubbing.allowed)} item(s) marked fm-saxml:allow were left as written.[/dim]")
+    elif scrubbing is not None:
+        console.print("[bold yellow]Scrubbing was disabled: output may contain credentials and personal data.[/bold yellow]")
 
 
 # ---------------------------------------------------------------------------
@@ -578,12 +839,27 @@ def _package_version() -> str:
 # Entry point
 # ---------------------------------------------------------------------------
 
+def _tolerate_unencodable_output() -> None:
+    """Print '?' instead of crashing when the output encoding can't represent a character.
+
+    On Windows, NUL (``> NUL``, ``subprocess.DEVNULL``) reports itself as a terminal with a
+    cp1252 encoding, so Rich animates its spinner and the braille frames raised
+    UnicodeEncodeError, failing the whole command in CI or scripted runs.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError):  # not a TextIOWrapper (e.g. replaced by a test harness)
+            pass
+
+
 def main() -> None:
     """Console entry point: friendly one-line errors instead of tracebacks."""
     from . import __version__
     from .utils import update_check
     from .version import REPO_URL
 
+    _tolerate_unencodable_output()
     notifier = update_check.start(__version__, REPO_URL)
     try:
         app()

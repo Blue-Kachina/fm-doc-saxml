@@ -28,7 +28,7 @@ from .entities import (
 from .references import ReferenceRecord
 
 
-SCHEMA_VERSION = "0.1.0"
+SCHEMA_VERSION = "0.2.0"
 
 
 class SourceInfo(BaseModel):
@@ -101,6 +101,50 @@ class Warning(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+class ScrubFinding(BaseModel):
+    """One redacted occurrence, or one flagged for review. Holds the placeholder, never the value."""
+
+    category: str
+    detector: str
+    location: str = ""
+    placeholder: str = ""
+    preview: str = ""
+    action: str = "redacted"  # "redacted" | "flagged" (left as-is, needs a human look) | "allowed" (fm-saxml:allow)
+    note: str = ""
+
+
+class ScrubSummary(BaseModel):
+    """What scrubbing did to this model. ``applied=False`` means the output is unredacted."""
+
+    applied: bool = False
+    level: Optional[str] = None
+    engine_version: Optional[str] = Field(None, alias="engineVersion")
+    # "numbered" (#1, #2: comparable within one run) or "fingerprint" (keyed hash:
+    # comparable across runs that share a salt, identified by salt_id).
+    placeholder_style: str = Field("numbered", alias="placeholderStyle")
+    salt_id: Optional[str] = Field(None, alias="saltId")
+    counts: dict[str, int] = {}  # distinct values per category
+    findings: list[ScrubFinding] = []
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    @property
+    def redactions(self) -> list[ScrubFinding]:
+        return [f for f in self.findings if f.action == "redacted"]
+
+    @property
+    def flagged(self) -> list[ScrubFinding]:
+        return [f for f in self.findings if f.action == "flagged"]
+
+    @property
+    def allowed(self) -> list[ScrubFinding]:
+        return [f for f in self.findings if f.action == "allowed"]
+
+    @property
+    def distinct_values(self) -> int:
+        return len({f.placeholder for f in self.redactions})
+
+
 class DocumentModel(BaseModel):
     schema_version: str = Field(SCHEMA_VERSION, alias="schemaVersion")
     source: SourceInfo
@@ -110,6 +154,7 @@ class DocumentModel(BaseModel):
     references: list[ReferenceRecord] = []
     backlinks: dict[str, list[dict]] = {}
     warnings: list[Warning] = []
+    scrubbing: Optional[ScrubSummary] = None
 
     model_config = ConfigDict(populate_by_name=True)
 

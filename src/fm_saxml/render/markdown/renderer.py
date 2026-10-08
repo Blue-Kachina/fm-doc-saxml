@@ -593,8 +593,14 @@ def _render_reports(model: DocumentModel, output_dir: Path, env: Environment, li
         unresolved_references=len(unresolved),
         external_references=sum(1 for r in model.references if r.confidence == "external"),
         warning_counts=dict(warning_counts),
+        scrubbing=model.scrubbing,
     )
     write_text(reports_dir / "summary.md", content)
+
+    # Redactions
+    if model.scrubbing is not None:
+        tmpl = env.get_template("reports/redactions.md.j2")
+        write_text(reports_dir / "redactions.md", tmpl.render(scrubbing=model.scrubbing))
 
     # Warnings
     tmpl = env.get_template("reports/warnings.md.j2")

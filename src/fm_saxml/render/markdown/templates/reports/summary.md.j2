@@ -48,3 +48,15 @@ title: Summary Report
 {% endfor %}
 
 _See [warnings.md](warnings.md) for full list._
+{% if scrubbing is not none %}
+
+## Scrubbing
+
+{% if scrubbing.applied %}
+{{ scrubbing.distinct_values }} distinct value(s) redacted in {{ scrubbing.redactions | length }} place(s), {{ scrubbing.flagged | length }} item(s) flagged for review (level `{{ scrubbing.level }}`).
+
+_See [redactions.md](redactions.md) for details._
+{% else %}
+**Scrubbing was disabled.** This documentation may contain credentials and personal data. See [redactions.md](redactions.md).
+{% endif %}
+{% endif %}

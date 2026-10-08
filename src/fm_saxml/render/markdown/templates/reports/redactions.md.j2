@@ -1,0 +1,57 @@
+---
+title: Redactions
+---
+
+# Redactions
+
+{% if not scrubbing.applied %}
+> **Scrubbing was disabled for this run.** Credentials, tokens, internal hostnames and personal data in the export were copied into this documentation as-is. Don't share it.
+{% else %}
+_{{ scrubbing.distinct_values }} distinct value(s) redacted in {{ scrubbing.redactions | length }} place(s); {{ scrubbing.flagged | length }} item(s) need review. Scrub level: `{{ scrubbing.level }}`._
+
+Each redacted value is replaced by a numbered placeholder. The same value gets the same placeholder everywhere, so `[REDACTED:api_key#1]` in two scripts means both use the same key. Values themselves are never shown here.
+
+This is a heuristic scrubber, not a guarantee. Review the documentation before sharing it.
+
+{% if scrubbing.flagged %}
+## Needs review
+
+These were left unchanged: the evidence wasn't strong enough to redact, or there was nothing in this file to redact.
+
+| Category | Detector | Location | Note | Preview |
+|---|---|---|---|---|
+{% for f in scrubbing.flagged %}
+| {{ f.category }} | {{ f.detector }} | {{ f.location | cell }} | {{ f.note | cell }} | {% if f.preview %}`{{ f.preview | replace("`", "'") | cell }}`{% endif %} |
+{% endfor %}
+
+{% endif %}
+{% if scrubbing.allowed %}
+## Allowed
+
+Marked `fm-saxml:allow` in a comment, so left exactly as written.
+
+| Location | Note |
+|---|---|
+{% for f in scrubbing.allowed %}
+| {{ f.location | cell }} | {{ f.note | cell }} |
+{% endfor %}
+
+{% endif %}
+{% if scrubbing.counts %}
+## Redacted
+
+| Category | Distinct values |
+|---|---:|
+{% for category, count in scrubbing.counts.items() %}
+| {{ category }} | {{ count }} |
+{% endfor %}
+
+| Placeholder | Category | Detector | Location | Preview |
+|---|---|---|---|---|
+{% for f in scrubbing.redactions %}
+| `{{ f.placeholder }}` | {{ f.category }} | {{ f.detector }} | {{ f.location | cell }} | `{{ f.preview | replace("`", "'") | cell }}` |
+{% endfor %}
+{% elif not scrubbing.flagged and not scrubbing.allowed %}
+_Nothing needed redacting._
+{% endif %}
+{% endif %}
