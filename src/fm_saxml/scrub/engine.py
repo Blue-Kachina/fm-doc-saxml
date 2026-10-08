@@ -71,11 +71,15 @@ class Scrubber:
     # Public, single-string API
     # ------------------------------------------------------------------
 
+    # A one-off string gets no second pass of its own, so every other occurrence of a
+    # value found in it is replaced right away: in C:\Users\jsmith\…\pytest-of-jsmith\
+    # the home-folder rule only sees the first "jsmith".
+
     def scrub_text(self, text: str, location: str = "") -> str:
-        return self._scrub_text(text, location, None)
+        return self.substitute(self._scrub_text(text, location, None))
 
     def scrub_calc(self, text: str, location: str = "") -> str:
-        return self._scrub_calc(text, location, None)
+        return self.substitute_calc(self._scrub_calc(text, location, None))
 
     # ------------------------------------------------------------------
     # Whole-model runs

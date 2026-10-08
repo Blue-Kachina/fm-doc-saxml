@@ -145,3 +145,12 @@ def test_guard_values_exclude_ordinary_words():
     values = s.guard_values()
     assert "password" not in values  # too ordinary to hunt for everywhere
     assert "Xy7#kL9!m" in values
+
+
+@pytest.mark.parametrize("path,user", [
+    (r"C:\Users\cirunnerx\AppData\Local\Temp\pytest-of-cirunnerx\App.xml", "cirunnerx"),
+    ("/home/cirunnerx/tmp/pytest-of-cirunnerx/App.xml", "cirunnerx"),
+    ("/Users/jsmithy/Exports/jsmithy-backups/App.xml", "jsmithy"),
+])
+def test_every_occurrence_of_a_username_in_one_string(path, user):
+    assert user not in Scrubber().scrub_text(path)

@@ -168,3 +168,36 @@ def test_report_step_numbers_match_the_script_page(tmp_path):
     page = next(out.joinpath("Scripts").rglob("Login.md")).read_text(encoding="utf-8")
     row = next(line for line in page.splitlines() if line.startswith(f"| {m.group(1)} |"))
     assert "Set Variable" in row and "[EMAIL#" in row
+
+
+def test_username_repeated_in_the_input_path_is_scrubbed_everywhere(tmp_path, monkeypatch):
+    # CI runners' temp dirs repeat the account name: C:\Users\runneradmin\...\pytest-of-runneradmin\.
+    # Locally "Admin"-style names are exempt as too common, which hid this; chase every name here.
+    from fm_saxml.scrub import placeholders
+
+    monkeypatch.setattr(placeholders, "_COMMON_NAMES", set())
+    xml = _secret_xml(tmp_path)
+    out, model = tmp_path / "docs", tmp_path / "model.json"
+    result = runner.invoke(app, ["build", str(xml), "-o", str(out), "--model-out", str(model)])
+    assert result.exit_code == 0, result.output
+
+
+def test_guard_message_masks_the_value_in_file_paths(tmp_path, capsys):
+    # A page named after a script named after a password: the leak's own path holds the value.
+    import pytest
+    import typer
+
+    from fm_saxml.cli import _guard_output
+    from fm_saxml.scrub import Scrubber
+
+    scrubber = Scrubber()
+    scrubber.scrub_calc('$password = "Xy7kL9mQ2z"')
+    page = tmp_path / "Xy7kL9mQ2z.md"
+    page.write_text("# Xy7kL9mQ2z\n", encoding="utf-8")
+    with pytest.raises(typer.Exit) as exc:
+        _guard_output(scrubber, page)
+    assert exc.value.exit_code == 2
+    err = capsys.readouterr().err
+    assert "[REDACTED:password#1].md" in "".join(err.split())
+    # Rich wraps long paths at the console width, which can split the value and hide it.
+    assert "Xy7kL9mQ2z" not in "".join(err.split())

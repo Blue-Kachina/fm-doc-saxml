@@ -165,7 +165,8 @@ def _guard_output(scrubber, *targets: Optional[Path]) -> None:
         f"[bold red]Scrubbing guard failed:[/bold red] {len(leaks)} redacted value(s) still appear in the output."
     )
     for leak in leaks[:10]:
-        err_console.print(f"  {leak.path}:{leak.line}  (the value behind {leak.placeholder})")
+        # The path itself can hold the value (a page named after a script named after a password).
+        err_console.print(f"  {scrubber.substitute(str(leak.path))}:{leak.line}  (the value behind {leak.placeholder})")
     if len(leaks) > 10:
         err_console.print(f"  ... and {len(leaks) - 10} more")
     err_console.print(
