@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<!--
+  Crepe's theme/common/style.css can't be linked directly: its partials @import bare
+  npm specifiers ('@milkdown/kit/prose/...') that only a bundler resolves. Link the
+  partials a read-only viewer needs, plus those bare imports at their real CDN paths.
+-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prosemirror-view@1.41.3/style/prosemirror.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prosemirror-tables@1.8.1/style/tables.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@milkdown/crepe@7.22.1/lib/theme/common/reset.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@milkdown/crepe@7.22.1/lib/theme/common/code-mirror.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@milkdown/crepe@7.22.1/lib/theme/common/list-item.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@milkdown/crepe@7.22.1/lib/theme/common/table.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@milkdown/crepe@7.22.1/lib/theme/nord/style.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@milkdown/crepe@7.22.1/lib/theme/nord-dark/style.css" media="(prefers-color-scheme: dark)">
+<style>
+/* ---- Viewer chrome ---------------------------------------------------- */
+:root {
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --border: #e1e4ea;
+    --text: #1f2933;
+    --muted: #66717f;
+    --accent: #3b6ea8;
+    --active-bg: #e6eef8;
+    --sidebar-w: 300px;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #16191e;
+        --panel: #1d2128;
+        --border: #2d333c;
+        --text: #dde3ea;
+        --muted: #8b95a3;
+        --accent: #88b4e7;
+        --active-bg: #263243;
+    }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    overflow: hidden;
+    grid-template-areas: "top top" "side main";
+}
+header.top {
+    grid-area: top;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+}
+header.top h1 { font-size: 15px; margin: 0; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+header.top h1 a { color: inherit; text-decoration: none; }
+header.top .gen { color: var(--muted); font-size: 12px; white-space: nowrap; }
+#menu-btn { display: none; }
+#menu-btn, header.top input {
+    font: inherit;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 10px;
+}
+header.top input { width: min(320px, 40vw); min-width: 110px; margin-left: auto; flex-shrink: 0; }
+
+nav.side {
+    grid-area: side;
+    overflow: auto;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 8px 6px 24px;
+}
+nav.side details { margin-left: 10px; }
+nav.side > ul > li > details { margin-left: 0; }
+nav.side ul { list-style: none; margin: 0; padding: 0 0 0 10px; }
+nav.side > ul { padding-left: 0; }
+nav.side summary { cursor: pointer; padding: 2px 4px; border-radius: 4px; color: var(--muted); }
+nav.side summary a { color: var(--text); font-weight: 600; }
+nav.side a {
+    display: inline-block;
+    max-width: 100%;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--text);
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+}
+nav.side li > a { display: block; }
+nav.side a:hover { background: var(--active-bg); }
+nav.side a.active { background: var(--active-bg); color: var(--accent); font-weight: 600; }
+nav.side .count { color: var(--muted); font-size: 12px; margin-left: 4px; }
+nav.side .results small { display: block; color: var(--muted); font-size: 11px; padding: 0 6px 4px; }
+
+main {
+    grid-area: main;
+    overflow: auto;
+    min-width: 0;
+}
+.page-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 40px 0;
+    color: var(--muted);
+    font-size: 12px;
+}
+.page-head .crumbs a { color: var(--muted); }
+.page-head .badge {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 1px 8px;
+}
+.page-head .src { margin-left: auto; color: var(--muted); }
+#content { max-width: 1200px; }
+.message { padding: 40px; color: var(--muted); }
+.message code { color: var(--text); }
+
+@media (max-width: 800px) {
+    body { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "main"; }
+    #menu-btn { display: inline-block; }
+    header.top .gen { display: none; }
+    nav.side {
+        display: none;
+        position: fixed;
+        inset: 49px 0 0 0;
+        z-index: 10;
+    }
+    body.menu-open nav.side { display: block; }
+    .page-head { padding-left: 16px; padding-right: 16px; }
+}
+
+/* ---- Crepe overrides: compact type scale, tinted table headers, zebra rows ---- */
+.milkdown .ProseMirror { padding: 16px 40px 32px; }
+@media (max-width: 800px) { .milkdown .ProseMirror { padding: 12px 16px 24px; } }
+.milkdown .milkdown-block-handle { display: none; }
+/* Viewer-only: wide tables scroll inside the page instead of widening it. */
+.milkdown .milkdown-table-block { overflow-x: auto; }
+.milkdown {
+    --crepe-base-font-size: 14px;
+    --crepe-color-inline-code: var(--crepe-color-on-surface-variant);
+    background: transparent;
+}
+.milkdown .ProseMirror h1 { font-size: 1.5em; font-weight: 700; margin-top: 16px; }
+.milkdown .ProseMirror h2 { font-size: 1.1875em; font-weight: 600; margin-top: 14px; }
+.milkdown .ProseMirror h3 { font-size: 1.0625em; font-weight: 600; margin-top: 12px; }
+.milkdown .ProseMirror h4 { font-size: 1em; font-weight: 600; margin-top: 12px; }
+.milkdown .ProseMirror h5 {
+    font-size: 0.875em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--crepe-color-on-surface-variant); margin-top: 12px;
+}
+.milkdown .ProseMirror h6 {
+    font-size: 0.8125em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--crepe-color-outline); margin-top: 12px;
+}
+.milkdown .milkdown-table-block th { background: var(--crepe-color-surface-low); }
+.milkdown .milkdown-table-block tr:nth-child(even) td {
+    background: color-mix(in srgb, var(--crepe-color-surface-low), transparent 60%);
+}
+.milkdown .ProseMirror blockquote blockquote::before { background: var(--crepe-color-primary); opacity: 0.55; }
+.milkdown .ProseMirror blockquote blockquote blockquote::before { background: var(--crepe-color-primary); opacity: 1; width: 5px; }
+/* Viewer-only: read-only CodeMirror blocks shouldn't show an editing cursor line or dimmed text. */
+.milkdown .milkdown-code-block .cm-activeLine,
+.milkdown .milkdown-code-block .cm-activeLineGutter { background: transparent; }
+.milkdown .milkdown-code-block .cm-content { color: var(--crepe-color-on-background); }
+/* Viewer-only: links are navigation here, so make them look clickable. */
+.milkdown .ProseMirror a { cursor: pointer; }
+</style>
+<script>
+// Page scripts (_viewer/pages/*.js) and the manifest call into this registry.
+// Classic <script src> is used because file:// blocks fetch() and local ES modules.
+window.FMDocs = {
+    data: null,
+    pages: {},
+    manifest(m) { this.data = m; },
+    page(path, meta, md) { this.pages[path] = { meta, md }; },
+};
+</script>
+<script src="_viewer/manifest.js"></script>
+</head>
+<body>
+<header class="top">
+    <button id="menu-btn" type="button" aria-label="Toggle navigation">&#9776;</button>
+    <h1><a href="#/index.md" id="site-title">{{TITLE}}</a></h1>
+    <span class="gen" id="gen"></span>
+    <input id="search" type="search" placeholder="Filter pages…" autocomplete="off" spellcheck="false">
+</header>
+<nav class="side" id="side" aria-label="Pages"></nav>
+<main id="main">
+    <div class="page-head" id="page-head"></div>
+    <div id="content"><div class="message">Loading viewer…</div></div>
+</main>
+<script type="module">
+// deps pin: npm's codemirror@6.65.7 is a mis-published v5 build that ^6.0.1 would pick up.
+const CREPE_URL = 'https://esm.sh/@milkdown/crepe@7.22.1?deps=codemirror@6.0.2';
+
+const $ = (id) => document.getElementById(id);
+const content = $('content');
+const data = window.FMDocs.data;
+
+function showMessage(html) {
+    content.innerHTML = `<div class="message">${html}</div>`;
+}
+function esc(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+if (!data) {
+    showMessage('Could not load <code>_viewer/manifest.js</code>. Keep <code>index.html</code> next to its <code>_viewer</code> folder.');
+    throw new Error('manifest missing');
+}
+
+let Crepe;
+try {
+    ({ Crepe } = await import(CREPE_URL));
+} catch (err) {
+    showMessage(`Could not load the Markdown renderer from the CDN (<code>${esc(CREPE_URL)}</code>).<br>`
+        + 'This viewer needs an internet connection. The <code>.md</code> files in this folder can still be opened directly.'
+        + `<br><small>${esc(err && err.message)}</small>`);
+    throw err;
+}
+
+// ---- Paths & routing -------------------------------------------------------
+const byPath = new Map(data.pages.map((p) => [p.p, p]));
+const encodePath = (p) => p.split('/').map(encodeURIComponent).join('/');
+const decodePath = (p) => p.split('/').map(decodeURIComponent).join('/');
+const hrefFor = (p) => '#/' + encodePath(p);
+
+function currentPath() {
+    const h = location.hash.replace(/^#\/?/, '');
+    if (!h) return 'index.md';
+    try { return decodePath(h); } catch { return h; }
+}
+
+// Resolve a relative .md link (as written in the markdown) against the page it appears on.
+function resolveLink(fromPath, href) {
+    const url = new URL(href, 'https://docs.invalid/' + encodePath(fromPath));
+    return decodePath(url.pathname.replace(/^\//, ''));
+}
+
+// ---- Sidebar ---------------------------------------------------------------
+function buildTree() {
+    const root = { dirs: new Map(), files: [] };
+    for (const page of data.pages) {
+        const parts = page.p.split('/');
+        let node = root;
+        let prefix = '';
+        for (const dir of parts.slice(0, -1)) {
+            prefix += dir + '/';
+            if (!node.dirs.has(dir)) node.dirs.set(dir, { name: dir, prefix, dirs: new Map(), files: [] });
+            node = node.dirs.get(dir);
+        }
+        node.files.push(page);
+    }
+    return root;
+}
+
+function countPages(node) {
+    let n = node.files.filter((f) => !f.p.endsWith('/index.md')).length;
+    for (const d of node.dirs.values()) n += countPages(d);
+    return n;
+}
+
+function renderDir(node, label, landing) {
+    // A folder's heading links to its index.md, or to the page the root index links it to (e.g. Reports/summary.md).
+    const index = node.files.find((f) => f.p === node.prefix + 'index.md')
+        || node.files.find((f) => f.p === landing);
+    const files = node.files.filter((f) => f !== index).sort((a, b) => a.t.localeCompare(b.t));
+    const dirs = [...node.dirs.values()].sort((a, b) => a.name.localeCompare(b.name));
+    const head = index
+        ? `<a href="${hrefFor(index.p)}" data-path="${esc(index.p)}">${esc(label)}</a>`
+        : esc(label);
+    let html = `<details data-prefix="${esc(node.prefix)}"><summary>${head}<span class="count">${countPages(node)}</span></summary><ul>`;
+    for (const d of dirs) html += `<li>${renderDir(d, d.name)}</li>`;
+    for (const f of files) html += `<li><a href="${hrefFor(f.p)}" data-path="${esc(f.p)}" title="${esc(f.p)}">${esc(f.t)}</a></li>`;
+    return html + '</ul></details>';
+}
+
+function renderSidebar() {
+    const tree = buildTree();
+    const sections = new Map((data.sections || []).map((s) => [s.dir, s]));
+    const order = [...sections.keys()];
+    const dirs = [...tree.dirs.values()].sort((a, b) => {
+        const ia = order.indexOf(a.name), ib = order.indexOf(b.name);
+        return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) || a.name.localeCompare(b.name);
+    });
+    let html = '<ul class="tree">';
+    for (const f of tree.files) {
+        html += `<li><a href="${hrefFor(f.p)}" data-path="${esc(f.p)}">${f.p === 'index.md' ? 'Overview' : esc(f.t)}</a></li>`;
+    }
+    for (const d of dirs) {
+        const s = sections.get(d.name);
+        html += `<li>${renderDir(d, s ? s.label : d.name, s && s.target)}</li>`;
+    }
+    $('side').innerHTML = html + '</ul>';
+}
+
+function renderSearch(query) {
+    const q = query.trim().toLowerCase();
+    if (!q) { renderSidebar(); markActive(currentPath()); return; }
+    const hits = data.pages.filter((p) => p.t.toLowerCase().includes(q) || p.p.toLowerCase().includes(q));
+    const shown = hits.slice(0, 300);
+    let html = `<ul class="results"><li><small>${hits.length} match${hits.length === 1 ? '' : 'es'}${hits.length > shown.length ? ` (showing ${shown.length})` : ''}</small></li>`;
+    for (const p of shown) {
+        html += `<li><a href="${hrefFor(p.p)}" data-path="${esc(p.p)}">${esc(p.t)}</a><small>${esc(p.p)}</small></li>`;
+    }
+    $('side').innerHTML = html + '</ul>';
+    markActive(currentPath());
+}
+
+function markActive(path) {
+    const side = $('side');
+    side.querySelectorAll('a.active').forEach((a) => a.classList.remove('active'));
+    const link = side.querySelector(`a[data-path="${CSS.escape(path)}"]`);
+    if (!link) return;
+    link.classList.add('active');
+    for (let el = link.parentElement; el && el !== side; el = el.parentElement) {
+        if (el.tagName === 'DETAILS') el.open = true;
+    }
+    link.scrollIntoView({ block: 'nearest' });
+}
+
+// ---- Page loading & rendering ----------------------------------------------
+function loadPage(path) {
+    const cached = window.FMDocs.pages[path];
+    if (cached) return Promise.resolve(cached);
+    const entry = byPath.get(path);
+    if (!entry) return Promise.reject(new Error('not-found'));
+    return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = '_viewer/pages/' + entry.f;
+        s.onload = () => {
+            s.remove();
+            const page = window.FMDocs.pages[path];
+            page ? resolve(page) : reject(new Error('load-failed'));
+        };
+        s.onerror = () => { s.remove(); reject(new Error('load-failed')); };
+        document.head.appendChild(s);
+    });
+}
+
+const features = {};
+for (const name of ['Placeholder', 'Latex', 'Toolbar', 'BlockEdit', 'LinkTooltip', 'ImageBlock', 'Cursor', 'TopBar', 'AI']) {
+    if (Crepe.Feature[name] !== undefined) features[Crepe.Feature[name]] = false;
+}
+
+function renderHead(path, page) {
+    const parts = path.split('/');
+    let crumbs = `<a href="#/index.md">Overview</a>`;
+    let prefix = '';
+    for (const dir of parts.slice(0, -1)) {
+        prefix += dir + '/';
+        const idx = prefix + 'index.md';
+        crumbs += ' / ' + (byPath.has(idx) && idx !== path ? `<a href="${hrefFor(idx)}">${esc(dir)}</a>` : esc(dir));
+    }
+    const type = page.meta.entityType ? `<span class="badge">${esc(page.meta.entityType)}</span>` : '';
+    $('page-head').innerHTML = `<span class="crumbs">${crumbs}</span>${type}<a class="src" href="${esc(encodePath(path))}">${esc(path)}</a>`;
+}
+
+let crepe = null;
+let queue = Promise.resolve();
+let routeSeq = 0;
+
+async function show(path, seq) {
+    let page;
+    try {
+        page = await loadPage(path);
+    } catch (err) {
+        if (seq !== routeSeq) return;
+        if (crepe) { await crepe.destroy(); crepe = null; }
+        $('page-head').innerHTML = '';
+        showMessage(err.message === 'not-found'
+            ? `No page at <code>${esc(path)}</code>.`
+            : `Could not load the page script for <code>${esc(path)}</code>.`);
+        return;
+    }
+    if (seq !== routeSeq) return; // a newer navigation superseded this one
+
+    if (crepe) { await crepe.destroy(); crepe = null; }
+    content.innerHTML = '';
+    renderHead(path, page);
+    const entry = byPath.get(path);
+    document.title = `${entry.t} · ${data.title}`;
+
+    const editor = new Crepe({ root: content, defaultValue: page.md, features });
+    editor.setReadonly(true);
+    await editor.create();
+    crepe = editor;
+    document.body.dataset.rendered = path; // lets automated checks wait for a page
+    $('main').scrollTop = 0;
+    markActive(path);
+}
+
+function route() {
+    const seq = ++routeSeq;
+    const path = currentPath();
+    document.body.classList.remove('menu-open');
+    delete document.body.dataset.rendered;
+    queue = queue.then(() => show(path, seq)).catch((err) => {
+        console.error(err);
+        showMessage(`Failed to render <code>${esc(path)}</code>: ${esc(err.message)}`);
+    });
+}
+
+// Intercept link clicks inside rendered markdown: relative .md links become hash routes.
+content.addEventListener('click', (event) => {
+    const a = event.target.closest('a[href]');
+    if (!a) return;
+    const href = a.getAttribute('href');
+    event.preventDefault();
+    event.stopPropagation();
+    if (/^[a-z][a-z0-9+.-]*:/i.test(href)) {
+        window.open(href, '_blank', 'noopener');
+        return;
+    }
+    const target = resolveLink(currentPath(), href.split('#')[0]);
+    location.hash = hrefFor(target);
+}, true);
+
+$('search').addEventListener('input', (e) => renderSearch(e.target.value));
+$('menu-btn').addEventListener('click', () => document.body.classList.toggle('menu-open'));
+window.addEventListener('hashchange', route);
+
+$('gen').textContent = data.generatedAt ? `Generated ${data.generatedAt}` : '';
+renderSidebar();
+route();
+</script>
+</body>
+</html>

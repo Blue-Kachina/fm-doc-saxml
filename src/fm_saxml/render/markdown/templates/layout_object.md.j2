@@ -4,7 +4,7 @@ entityType: layoutObject
 layout: {{ entity.layout_doc_id }}
 ---
 
-# Layout Object: {{ entity.name or entity.raw_text or entity.object_id or "(unnamed)" }}
+# Layout Object: {{ (entity.name or entity.raw_text or entity.object_id or "(unnamed)") | cell }}
 
 ## Metadata
 

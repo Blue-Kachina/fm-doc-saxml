@@ -11,7 +11,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape, Undefined
 from ...model.document_model import DocumentModel
 from ...normalize.paths import relative_md_link
 from ...utils.file_writer import write_text
-from .link_resolver import LinkResolver
+from .link_resolver import LinkResolver, _esc as _esc_link_label
 
 
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
@@ -639,14 +639,16 @@ def _render_section_index(
     lines.append(f"| Name | {extra_header} |")
     lines.append("|---|---|")
     for e in sorted(entities, key=sort_key):
-        display_name = name_fn(e)
+        # Names can hold newlines and pipes (e.g. a multi-line layout text object),
+        # which would end the table row early.
+        display_name = _md_cell(name_fn(e))
         doc_path = links.path_for(e.doc_id)
         if doc_path:
             href = _relative_from_index(index_path, doc_path)
-            name_cell = f"[{display_name}]({href})"
+            name_cell = f"[{_esc_link_label(display_name)}]({href})"
         else:
             name_cell = display_name
-        extra_cell = str(extra_col_fn(e))
+        extra_cell = _md_cell(extra_col_fn(e))
         lines.append(f"| {name_cell} | {extra_cell} |")
 
     write_text(out_path, "\n".join(lines) + "\n")

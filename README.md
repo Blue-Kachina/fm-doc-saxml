@@ -46,7 +46,7 @@ Early development. The full design is captured in [`fm-saxml-converter-plan.md`]
 3. Render Markdown pages for tables, fields, layouts, layout objects, and scripts with table↔field links.
 4. Emit `summary.md`, `warnings.md`, and `unresolved-references.md` reports.
 
-Reference-graph analysis (layouts, table occurrences, relationships, backlinks) is in place, along with a dead-code check (`UNUSED_FIELD_CANDIDATE`: fields with no *usage* references — a field's structural link to its own table doesn't count) and a `diff` command for comparing two exports. HTML/Vue rendering has not been started; `src/fm_saxml/render/html/` does not exist yet.
+Reference-graph analysis (layouts, table occurrences, relationships, backlinks) is in place, along with a dead-code check (`UNUSED_FIELD_CANDIDATE`: fields with no *usage* references — a field's structural link to its own table doesn't count) and a `diff` command for comparing two exports. An optional HTML viewer (`--html`) renders the Markdown in a browser, opened straight from disk.
 
 ## Requirements
 
@@ -76,8 +76,6 @@ Add `--open` to have the folder opened for you. Run `fm-saxml doctor` if somethi
 ```bash
 pipx install fm-saxml-converter      # or run without installing: uvx --from fm-saxml-converter fm-saxml MySolution.xml
 ```
-
-*(Requires the package to be published to PyPI; until then, use one of the source installs below.)*
 
 ### Updating
 
@@ -123,7 +121,7 @@ Errors are shown as a single readable line. Set `FM_SAXML_DEBUG=1` to get the fu
 Paths are platform-flexible — Windows drive letters and UNC paths, macOS, and Linux paths all work. `~` and environment variables (`$HOME`, `%USERPROFILE%`) are expanded automatically.
 
 ```bash
-# One-shot: parse and render. Output goes to ./saxml2doc by default.
+# One-shot: parse and render. Output goes to ./MySolution_docs by default.
 fm-saxml build ./MySolution.xml
 
 # Just parse XML into the normalized JSON model.
@@ -157,6 +155,19 @@ fm-saxml build ./MySolution.xml --out ./docs/MySolution
 | `--strict` | `build` | Exit non-zero if any reference is left `unresolved` after resolution |
 | `--yes` / `-y` | `build`, `render` | Same as `--force`/`-f` — skip the overwrite-confirmation prompt |
 | `--open` | `build` | Open the output folder when finished |
+| `--html` | `build`, `render` | Also write an `index.html` for browsing the docs in a web browser (see below) |
+
+### Browsing the docs in a web browser (`--html`)
+
+```bash
+fm-saxml build ./MySolution.xml --html
+```
+
+`--html` adds `index.html` to the output folder. Double-click it to browse the documentation in any modern browser, with a sidebar, page filter, breadcrumbs and working links between pages. It runs straight from disk, so no web server is needed.
+
+- Browsers don't let a page opened from disk read other files, so each Markdown page is also written as a small script under `_viewer/pages/` (one per page). That's why it's opt-in.
+- The Markdown is rendered with [Milkdown Crepe](https://milkdown.dev/), loaded from a CDN (esm.sh and jsDelivr). Viewing needs internet access, at least until the browser has cached it. The `.md` files are unchanged and still work on their own.
+- Keep `index.html` and `_viewer/` together if you move or zip the folder.
 
 ### Secret and personal-data scrubbing
 
@@ -261,11 +272,15 @@ saxml2doc/
 ├─ Scripts/
 ├─ CustomFunctions/
 ├─ ValueLists/
-└─ Reports/
-   ├─ summary.md
-   ├─ redactions.md
-   ├─ warnings.md
-   └─ unresolved-references.md
+├─ Reports/
+│  ├─ summary.md
+│  ├─ redactions.md
+│  ├─ warnings.md
+│  └─ unresolved-references.md
+├─ index.html          (--html only)
+└─ _viewer/            (--html only)
+   ├─ manifest.js
+   └─ pages/
 ```
 
 File names are safe on Windows, macOS and Linux: invalid characters and Windows reserved names (`CON`, `NUL`, …) are replaced, long names are truncated with a short hash, and names that would collide on a case-insensitive file system (`Invoices` vs `invoices`, or an entity named `index`) get a `-2`, `-3`… suffix. Links always point at the final file names.
@@ -291,6 +306,7 @@ src/fm_saxml/
 ├─ analyze/             # Calculation parsing, backlinks, warnings (incl. UNUSED_FIELD_CANDIDATE), diff.py
 ├─ render/
 │  ├─ markdown/         # Jinja2 templates and renderer (incl. diff_renderer.py)
+│  ├─ html/             # --html viewer: index.html template + per-page scripts
 │  └─ json/             # JSON sidecar writer
 └─ utils/
 
