@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMPReport CreationDate="2026-10-14" CreationTime="10:24:13 AM" type="Summary" version="2.3.0.0" membercount="2">
+	<File name="FileA.fmp12" path="C:\Users\Admin\Downloads\TwoFileTest\">
+		<XML path="D:\Dev\FMDev\fm-saxml-converter\samples\multi_file_export\SaXML_separate_catalogue\FileA\"></XML>
+	</File>
+	<File name="FileB.fmp12" path="C:\Users\Admin\Downloads\TwoFileTest\">
+		<XML path="D:\Dev\FMDev\fm-saxml-converter\samples\multi_file_export\SaXML_separate_catalogue\FileB\"></XML>
+	</File>
+</FMPReport>

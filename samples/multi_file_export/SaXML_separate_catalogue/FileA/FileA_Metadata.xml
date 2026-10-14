@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="FileA.fmp12" UUID="98523AA9-B8FE-E94F-8D5D-BB3D3B885748" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Metadata membercount="1">
+		<AddAction membercount="9">
+			<PageSetup>
+				<Orientation name="Portrait" value="0"></Orientation>
+				<size height="1169.44" width="826.39"></size>
+				<scale value="100"></scale>
+			</PageSetup>
+			<HideWebDirectSharing enable="False"></HideWebDirectSharing>
+			<HideClientSharing enable="False"></HideClientSharing>
+			<Encryption type="0"></Encryption>
+			<Minimum version="12.0" value="1208"></Minimum>
+			<Login type="1">
+				<AccountName>Admin</AccountName>
+			</Login>
+			<SavePassword keychain="True" requireMobile="False"></SavePassword>
+			<ShowSignInFields enable="True"></ShowSignInFields>
+			<UseDefaultFields enable="True"></UseDefaultFields>
+		</AddAction>
+	</Metadata>
+	<DDR_INFO></DDR_INFO>
+</FMSaveAsXML>

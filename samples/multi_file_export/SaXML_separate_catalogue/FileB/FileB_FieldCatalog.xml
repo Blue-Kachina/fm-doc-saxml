@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="FileB.fmp12" UUID="817A0C34-523F-F049-A248-A0E3F6BEFF1C" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<FieldsForTables membercount="1">
+				<FieldCatalog>
+					<SortOrder>1</SortOrder>
+					<CustomOrderList>
+						<key>1</key>
+						<key>2</key>
+						<key>3</key>
+						<key>4</key>
+						<key>5</key>
+					</CustomOrderList>
+					<UUID modifications="1" userName="Admin" accountName="Admin" timestamp="2026-10-14T10:14:19">C97C2BED-23E4-A84E-BADD-A7B71B3D11EC</UUID>
+					<TagList></TagList>
+					<BaseTableReference id="129" name="FileB" UUID="CE2FFE99-8C5A-6047-B894-91EF33D73E79"></BaseTableReference>
+					<ObjectList membercount="5">
+						<Field id="1" name="PrimaryKey" fieldtype="Normal" datatype="Text" comment="Unique identifier of each record in this table">
+							<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-10-14T10:14:19">B7DB9BEB-3993-7C49-99D4-A7B5E67EA2DD</UUID>
+							<AutoEnter type="Calculated" prohibitModification="True" overwriteExisting="True" alwaysEvaluate="False">
+								<Calculated enable="True">
+									<Calculation>
+										<TableOccurrenceReference id="1065089" name="FileB" UUID="CF0C2376-2DA6-F240-98E7-2304C3E74A21"></TableOccurrenceReference>
+										<DDRREF kind="ChunkList" hash="F8FC751FEE733A347BA2266C54DEC7A0">_B7DB9BEB-3993-7C49-99D4-A7B5E67EA2DD_1</DDRREF>
+										<Text><![CDATA[Get( UUID )]]></Text>
+									</Calculation>
+								</Calculated>
+							</AutoEnter>
+							<Validation alwaysValidate="False" type="OnlyDuringDataEntry" allowOverride="False" notEmpty="True" unique="True" existing="False"></Validation>
+							<Storage autoIndex="True" index="Minimal" global="False" maxRepetitions="1">
+								<LanguageReference name="Unicode" id="2"></LanguageReference>
+							</Storage>
+							<TagList primary="True">#^FMI* #_FMI_0 </TagList>
+							<Annotation></Annotation>
+							<DisplayNames enable="False"></DisplayNames>
+						</Field>
+						<Field id="2" name="CreationTimestamp" fieldtype="Normal" datatype="Timestamp" comment="Date and time each record was created">
+							<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-10-14T10:14:19">7FC59AC1-B3A8-8349-8AAC-37BE76559091</UUID>
+							<AutoEnter type="CreationTimestamp" prohibitModification="True"></AutoEnter>
+							<Validation alwaysValidate="False" type="OnlyDuringDataEntry" allowOverride="False" notEmpty="True" unique="False" existing="False">
+								<Strict>FourDigitYear</Strict>
+							</Validation>
+							<Storage autoIndex="True" index="None" global="False" maxRepetitions="1">
+								<LanguageReference name="English" id="21"></LanguageReference>
+							</Storage>
+							<TagList>#_FMI_0 </TagList>
+							<Annotation></Annotation>
+							<DisplayNames enable="False"></DisplayNames>
+						</Field>
+						<Field id="3" name="CreatedBy" fieldtype="Normal" datatype="Text" comment="Account name of the user who created each record">
+							<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-10-14T10:14:19">F7F456D9-1F36-3E47-A8DE-49692276F878</UUID>
+							<AutoEnter type="CreationAccountName" prohibitModification="True"></AutoEnter>
+							<Validation alwaysValidate="False" type="OnlyDuringDataEntry" allowOverride="False" notEmpty="True" unique="False" existing="False"></Validation>
+							<Storage autoIndex="True" index="None" global="False" maxRepetitions="1">
+								<LanguageReference name="English" id="21"></LanguageReference>
+							</Storage>
+							<TagList>#_FMI_0 </TagList>
+							<Annotation></Annotation>
+							<DisplayNames enable="False"></DisplayNames>
+						</Field>
+						<Field id="4" name="ModificationTimestamp" fieldtype="Normal" datatype="Timestamp" comment="Date and time each record was last modified">
+							<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-10-14T10:14:19">EFC96EF3-11F6-834F-A191-0D9599BB09D3</UUID>
+							<AutoEnter type="ModificationTimestamp" prohibitModification="True"></AutoEnter>
+							<Validation alwaysValidate="False" type="OnlyDuringDataEntry" allowOverride="False" notEmpty="True" unique="False" existing="False">
+								<Strict>FourDigitYear</Strict>
+							</Validation>
+							<Storage autoIndex="True" index="None" global="False" maxRepetitions="1">
+								<LanguageReference name="English" id="21"></LanguageReference>
+							</Storage>
+							<TagList>#_FMI_0 </TagList>
+							<Annotation></Annotation>
+							<DisplayNames enable="False"></DisplayNames>
+						</Field>
+						<Field id="5" name="ModifiedBy" fieldtype="Normal" datatype="Text" comment="Account name of the user who last modified each record">
+							<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-10-14T10:14:19">9446B645-96FD-8A41-98A8-A903A062FE09</UUID>
+							<AutoEnter type="ModificationAccountName" prohibitModification="True"></AutoEnter>
+							<Validation alwaysValidate="False" type="OnlyDuringDataEntry" allowOverride="False" notEmpty="True" unique="False" existing="False"></Validation>
+							<Storage autoIndex="True" index="None" global="False" maxRepetitions="1">
+								<LanguageReference name="English" id="21"></LanguageReference>
+							</Storage>
+							<TagList>#_FMI_0 </TagList>
+							<Annotation></Annotation>
+							<DisplayNames enable="False"></DisplayNames>
+						</Field>
+					</ObjectList>
+				</FieldCatalog>
+			</FieldsForTables>
+		</AddAction>
+	</Structure>
+	<DDR_INFO>
+		<Calculation>
+			<ObjectList>
+				<_B7DB9BEB-3993-7C49-99D4-A7B5E67EA2DD_1 hash="F8FC751FEE733A347BA2266C54DEC7A0" datatype="ChunkList">
+					<TableOccurrenceReference id="1065089" name="FileB" UUID="CF0C2376-2DA6-F240-98E7-2304C3E74A21"></TableOccurrenceReference>
+					<ChunkList hash="F8FC751FEE733A347BA2266C54DEC7A0">
+						<Chunk type="FunctionRef">Get</Chunk>
+						<Chunk type="NoRef">( </Chunk>
+						<Chunk type="FunctionRef">UUID</Chunk>
+						<Chunk type="NoRef"> )</Chunk>
+					</ChunkList>
+				</_B7DB9BEB-3993-7C49-99D4-A7B5E67EA2DD_1>
+			</ObjectList>
+		</Calculation>
+	</DDR_INFO>
+</FMSaveAsXML>

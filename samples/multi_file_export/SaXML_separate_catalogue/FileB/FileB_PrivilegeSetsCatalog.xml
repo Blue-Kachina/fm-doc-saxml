@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="FileB.fmp12" UUID="817A0C34-523F-F049-A248-A0E3F6BEFF1C" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<PrivilegeSetsCatalog membercount="3">
+				<SortOrder>1</SortOrder>
+				<CustomOrderList>
+					<key>1</key>
+					<key>2</key>
+					<key>3</key>
+				</CustomOrderList>
+				<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-14T10:14:18">F173B67A-72BD-D64F-B01C-A3F74AC8625D</UUID>
+				<TagList></TagList>
+				<ObjectList membercount="3">
+					<PrivilegeSet id="1" name="[Full Access]">
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-14T10:14:18">E7590A61-01B6-B94B-B4B7-9560006F20EF</UUID>
+						<Description>access to everything</Description>
+						<access default="True">
+							<Records Create="True" Edit="True" Delete="True"></Records>
+							<Layouts Create="True" Edit="True" Delete="True"></Layouts>
+							<ValueLists Create="True" Edit="True" Delete="True"></ValueLists>
+							<Scripts Create="True" Edit="True" Delete="True"></Scripts>
+							<Other value="65535" Print="True" Export="True" manageDatabase="True" manageCustomMenus="True" manageAccounts="True" manageExtPrivs="True" allowOverride="True" allowOpenQuickly="True" disconnectIdle="False" commands="All">
+								<Password prohibitModification="False"></Password>
+							</Other>
+						</access>
+					</PrivilegeSet>
+					<PrivilegeSet id="2" name="[Data Entry Only]">
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-14T10:14:18">598C547B-378F-4045-986E-C59E62512926</UUID>
+						<Description>write access to all records, no design access</Description>
+						<access default="True">
+							<Records Create="True" Edit="True" Delete="True"></Records>
+							<Layouts View="ReadOnly"></Layouts>
+							<ValueLists View="ReadOnly"></ValueLists>
+							<Scripts View="ReadOnly"></Scripts>
+							<Other value="25348" Print="True" Export="True" manageDatabase="False" manageCustomMenus="False" manageAccounts="False" manageExtPrivs="False" allowOverride="False" allowOpenQuickly="False" disconnectIdle="True" commands="All">
+								<Password prohibitModification="False"></Password>
+							</Other>
+						</access>
+					</PrivilegeSet>
+					<PrivilegeSet id="3" name="[Read-Only Access]">
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-14T10:14:18">C9B2A36A-F973-EB49-B525-AFA9EA53B75E</UUID>
+						<Description>read access to all records, no design access, write access to all global fields</Description>
+						<access default="True">
+							<Records View="ReadOnly"></Records>
+							<Layouts View="ReadOnly"></Layouts>
+							<ValueLists View="ReadOnly"></ValueLists>
+							<Scripts View="ReadOnly"></Scripts>
+							<Other value="25348" Print="True" Export="True" manageDatabase="False" manageCustomMenus="False" manageAccounts="False" manageExtPrivs="False" allowOverride="False" allowOpenQuickly="False" disconnectIdle="True" commands="All">
+								<Password prohibitModification="False"></Password>
+							</Other>
+						</access>
+					</PrivilegeSet>
+				</ObjectList>
+			</PrivilegeSetsCatalog>
+		</AddAction>
+	</Structure>
+	<DDR_INFO></DDR_INFO>
+</FMSaveAsXML>

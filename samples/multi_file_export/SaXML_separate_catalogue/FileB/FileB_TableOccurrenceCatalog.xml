@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="FileB.fmp12" UUID="817A0C34-523F-F049-A248-A0E3F6BEFF1C" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<TableOccurrenceCatalog membercount="2">
+				<CustomOrderList>
+					<key>1065090</key>
+					<key>1065089</key>
+				</CustomOrderList>
+				<UUID modifications="4" userName="Admin" accountName="Admin" timestamp="2026-10-14T10:18:23">13D8B197-53D4-884F-974A-3D2E4CF869F0</UUID>
+				<TagList></TagList>
+				<TableOccurrence View="Full" height="0" id="1065089" name="FileB" type="Local">
+					<UUID modifications="4" userName="Admin" accountName="Admin" timestamp="2026-10-14T10:18:22">CF0C2376-2DA6-F240-98E7-2304C3E74A21</UUID>
+					<BaseTableSourceReference type="BaseTableReference">
+						<BaseTableReference id="129" name="FileB" UUID="CE2FFE99-8C5A-6047-B894-91EF33D73E79"></BaseTableReference>
+					</BaseTableSourceReference>
+					<CoordRect top="20" left="20" bottom="131" right="151"></CoordRect>
+					<Color red="120" green="120" blue="120" alpha="1.00"></Color>
+					<TagList></TagList>
+				</TableOccurrence>
+				<TableOccurrence View="Full" height="80" id="1065090" name="FileA" type="External">
+					<UUID modifications="5" userName="Admin" accountName="Admin" timestamp="2026-10-14T10:18:22">FE7369BC-C0AF-3741-A498-F76CA584293D</UUID>
+					<BaseTableSourceReference type="ExternalDataSourceReference">
+						<DataSourceReference id="1" name="FileA" UUID="82D46342-3537-0F4C-B2F4-5F1696155EF5"></DataSourceReference>
+						<BaseTableReference id="129" name="FileA" UUID="256E73E4-E1E5-2145-B638-DA9449C74312"></BaseTableReference>
+					</BaseTableSourceReference>
+					<CoordRect top="74" left="362" bottom="185" right="493"></CoordRect>
+					<Color red="120" green="120" blue="120" alpha="1.00"></Color>
+					<TagList></TagList>
+				</TableOccurrence>
+			</TableOccurrenceCatalog>
+		</AddAction>
+	</Structure>
+	<DDR_INFO></DDR_INFO>
+</FMSaveAsXML>

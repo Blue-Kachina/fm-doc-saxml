@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="FileB.fmp12" UUID="817A0C34-523F-F049-A248-A0E3F6BEFF1C" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<FileAccessCatalog sameHost="False" required="True">
+				<UUID modifications="3" userName="Admin" accountName="Admin" timestamp="2026-10-14T10:17:49">EEF6D496-E3E0-8347-9ED2-C277D74909E1</UUID>
+				<ObjectList membercount="3">
+					<Authorization id="1" type="Local" self="True">
+						<Source CreationTimestamp="10/14/2026 10:14:18 AM" CreationAccountName="Admin"></Source>
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-14T10:14:18">AABAF621-55F5-3349-8528-3051DE56986A</UUID>
+						<Display><![CDATA[FileB]]></Display>
+						<Authentication>C06C2644D47107D7E05E36EE02406421DD41667B2512362CEBEC914FA4D6523B432BFEE7F2A6274628678FB83DB24BE3B963339FEB4C64BE9C09B6E0E5F5529F</Authentication>
+						<TagList></TagList>
+					</Authorization>
+					<Authorization id="2" type="External" self="True">
+						<Source CreationTimestamp="10/14/2026 10:14:18 AM" CreationAccountName="Admin"></Source>
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-14T10:14:18">5628E3F4-EA69-E249-B152-93DAED1F48B9</UUID>
+						<Display><![CDATA[FileB]]></Display>
+						<Authentication>FF378F8F26708E6B260365AC292D6CBDD77CDD3CF28645D104134C1FF7DFD5BB</Authentication>
+						<TagList></TagList>
+					</Authorization>
+					<Authorization id="3" type="Local">
+						<Source CreationTimestamp="10/14/2026 10:17:49 AM" CreationAccountName="Admin"></Source>
+						<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-10-14T10:17:49">262B14AA-DA30-EA47-8FA2-1747DBC582D1</UUID>
+						<Display><![CDATA[FileA]]></Display>
+						<Authentication>CE2E66E20DDD56F52E0BE0444EF796B4FA443A87610290DCB9903CEC5D1A786CAADCADD4B4853A945853F55F31C7391A8A0584214C4EEFDC791419E8C9A74752</Authentication>
+						<TagList></TagList>
+					</Authorization>
+				</ObjectList>
+			</FileAccessCatalog>
+		</AddAction>
+	</Structure>
+	<DDR_INFO></DDR_INFO>
+</FMSaveAsXML>

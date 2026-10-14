@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="FileA.fmp12" UUID="98523AA9-B8FE-E94F-8D5D-BB3D3B885748" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<LayoutCatalog membercount="1">
+				<UUID modifications="3" userName="Admin" accountName="Admin" timestamp="2026-10-14T10:14:00">5726765D-AF92-9740-9F37-BFC7F18E92FA</UUID>
+				<TagList></TagList>
+				<Layout id="1" name="FileA" width="1024">
+					<TableOccurrenceReference id="1065089" name="FileA" UUID="3E6AD308-475A-784D-BA64-B68853201879"></TableOccurrenceReference>
+					<LayoutThemeReference id="1" name="com.filemaker.theme.apex_blue" UUID="1E1F58BA-2D66-0745-BD5A-ACF418C0942A" Base="com.filemaker.theme.minimalist_touch"></LayoutThemeReference>
+					<PartsList membercount="2">
+						<Part type="Top Navigation" kind="12">
+							<Definition type="Top Navigation" kind="12" size="110" absolute="0" Options="0"></Definition>
+						</Part>
+						<Part type="Body" kind="4">
+							<Definition type="Body" kind="4" size="658" absolute="110" Options="0"></Definition>
+						</Part>
+					</PartsList>
+					<UUID modifications="1" userName="Admin" accountName="Admin" timestamp="2026-10-14T10:14:03">A9716282-E3D7-774E-B792-DA52CC3508C8</UUID>
+					<TagList></TagList>
+					<GridStyle>
+						<Color red="0.500000" green="0.500000" blue="0.500000" alpha="1.000000"></Color>
+						<Style>5</Style>
+					</GridStyle>
+					<ClientType>3</ClientType>
+					<Options hidden="False">64708872193</Options>
+					<MenuSet>
+						<CustomMenuSetReference id="0" name="[File Default]" UUID=""></CustomMenuSetReference>
+					</MenuSet>
+				</Layout>
+			</LayoutCatalog>
+		</AddAction>
+	</Structure>
+	<DDR_INFO></DDR_INFO>
+</FMSaveAsXML>

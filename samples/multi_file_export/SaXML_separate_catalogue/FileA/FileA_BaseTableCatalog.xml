@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="FileA.fmp12" UUID="98523AA9-B8FE-E94F-8D5D-BB3D3B885748" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<BaseTableCatalog membercount="1">
+				<SortOrder>1</SortOrder>
+				<CustomOrderList>
+					<key>129</key>
+				</CustomOrderList>
+				<UUID modifications="2" userName="Admin" accountName="Admin" timestamp="2026-10-14T10:14:00">5C574F7A-D39C-A641-B7B3-9E70DA694521</UUID>
+				<BaseTable id="129" comment="" name="FileA">
+					<UUID modifications="1" userName="Admin" accountName="Admin" timestamp="2026-10-14T10:14:00">256E73E4-E1E5-2145-B638-DA9449C74312</UUID>
+					<TagList></TagList>
+				</BaseTable>
+			</BaseTableCatalog>
+		</AddAction>
+	</Structure>
+	<DDR_INFO></DDR_INFO>
+</FMSaveAsXML>

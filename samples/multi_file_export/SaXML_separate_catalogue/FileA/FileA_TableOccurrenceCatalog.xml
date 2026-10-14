@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="FileA.fmp12" UUID="98523AA9-B8FE-E94F-8D5D-BB3D3B885748" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<TableOccurrenceCatalog membercount="1">
+				<CustomOrderList>
+					<key>1065089</key>
+				</CustomOrderList>
+				<UUID modifications="2" userName="Admin" accountName="Admin" timestamp="2026-10-14T10:14:00">1798D095-4FA2-5D49-802D-C42731135934</UUID>
+				<TagList></TagList>
+				<TableOccurrence View="Full" height="0" id="1065089" name="FileA" type="Local">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-10-14T10:14:00">3E6AD308-475A-784D-BA64-B68853201879</UUID>
+					<BaseTableSourceReference type="BaseTableReference">
+						<BaseTableReference id="129" name="FileA" UUID="256E73E4-E1E5-2145-B638-DA9449C74312"></BaseTableReference>
+					</BaseTableSourceReference>
+					<CoordRect top="0" left="0" bottom="0" right="0"></CoordRect>
+					<Color red="119" green="119" blue="119" alpha="1.00"></Color>
+					<TagList></TagList>
+				</TableOccurrence>
+			</TableOccurrenceCatalog>
+		</AddAction>
+	</Structure>
+	<DDR_INFO></DDR_INFO>
+</FMSaveAsXML>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="FileA.fmp12" UUID="98523AA9-B8FE-E94F-8D5D-BB3D3B885748" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<AccountsCatalog membercount="2">
+				<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-14T10:13:59">F8EF9825-CB5E-774C-A0CF-D07F18DDABBA</UUID>
+				<Options>4</Options>
+				<ObjectList membercount="2">
+					<Account id="1" kind="0" type="FileMaker" enable="False">
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-14T10:13:59">5EDBB4D7-8C64-3643-9CE4-1398FAE29EC1</UUID>
+						<TagList></TagList>
+						<Description></Description>
+						<Authentication>
+							<AccountName>[Guest]</AccountName>
+							<PasswordEncrypted>
+								<Context>kc/qa8GZfPIyAg==</Context>
+								<Data></Data>
+							</PasswordEncrypted>
+						</Authentication>
+						<PrivilegeSetReference id="3" name="[Read-Only Access]"></PrivilegeSetReference>
+					</Account>
+					<Account id="2" kind="0" type="FileMaker" enable="True">
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-14T10:13:59">DE6F679A-85CB-CA41-8CA8-01F9AD0295B8</UUID>
+						<TagList></TagList>
+						<Description></Description>
+						<Authentication>
+							<AccountName>Admin</AccountName>
+						</Authentication>
+						<PrivilegeSetReference id="1" name="[Full Access]"></PrivilegeSetReference>
+					</Account>
+				</ObjectList>
+			</AccountsCatalog>
+		</AddAction>
+	</Structure>
+	<DDR_INFO></DDR_INFO>
+</FMSaveAsXML>
