@@ -1,0 +1,75 @@
+---
+title: Redactions (all files)
+generatedAt: {{ generated_at }}
+---
+
+# Redactions (all files)
+
+[Back to index](../index.md)
+
+{% if scrubbing is none %}
+> **Scrubbing was disabled for this run.** Credentials, tokens, internal hostnames and personal data in the exports were copied into this documentation as-is. Don't share it.
+{% else %}
+_{{ scrubbing.distinct_values }} distinct value(s) redacted in {{ scrubbing.redactions | length }} place(s) across {{ files | length }} file(s); {{ scrubbing.flagged | length }} item(s) need review. Scrub level: `{{ scrubbing.level }}`._
+
+Placeholders are shared by every file in this build: `[EMAIL#3]` in two files is the same address. Values themselves are never shown here. Each file's own report lists every place a value was redacted.
+
+This is a heuristic scrubber, not a guarantee. Review the documentation before sharing it.
+
+## By File
+
+| File | Distinct Values | Places | Needs Review |
+|---|---:|---:|---:|
+{% for f in per_file %}
+| [{{ f.name | cell }}](../{{ f.folder | urlencode }}/Reports/redactions.md) | {{ f.distinct }} | {{ f.places }} | {{ f.flagged }} |
+{% endfor %}
+{% if scrubbing.counts %}
+
+## By Category
+
+| Category | Distinct Values |
+|---|---:|
+{% for category, count in scrubbing.counts.items() %}
+| {{ category }} | {{ count }} |
+{% endfor %}
+
+## Placeholders
+
+{% if shared_count %}{{ shared_count }} value(s) appear in more than one file; they're listed first.{% else %}No value appears in more than one file.{% endif %}
+
+
+| Placeholder | Category | Places | Files |
+|---|---|---:|---|
+{% for p in placeholders %}
+| `{{ p.placeholder }}` | {{ p.category }} | {{ p.places }} | {% for folder, name in p.files.items() %}[{{ name | cell }}](../{{ folder | urlencode }}/Reports/redactions.md){{ ", " if not loop.last }}{% endfor %} |
+{% endfor %}
+{% endif %}
+{% if flagged %}
+
+## Needs Review
+
+These were left unchanged: the evidence wasn't strong enough to redact.
+
+| File | Category | Detector | Location | Note | Preview |
+|---|---|---|---|---|---|
+{% for file, f in flagged %}
+| {{ file.name | cell }} | {{ f.category }} | {{ f.detector }} | {{ f.location | cell }} | {{ f.note | cell }} | {% if f.preview %}`{{ f.preview | replace("`", "'") | cell }}`{% endif %} |
+{% endfor %}
+{% endif %}
+{% if allowed %}
+
+## Allowed
+
+Marked `fm-saxml:allow` in a comment, so left exactly as written.
+
+| File | Location | Note |
+|---|---|---|
+{% for file, f in allowed %}
+| {{ file.name | cell }} | {{ f.location | cell }} | {{ f.note | cell }} |
+{% endfor %}
+{% endif %}
+{% if not scrubbing.counts and not flagged and not allowed %}
+
+_Nothing needed redacting._
+{% endif %}
+{% endif %}

@@ -342,6 +342,21 @@ def test_value_found_in_a_later_file_is_redacted_in_earlier_ones(tmp_path):
     a_pages = "".join(p.read_text(encoding="utf-8") for p in (out / "FileA").rglob("*.md"))
     assert "[EMAIL#" in a_pages
 
+    # The master list shows one placeholder used by both files
+    master = (out / "Reports" / "redactions.md").read_text(encoding="utf-8")
+    assert "appear in more than one file; they're listed first." in master
+    row = next(line for line in master.splitlines() if line.startswith("| `[EMAIL#"))
+    assert "[FileA](../FileA/Reports/redactions.md)" in row and "[FileB](../FileB/Reports/redactions.md)" in row
+    assert "[Redactions](Reports/redactions.md)" in (out / "index.md").read_text(encoding="utf-8")
+    assert "See Reports/redactions.md" in " ".join(result.output.split())
+
+
+def test_master_redactions_report_when_scrubbing_is_disabled(tmp_path):
+    out = tmp_path / "docs"
+    result = runner.invoke(app, ["build", str(WHOLE), "--out", str(out), "--disable-scrubbing"])
+    assert result.exit_code == 0, result.output
+    assert "Scrubbing was disabled" in (out / "Reports" / "redactions.md").read_text(encoding="utf-8")
+
 
 def test_inspect_and_validate_accept_a_folder():
     result = runner.invoke(app, ["inspect", str(SPLIT)])

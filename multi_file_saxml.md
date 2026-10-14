@@ -231,7 +231,8 @@ SaXML_PROD_2026-10-14_docs/
 ├── index.html               (--html)
 ├── _viewer/                 (--html)
 ├── Reports/
-│   └── batch-summary.md     files, counts, pairings, unresolved sources, skipped XMLs, redaction counts
+│   ├── batch-summary.md     files, counts, pairings, unresolved sources, skipped XMLs
+│   └── redactions.md        master list: every placeholder and the files it occurs in, items to review
 ├── BLITZ/
 │   ├── index.md
 │   ├── Tables/ Scripts/ Layouts/ ...
@@ -272,7 +273,7 @@ Pairing runs on the normalized models' `ExternalDataSource.paths`, so first chec
 - Use **one scrubber instance** for the whole batch, so the same secret gets the same placeholder in every file. Otherwise `idiClients` and `Synapse` would show different placeholders for the same shared API key.
 - **Two passes.** Every file is read and scrubbed before any is normalized. A file scrubbed before a later file revealed a new sensitive value is scrubbed again (only known values get substituted on that pass), so a value detected in one file is redacted in all of them. Without this, the first production run failed the guard: an address detected in one file sat unredacted in earlier files, where it only appeared as a modifier's account name. The cost is holding every file's raw records until its turn to normalize.
 - Scrub before cross-file resolution. Resolution matches on uuid, id and name, which the scrubber doesn't touch. Add a test that a scrubbed batch still pairs and resolves.
-- Each subfolder keeps its own `Reports/redactions.md`; `batch-summary.md` lists each file's redaction count with a link to it. `_guard_output` runs once over the parent directory, and `--fail-on-secrets` aggregates every file's `ScrubSummary`.
+- Each subfolder keeps its own `Reports/redactions.md` (every occurrence). The batch root gets a master `Reports/redactions.md`: totals by file and category, one row per placeholder with the files it occurs in (values shared by several files first), and everything flagged for review, labeled by file. It's written even with scrubbing disabled, to say so. `_guard_output` runs once over the parent directory, and `--fail-on-secrets` aggregates every file's `ScrubSummary`.
 
 **Memory and progress**
 

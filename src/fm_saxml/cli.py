@@ -301,7 +301,7 @@ def _build_batch(scan, out: Path, scrubber, *, include_json: bool, strict: bool,
                  html: bool, fail_on_secrets: bool, open_when_done: bool) -> None:
     """Convert every export in a folder into its own subfolder of ``out``, with cross-file links."""
     from .batch.links import link_batch
-    from .batch.report import BatchResult, write_batch_reports
+    from .batch.report import BatchResult, combined_scrubbing, write_batch_reports
 
     folders = _batch_folders(scan)
     _confirm_output_directory(out, force=force)
@@ -327,11 +327,7 @@ def _build_batch(scan, out: Path, scrubber, *, include_json: bool, strict: bool,
 
     _guard_output(scrubber, out)
     _print_batch_summary(files, links)
-    for f in files:
-        scrubbing = f.model.scrubbing
-        if scrubbing is not None and (scrubbing.redactions or scrubbing.flagged):
-            console.print(f"[dim]{f.name}:[/dim]", end=" ")
-            _print_scrubbing(scrubbing, report=f"{f.folder}/Reports/redactions.md")
+    _print_scrubbing(combined_scrubbing(files) or files[0].model.scrubbing, report="Reports/redactions.md")
 
     if strict:
         problems = []

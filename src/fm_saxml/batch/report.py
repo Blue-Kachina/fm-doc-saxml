@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
 
+from ..model.document_model import ScrubSummary
 from ..parser.input_scan import InputScan, ManifestEntry, SolutionSource
 from ..render.markdown.renderer import _make_jinja_env
 from ..utils.file_writer import write_text
@@ -14,6 +16,7 @@ from .links import BatchFile, BatchLinks
 
 REPORTS_DIR = "Reports"
 SUMMARY_PAGE = f"{REPORTS_DIR}/batch-summary.md"
+REDACTIONS_PAGE = f"{REPORTS_DIR}/redactions.md"
 
 
 @dataclass
@@ -32,6 +35,50 @@ def write_batch_reports(result: BatchResult, out: Path) -> None:
     ctx = _context(result)
     write_text(out / "index.md", env.get_template("batch_index.md.j2").render(**ctx))
     write_text(out / SUMMARY_PAGE, env.get_template("reports/batch_summary.md.j2").render(**ctx))
+    write_text(out / REDACTIONS_PAGE, env.get_template("reports/batch_redactions.md.j2").render(**ctx))
+
+
+def combined_scrubbing(files: list[BatchFile]) -> ScrubSummary | None:
+    """Every file's findings as one summary; None when scrubbing was disabled."""
+    summaries = [f.model.scrubbing for f in files]
+    if not summaries or any(s is None or not s.applied for s in summaries):
+        return None
+    findings = [finding for s in summaries for finding in s.findings]
+    counts = Counter(cat for _ph, cat in {(f.placeholder, f.category) for f in findings if f.action == "redacted"})
+    first = summaries[0]
+    return ScrubSummary(
+        applied=True, level=first.level, engineVersion=first.engine_version,
+        placeholderStyle=first.placeholder_style, saltId=first.salt_id,
+        counts=dict(sorted(counts.items())), findings=findings,
+    )
+
+
+def _redaction_context(files: list[BatchFile]) -> dict:
+    combined = combined_scrubbing(files)
+    if combined is None:
+        return {"scrubbing": None}
+    # One row per placeholder: the same value gets the same placeholder in every file
+    by_placeholder: dict[str, dict] = {}
+    for f in files:
+        for finding in f.model.scrubbing.redactions:
+            row = by_placeholder.setdefault(finding.placeholder, {
+                "placeholder": finding.placeholder, "category": finding.category, "places": 0, "files": {},
+            })
+            row["places"] += 1
+            row["files"].setdefault(f.folder, f.name)
+    placeholders = sorted(by_placeholder.values(), key=lambda r: (-len(r["files"]), r["category"], r["placeholder"]))
+    return {
+        "scrubbing": combined,
+        "placeholders": placeholders,
+        "shared_count": sum(1 for r in placeholders if len(r["files"]) > 1),
+        "flagged": [(f, finding) for f in files for finding in f.model.scrubbing.flagged],
+        "allowed": [(f, finding) for f in files for finding in f.model.scrubbing.allowed],
+        "per_file": [
+            {"name": f.name, "folder": f.folder, "distinct": f.model.scrubbing.distinct_values,
+             "places": len(f.model.scrubbing.redactions), "flagged": len(f.model.scrubbing.flagged)}
+            for f in files
+        ],
+    }
 
 
 def _context(result: BatchResult) -> dict:
@@ -99,4 +146,6 @@ def _context(result: BatchResult) -> dict:
         "manifest_missing": result.manifest_missing,
         "manifest_extra": [rel(s.path) for s in result.manifest_extra],
         "summary_page": SUMMARY_PAGE,
+        "redactions_page": REDACTIONS_PAGE,
+        **_redaction_context(result.files),
     }
