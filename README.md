@@ -156,6 +156,11 @@ fm-saxml build ./MySolution.xml --out ./docs/MySolution
 | `--yes` / `-y` | `build`, `render` | Same as `--force`/`-f` — skip the overwrite-confirmation prompt |
 | `--open` | `build` | Open the output folder when finished |
 | `--html` | `build`, `render` | Also write an `index.html` for browsing the docs in a web browser (see below) |
+| `--fail-on-coverage-gap` | `build` | Exit with status 1 if anything in the export didn't reach the docs, or the export has XML the converter doesn't recognise (see [Coverage report](#coverage-report)). For CI. |
+
+### Coverage report
+
+Every build writes `Reports/coverage.md`. It counts about 70 things straight from the export's XML (scripts, step comments, Set Variable names, button actions, relationship options, value list sources, privilege rows, validation rules, and so on), independently of the converter, and sets each against the same thing in the finished docs. Some checks look at the rendered text: a Set Variable name only counts if it appears in the step. The report also lists any element or attribute the converter has no rule for ("Unrecognised XML"), so a FileMaker option this version doesn't document can't disappear silently, and what it leaves out on purpose (images, styling, layout geometry). The home page shows a one-line result, and a multi-file build's `Reports/batch-summary.md` has a Coverage column.
 
 ### Browsing the docs in a web browser (`--html`)
 
@@ -284,7 +289,7 @@ saxml2doc/
 │  └─ <TableName>/
 ├─ TableOccurrences/
 ├─ Relationships/
-├─ Layouts/
+├─ Layouts/            (parts, objects with their value lists and button actions)
 ├─ LayoutObjects/
 │  └─ <LayoutName>/
 ├─ Scripts/
@@ -293,6 +298,7 @@ saxml2doc/
 ├─ ValueLists/
 ├─ Reports/
 │  ├─ summary.md
+│  ├─ coverage.md
 │  ├─ redactions.md
 │  ├─ warnings.md
 │  └─ unresolved-references.md

@@ -89,6 +89,7 @@ MEASURE_XPATHS: dict[str, str] = {
     "portals": f"{_OBJECTS}/Portal",
     "sorted_portals": f"{_OBJECTS}/Portal[SortSpecification[@value='True']//Sort]",
     "filtered_portals": f"{_OBJECTS}/Portal[Calculation]",
+    "portals_allow_deletion": f"{_OBJECTS}/Portal[number(Options) mod 8 >= 4]",  # bit 4
     "tooltips": f"{_OBJECTS}/Tooltip[.//Calculation]",
     # Fields
     "field_comments": f"{_FIELDS}[normalize-space(@comment)!='']",

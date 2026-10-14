@@ -309,6 +309,7 @@ class PortalOptions(BaseModel):
 
     initial_row: Optional[int] = Field(None, alias="initialRow")
     rows: Optional[int] = None  # number of rows shown
+    allow_deletion: Optional[bool] = Field(None, alias="allowDeletion")  # "Allow deletion of portal records"
     sort: list[SortField] = []
 
     model_config = ConfigDict(populate_by_name=True)

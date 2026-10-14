@@ -772,6 +772,7 @@ def _normalize_layout_objects(raw: RawModel, model: DocumentModel) -> None:
                 portal=PortalOptions(
                     initialRow=_int_or_none(portal.get("initial_row")),
                     rows=_int_or_none(portal.get("rows")),
+                    allowDeletion=portal.get("allow_deletion"),
                     sort=_sort_fields(portal.get("sort"), resolve_field, ext),
                 ) if portal else None,
                 scriptTriggers=_script_triggers(obj.get("script_triggers"), ext, model),

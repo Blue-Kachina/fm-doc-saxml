@@ -329,6 +329,7 @@ def test_portal_rows_and_sort_order():
     </LayoutObject>"""), "Body", 0)
     portal = obj["portal"]
     assert portal["rows"] == "3" and portal["initial_row"] == "1"
+    assert portal["allow_deletion"] is False  # 281 = 256 + 16 + 8 + 1: no bit 4
     assert [(s["field_name"], s["order"]) for s in portal["sort"]] == [("created", "Descending")]
 
 
@@ -454,3 +455,14 @@ def test_filemaker_step_text_is_used_and_scrubbed(tmp_path):
     everything += "".join(p.read_text(encoding="utf-8") for p in out.rglob("*.json"))
     assert "swordfish99" not in everything
     assert "Q" * 40 not in everything
+
+
+def test_portal_allow_deletion_is_bit_4():
+    # disRenewalUniverse "Contrat - Fiche": the portal with 277 allows deletion, those with 281 don't
+    def portal(flags: int) -> dict:
+        return _parse_layout_object(etree.fromstring(
+            f'<LayoutObject id="1" type="Portal"><Portal><Options index="1" show="2">{flags}</Options></Portal></LayoutObject>'),
+            "Body", 0)["portal"]
+    assert portal(277)["allow_deletion"] is True
+    assert portal(281)["allow_deletion"] is False
+    assert portal(17)["allow_deletion"] is False

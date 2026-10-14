@@ -31,6 +31,7 @@ layout: {{ entity.layout_doc_id }}
 |---|---|
 {% if entity.portal.rows %}| Rows Shown | {{ entity.portal.rows }} |
 {% endif %}{% if entity.portal.initial_row %}| Initial Row | {{ entity.portal.initial_row }} |
+{% endif %}{% if entity.portal.allow_deletion is not none %}| Allow Deletion of Portal Records | {{ "Yes" if entity.portal.allow_deletion else "No" }} |
 {% endif %}| Sort Portal Records | {{ "Yes" if entity.portal.sort else "No" }} |
 {% if entity.calculations | selectattr("role", "equalto", "portalFilter") | list %}| Filter Portal Records | Yes (see Calculations) |
 {% endif %}

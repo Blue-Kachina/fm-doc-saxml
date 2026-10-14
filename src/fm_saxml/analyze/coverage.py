@@ -199,6 +199,8 @@ MEASURES: list[Measure] = [
             lambda m: sum(1 for o in _objects(m) if o.portal is not None and o.portal.sort)),
     Measure("filtered_portals", "Layouts", "Filtered portals",
             lambda m: sum(1 for o in _objects(m) if any(c.role == "portalFilter" for c in o.calculations))),
+    Measure("portals_allow_deletion", "Layouts", "Portals allowing record deletion",
+            lambda m: sum(1 for o in _objects(m) if o.portal is not None and o.portal.allow_deletion)),
     Measure("tooltips", "Layouts", "Tooltips",
             lambda m: sum(1 for o in _objects(m) if any(c.role == "tooltip" for c in o.calculations))),
     # Fields

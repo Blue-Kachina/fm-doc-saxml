@@ -189,6 +189,6 @@ Its first run on the 25 production files found these losses, all fixed:
 
 Also done: relationship graph notes (with the TOs under each, by position; `TableOccurrences/_GraphNotes.md`), layout parts with sub-summary break fields, a layout's own menu set, the file's default menu set and "use default fields", container external storage, field annotations, `buttonKind` on layout objects, and the portal filter calc's role is now `portalFilter`.
 
-All 25 production files, NEXUS, disRenewal and EverythingBagel: every check complete, nothing unrecognised. `tests/test_coverage.py` keeps the samples at that floor.
+All 24 production files, NEXUS, disRenewal and EverythingBagel: every check complete, nothing unrecognised. `tests/test_coverage.py` keeps the samples at that floor.
 
-**Still open:** portal "Allow deletion of portal records". It is only in the `<Portal><Options>` bitmask. Across 412 portals, bit 8 matches "sorted" and bit 128 matches "filtered" exactly, but no XML evidence identifies deletion. Two portals in NEXUS settle it: "GROUP Add/Edit Card" object 127 (flags 17) and "GROUP" object 148 (flags 16) differ only in bit 1.
+**Portal "Allow deletion of portal records"** (done, after a check in FileMaker): bit 4 of `<Portal><Options>`. Bits 1 and 16 go with vertical scrolling and 256 is neither (checked on NEXUS "GROUP Add/Edit Card" and disRenewal "Paramètres"); on disRenewal "Contrat - Fiche" only the portal with bit 4 allows deletion. Also counted by the coverage report.

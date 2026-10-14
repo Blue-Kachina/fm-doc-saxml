@@ -310,7 +310,21 @@ def _parse_portal(portal: etree._Element | None) -> dict[str, Any] | None:
         "sort": parse_sort_spec(sort_spec),  # with order and custom value list
         "initial_row": attr(options, "index") or None if options is not None else None,
         "rows": attr(options, "show") or None if options is not None else None,
+        "allow_deletion": _portal_flag(options, _PORTAL_ALLOW_DELETION),
     }
+
+
+# Bits of <Portal><Options>N</Options>, identified by comparing exports with Portal Setup in
+# FileMaker: 4 = "Allow deletion of portal records" (8 = sorted, 128 = filtered; 1 and 16
+# go with vertical scrolling). Only the deletion bit isn't also visible elsewhere in the XML.
+_PORTAL_ALLOW_DELETION = 4
+
+
+def _portal_flag(options: etree._Element | None, bit: int) -> bool | None:
+    try:
+        return bool(int((options.text or "").strip()) & bit) if options is not None else None
+    except ValueError:
+        return None
 
 
 def _parse_layout_object(
