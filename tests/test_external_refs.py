@@ -202,7 +202,7 @@ def test_external_references_json_is_self_contained(rich, tmp_path):
     assert doc["externalTableOccurrences"][0]["baseTableUuid"] == "BT-UUID"
     assert doc["references"] and all(r["target"] and r["target"]["dataSourceUuid"] == "DS-UUID" for r in doc["references"])
     kinds = {r["target"]["targetType"] for r in doc["references"]}
-    assert kinds == {"field", "script", "layout"}
+    assert kinds == {"field", "script", "layout", "table"}
 
 
 def test_extractor_reads_data_source_catalog():

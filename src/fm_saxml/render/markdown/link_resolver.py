@@ -31,11 +31,14 @@ from ...normalize.paths import (
 class LinkResolver:
     """Resolves docIds to Markdown file paths and builds relative Markdown links."""
 
-    def __init__(self, model: DocumentModel) -> None:
+    def __init__(self, model: DocumentModel, cross_file: dict[str, tuple[str, str]] | None = None) -> None:
+        """``cross_file`` maps docIds that live in other files of a multi-file build to
+        ``(path, title)``, the path relative to this file's output folder (``../Other/...``)."""
         self._model = model
         self._path_by_doc_id: dict[str, str] = {}
         self._title_by_doc_id: dict[str, str] = {}
         self._field_dir_by_table: dict[str, str] = {}
+        self._cross_file = cross_file or {}
         self._build_index()
 
     @property
@@ -163,10 +166,14 @@ class LinkResolver:
         return self._path_by_doc_id.get(doc_id)
 
     def title_for(self, doc_id: str) -> str:
+        if doc_id in self._cross_file:
+            return self._cross_file[doc_id][1]
         return self._title_by_doc_id.get(doc_id, doc_id)
 
     def href(self, from_path: str, target_doc_id: str) -> str | None:
         to_path = self._path_by_doc_id.get(target_doc_id)
+        if to_path is None and target_doc_id in self._cross_file:
+            to_path = self._cross_file[target_doc_id][0]
         if to_path is None:
             return None
         return _relative(from_path, to_path)

@@ -6,7 +6,8 @@ from typing import Any
 from lxml import etree
 
 from ._helpers import (
-    attr, calc_text_of, find_all_children, find_all_descendants, find_child, modification_info, text_of, xml_path,
+    attr, calc_text_of, find_all_children, find_all_descendants, find_child, modification_info, text_of, uuid_of,
+    xml_path,
 )
 from .chunk_lists import chunk_refs_for
 
@@ -105,7 +106,7 @@ def _parse_script(elem: etree._Element, folder_path: str, steps_map: dict[str, l
     return {
         "id": sc_id,
         "name": attr(elem, "name", "Name"),
-        "uuid": attr(elem, "uuid", "UUID") or None,
+        "uuid": uuid_of(elem),
         "folder_path": folder_path or None,
         "steps": steps,
         "modified": modification_info(elem),

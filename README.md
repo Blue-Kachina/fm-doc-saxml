@@ -169,6 +169,23 @@ fm-saxml build ./MySolution.xml --html
 - The Markdown is rendered with [Milkdown Crepe](https://milkdown.dev/), loaded from a CDN (esm.sh and jsDelivr). Viewing needs internet access, at least until the browser has cached it. The `.md` files are unchanged and still work on their own.
 - Keep `index.html` and `_viewer/` together if you move or zip the folder.
 
+### Multi-file solutions (FileMaker 26 folder exports)
+
+FileMaker Pro 26 can Save a Copy as XML for several files at once. Point `build` at the folder it wrote:
+
+```bash
+fm-saxml build ./SaXML_PROD_2026-10-14
+```
+
+Each file gets its own subfolder (named after the FileMaker file, e.g. `Clients/`), laid out exactly like a single-file build. References from one file into another (external table occurrences, relationship predicates, layout fields, Perform Script from another file, Go to Related Record) become links to the other file's pages, and the target's "Used By" / "Referenced By" lists show callers from the other files. A combined `index.md` lists every file with what it references and what references it, and `Reports/batch-summary.md` shows how each external data source was paired with a file.
+
+- Both export styles work: one XML per file, or **separate catalogs** (one folder per file with one XML per catalog). A single file's catalog folder can also be built on its own.
+- `Summary.xml` is used to warn about files it lists that are missing from the folder.
+- Data sources are paired with files by their file path (`file:Clients` → `Clients.fmp12`). References into files that aren't in the folder stay plain text and are listed in the index.
+- A file that can't be converted is reported and skipped; the others are still built, and the exit code is 1.
+- `--strict` also fails on files missing from `Summary.xml`, skipped XMLs, ambiguous pairings and cross-file targets that don't exist. `--model-out` isn't supported for folders.
+- `inspect` and `validate` accept a folder too.
+
 ### Secret and personal-data scrubbing
 
 Scrubbing is **on by default** for `build`, `parse`, `render` and `diff`. Before any output is written, credentials, tokens, internal hostnames and personal data found in the export are replaced with numbered placeholders. The calculation logic around them is left intact:

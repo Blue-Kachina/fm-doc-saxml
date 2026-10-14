@@ -5,7 +5,9 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, find_child, find_all_children, find_all_descendants, calc_text_of, xml_path, modification_info
+from ._helpers import (
+    attr, find_child, find_all_children, find_all_descendants, calc_text_of, xml_path, modification_info, uuid_of,
+)
 from .chunk_lists import ChunkLists, collect_calcs
 
 
@@ -75,7 +77,7 @@ def _parse_field(
     return {
         "id": attr(elem, "id", "ID"),
         "name": attr(elem, "name", "Name"),
-        "uuid": attr(elem, "uuid", "UUID") or None,
+        "uuid": uuid_of(elem),
         "comment": attr(elem, "comment", "Comment") or None,
         # v1 uses dataType/fieldType (camelCase); v2 uses datatype/fieldtype (lower)
         "data_type": attr(elem, "dataType", "DataType", "datatype", "fieldDataType") or "Text",

@@ -14,6 +14,7 @@ import json
 import re
 from importlib import resources
 from pathlib import Path
+from urllib.parse import unquote
 
 from ...utils.file_writer import write_text
 
@@ -59,7 +60,7 @@ def render_html_viewer(output_dir: Path) -> int:
         "generatedAt": root_meta.get("generatedAt", ""),
         # Sidebar section order and labels follow the root index's "Sections" list.
         "sections": [
-            {"dir": target.split("/")[0], "label": label, "target": target}
+            {"dir": unquote(target.split("/")[0]), "label": label, "target": target}
             for label, target in _SECTION_LINK_RE.findall(root_body)
         ],
         "pages": pages,

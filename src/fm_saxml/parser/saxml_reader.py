@@ -56,22 +56,77 @@ class RawModel:
     parse_warnings: list[str] = field(default_factory=list)
 
 
-def parse_savexml(xml_path: Path) -> RawModel:
-    """Parse a FileMaker SaveAsXML file and return a RawModel."""
+def parse_savexml(xml_path: Path, fragments: list[Path] | None = None) -> RawModel:
+    """Parse a FileMaker SaveAsXML file and return a RawModel.
+
+    ``xml_path`` may also be the folder of a "separate catalogs" export, holding one
+    XML per catalog; pass ``fragments`` to name those XMLs explicitly (otherwise every
+    ``*.xml`` in the folder is used). They are merged back into one document first.
+    """
     raw = RawModel(file_name=xml_path.name)
 
     try:
-        tree = etree.parse(str(xml_path))
+        if fragments or xml_path.is_dir():
+            paths = fragments or sorted(p for p in xml_path.iterdir() if p.suffix.lower() == ".xml")
+            if not paths:
+                raw.parse_warnings.append("XML parse error: no catalog XML files in this folder")
+                return raw
+            root = merge_split_catalogs([etree.parse(str(p)).getroot() for p in paths])
+        else:
+            root = etree.parse(str(xml_path)).getroot()
     except etree.XMLSyntaxError as exc:
         raw.parse_warnings.append(f"XML parse error: {exc}")
         return raw
-
-    root = tree.getroot()
 
     root_tag = root.tag.split("}")[-1] if "}" in root.tag else root.tag
     if root_tag == "FMSaveAsXML" and _is_v2_format(root):
         return _parse_v2(xml_path, root, raw)
     return _parse_v1(xml_path, root, raw)
+
+
+def merge_split_catalogs(roots: list) -> etree._Element:
+    """Rebuild one whole-file document from the per-catalog documents of a split export.
+
+    Each fragment is a full ``FMSaveAsXML`` holding one catalog in
+    ``Structure/AddAction`` (or the ``Metadata`` block), plus its own ``DDR_INFO``.
+    The merged document has every catalog in a single ``AddAction`` and every
+    ``DDR_INFO`` section's entries combined, which is the shape ``_parse_v2`` reads.
+    The fragments' elements are moved, not copied.
+    """
+    first = roots[0]
+    ns = first.tag[: first.tag.index("}") + 1] if first.tag.startswith("{") else ""
+    merged = etree.Element(first.tag, dict(first.attrib), nsmap=first.nsmap)
+    add_action = etree.SubElement(etree.SubElement(merged, f"{ns}Structure"), f"{ns}AddAction")
+    ddr_info = etree.Element(f"{ns}DDR_INFO")
+
+    for root in roots:
+        for child in list(root):
+            if not isinstance(child.tag, str):
+                continue
+            name = strip_namespace(child.tag)
+            if name == "Structure":
+                for action in child:
+                    if isinstance(action.tag, str) and strip_namespace(action.tag) == "AddAction":
+                        add_action.extend(list(action))
+            elif name == "DDR_INFO":
+                _merge_by_name(ddr_info, child, depth=2)  # DDR_INFO / <section> / ObjectList / entries
+            else:
+                merged.append(child)
+
+    merged.append(ddr_info)
+    return merged
+
+
+def _merge_by_name(dst, src, depth: int) -> None:
+    """Move ``src``'s children into ``dst``, merging same-named containers ``depth`` levels down."""
+    for child in list(src):
+        if not isinstance(child.tag, str):
+            continue
+        same = find_child(dst, strip_namespace(child.tag)) if depth > 0 else None
+        if same is None:
+            dst.append(child)
+        else:
+            _merge_by_name(same, child, depth - 1)
 
 
 def _is_v2_format(root) -> bool:

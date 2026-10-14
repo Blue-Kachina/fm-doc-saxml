@@ -149,6 +149,8 @@ class TableOccurrenceEntity(BaseModel):
     external_base_table: Optional[str] = Field(None, alias="externalBaseTable")
     external_base_table_id: Optional[str] = Field(None, alias="externalBaseTableId")
     external_base_table_uuid: Optional[str] = Field(None, alias="externalBaseTableUuid")
+    # Scoped docId of that base table (the target of this TO's external basedOnBaseTable reference)
+    external_base_table_doc_id: Optional[str] = Field(None, alias="externalBaseTableDocId")
     relationships: list[str] = []    # relationship docIds
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 

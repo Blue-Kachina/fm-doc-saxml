@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, find_child, find_all_children, find_all_descendants, xml_path, modification_info
+from ._helpers import attr, find_child, find_all_children, find_all_descendants, xml_path, modification_info, uuid_of
 from .chunk_lists import ChunkLists, collect_calcs
 from .scripts import _parse_step, _sibling_data_source
 
@@ -98,7 +98,7 @@ def _parse_layout(elem: etree._Element, chunk_lists: ChunkLists | None = None) -
     return {
         "id": attr(elem, "id", "ID"),
         "name": attr(elem, "name", "Name"),
-        "uuid": _layout_uuid(elem),
+        "uuid": uuid_of(elem),
         "table_occurrence_id": to_id,
         "table_occurrence_name": to_name,
         "theme": theme,
@@ -114,15 +114,6 @@ def _parse_layout(elem: etree._Element, chunk_lists: ChunkLists | None = None) -
     }
 
 
-def _layout_uuid(elem: etree._Element) -> str | None:
-    """v1 stores uuid as an attribute; v2 has a <UUID> child element."""
-    val = attr(elem, "uuid", "UUID") or None
-    if val:
-        return val
-    uuid_child = find_child(elem, "UUID")
-    if uuid_child is not None and uuid_child.text:
-        return uuid_child.text.strip() or None
-    return None
 
 
 def _collect_layout_objects(
@@ -290,7 +281,7 @@ def _parse_layout_object(
     obj_id = attr(lo, "id", "ID")
     obj_name = attr(lo, "name", "Name")
     obj_kind = attr(lo, "kind", "Kind") or None
-    obj_uuid = _layout_uuid(lo)
+    obj_uuid = uuid_of(lo)
 
     bounds = _parse_bounds(find_child(lo, "Bounds"))
 

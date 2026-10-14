@@ -57,6 +57,11 @@ def find_all_descendants(elem: etree._Element, *tags: str) -> list[etree._Elemen
     return [e for e in elem.iter() if isinstance(e.tag, str) and _local(e.tag) in tags]
 
 
+def uuid_of(elem: etree._Element) -> str | None:
+    """An object's UUID: v1 stores it as an attribute, v2 as a <UUID> child element."""
+    return attr(elem, "uuid", "UUID") or text_of(find_child(elem, "UUID")) or None
+
+
 def text_of(elem: etree._Element | None) -> str:
     """Get .text of an element, stripped, or empty string."""
     if elem is None:

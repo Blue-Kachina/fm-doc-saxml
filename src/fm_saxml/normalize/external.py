@@ -12,7 +12,7 @@ from typing import Optional
 from ..model.document_model import DocumentModel
 from ..model.entities import TableOccurrenceEntity
 from ..model.references import ExternalTarget
-from .ids import field_doc_id, layout_doc_id, provisional_scope, script_doc_id, scoped_doc_id
+from .ids import field_doc_id, layout_doc_id, provisional_scope, script_doc_id, scoped_doc_id, table_doc_id
 
 
 class ExternalTargets:
@@ -55,6 +55,8 @@ class ExternalTargets:
             local = script_doc_id(name)
         elif kind == "layout":
             local = layout_doc_id(name)
+        elif kind == "table":
+            local = table_doc_id(name)
         else:
             local = field_doc_id(kw.get("baseTable") or kw.get("tableOccurrence") or "", name)
         scope = provisional_scope(kw.get("dataSourceUuid"), kw["dataSource"])
@@ -78,6 +80,20 @@ class ExternalTargets:
             baseTable=to.external_base_table,
             baseTableId=to.external_base_table_id,
             baseTableUuid=to.external_base_table_uuid,
+        )
+
+    def table(self, to_name: Optional[str]) -> Optional[ExternalTarget]:
+        """Target for an external TO's base table, else None (local TO)."""
+        to = self.to_entity(to_name)
+        if to is None or not to.external_base_table:
+            return None
+        return self._make(
+            **self._source_fields(to.external_data_source, to.external_data_source_id, to.external_data_source_uuid),
+            targetType="table",
+            name=to.external_base_table,
+            fmpId=to.external_base_table_id,
+            uuid=to.external_base_table_uuid,
+            tableOccurrence=to.name,
         )
 
     def script(

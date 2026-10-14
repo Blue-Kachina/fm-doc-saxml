@@ -1,0 +1,61 @@
+---
+title: Batch Summary
+generatedAt: {{ generated_at }}
+---
+
+# Batch Summary
+
+[Back to index](../index.md)
+
+| Name | Value |
+|---|---|
+| Files converted | {{ files | length }} |
+{% if split_count %}| Of which separate-catalog exports | {{ split_count }} |
+{% endif %}| Not converted | {{ failed | length + skipped | length }} |
+| Cross-file references | {{ xref_total }} |
+| Resolved | {{ xref_resolved }} |
+| Unresolved | {{ xref_total - xref_resolved }} |
+
+## Files
+
+| File | Source | Unresolved References (in file) | Redactions |
+|---|---|---:|---:|
+{% for f in files %}
+| [{{ f.name | cell }}](../{{ f.href }}) | `{{ f.source }}` | {{ f.unresolved }} | {% if f.redactions is none %}_scrubbing off_{% else %}[{{ f.redactions }}](../{{ f.folder | urlencode }}/Reports/redactions.md){% endif %} |
+{% endfor %}
+
+## Data Source Pairings
+
+How each file's external FileMaker data sources were matched to the other files.
+
+{% if pairings %}
+| File | Data Source | Path | Paired With | Matched By | Reason |
+|---|---|---|---|---|---|
+{% for p in pairings %}
+| {{ p.source | cell }} | {{ p.data_source | cell }} | {{ p.paths | cell }} | {{ p.target | cell }} | {{ p.match }} | {{ p.reason | cell }} |
+{% endfor %}
+{% else %}
+_No file has external data sources._
+{% endif %}
+{% if missing_targets %}
+
+## Targets Not Found
+
+The data source was paired, but the referenced object doesn't exist in that file (usually renamed or deleted).
+
+| File | Source | Relationship | Reason |
+|---|---|---|---|
+{% for m in missing_targets %}
+| {{ m.source | cell }} | `{{ m.ref.source_doc_id }}` | {{ m.ref.relationship_type }} | {{ m.reason | cell }} |
+{% endfor %}
+{% endif %}
+{% if manifest_extra %}
+
+## Not Listed in Summary.xml
+
+These exports were converted, but the folder's Summary.xml doesn't list them.
+
+{% for e in manifest_extra %}
+- `{{ e }}`
+{% endfor %}
+{% endif %}

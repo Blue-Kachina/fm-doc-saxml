@@ -16,11 +16,24 @@ from .link_resolver import LinkResolver, _esc as _esc_link_label
 
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
 
+# fm-saxml's own version line for page footers, looked up once by render_markdown
+_updated_at: str | None = None
 
-def render_markdown(model: DocumentModel, output_dir: Path) -> None:
-    """Render the full documentation site from a DocumentModel."""
+
+def render_markdown(
+    model: DocumentModel, output_dir: Path, cross_file: dict[str, tuple[str, str]] | None = None,
+) -> None:
+    """Render the full documentation site from a DocumentModel.
+
+    ``cross_file`` adds pages in sibling folders of a multi-file build (see ``LinkResolver``).
+    """
+    global _updated_at
+    from ...version import get_self_updated_at_display
+
+    # Reads git metadata (two subprocesses): once per build, not once per page
+    _updated_at = get_self_updated_at_display()
     env = _make_jinja_env()
-    links = LinkResolver(model)
+    links = LinkResolver(model, cross_file)
 
     _render_root_index(model, output_dir, env, links)
     _render_tables(model, output_dir, env, links)
@@ -81,6 +94,9 @@ def _make_ctx(
     def backlinks(doc_id: str) -> list[dict]:
         return model.backlinks.get(doc_id, [])
 
+    def has_page(doc_id: str) -> bool:
+        return links.href(current_path, doc_id) is not None
+
     xml_modified_at = (
         model.source.source_modified_at.strftime("%Y-%m-%d %H:%M UTC")
         if model.source.source_modified_at
@@ -97,12 +113,13 @@ def _make_ctx(
         "solution_name": model.solution.name,
         "generated_at": model.source.generated_at.strftime("%Y-%m-%d %H:%M UTC"),
         "xml_modified_at": xml_modified_at,
-        "fm_saxml_updated_at": get_self_updated_at_display(),
+        "fm_saxml_updated_at": _updated_at or get_self_updated_at_display(),
         "fm_saxml_repo_url": REPO_URL,
         "fm_saxml_repo_label": REPO_LABEL,
         "link": link,
         "get_entity": get_entity,
         "backlinks": backlinks,
+        "has_page": has_page,
     }
 
 

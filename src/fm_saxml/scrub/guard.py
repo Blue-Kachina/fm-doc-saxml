@@ -10,6 +10,7 @@ from __future__ import annotations
 import html
 import json
 import re
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -57,21 +58,37 @@ def find_leaks_in_text(path: Path, text: str, values: dict[str, str], limit: int
     return leaks
 
 
+def _read_or_none(path: Path) -> str | None:
+    try:
+        return _read(path)
+    except OSError:
+        return None
+
+
+# Files are read a chunk at a time on a few threads: opening a file that was just
+# written is slow where antivirus scans it on first read (seconds per thousand files
+# on Windows), and those waits overlap. Matching stays in order, in this thread.
+_READ_THREADS = 8
+_READ_CHUNK = 256
+
+
 def find_leaks(paths: Iterable[Path], values: dict[str, str], limit: int = 50) -> list[Leak]:
     """Every occurrence of a guarded value in ``paths``. ``values`` maps value -> placeholder."""
     if not values:
         return []
     pattern, lookup = _pattern(values)
     leaks: list[Leak] = []
-    for path in paths:
-        try:
-            text = _read(path)
-        except OSError:
-            continue
-        for m in pattern.finditer(text):
-            leaks.append(Leak(path, text.count("\n", 0, m.start()) + 1, lookup[m.group()]))
-            if len(leaks) >= limit:
-                return leaks
+    paths = list(paths)
+    with ThreadPoolExecutor(max_workers=_READ_THREADS) as pool:
+        for start in range(0, len(paths), _READ_CHUNK):
+            chunk = paths[start:start + _READ_CHUNK]
+            for path, text in zip(chunk, pool.map(_read_or_none, chunk)):
+                if text is None:
+                    continue
+                for m in pattern.finditer(text):
+                    leaks.append(Leak(path, text.count("\n", 0, m.start()) + 1, lookup[m.group()]))
+                    if len(leaks) >= limit:
+                        return leaks
     return leaks
 
 

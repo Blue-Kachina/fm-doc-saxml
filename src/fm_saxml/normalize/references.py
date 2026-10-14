@@ -71,8 +71,23 @@ def _link_summary_fields(model: DocumentModel) -> None:
 # ---------------------------------------------------------------------------
 
 def _link_tos_to_tables(model: DocumentModel) -> None:
+    from .external import ExternalTargets
+
+    externals = ExternalTargets(model)
     for to in model.entities.table_occurrences.values():
-        if to.base_table_doc_id in model.entities.tables:
+        target = externals.table(to.name) if to.external_data_source else None
+        if target is not None:
+            to.external_base_table_doc_id = target.scoped_doc_id
+            model.references.append(ReferenceRecord(
+                sourceDocId=to.doc_id,
+                sourceEntityType="tableOccurrence",
+                targetDocId=target.scoped_doc_id,
+                targetEntityType="table",
+                relationshipType="basedOnBaseTable",
+                confidence="external",
+                externalTarget=target,
+            ))
+        elif to.base_table_doc_id in model.entities.tables:
             model.references.append(ReferenceRecord(
                 sourceDocId=to.doc_id,
                 sourceEntityType="tableOccurrence",
