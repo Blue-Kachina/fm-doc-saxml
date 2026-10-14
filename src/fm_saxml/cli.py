@@ -1059,7 +1059,7 @@ def _print_summary(model, verbose: bool = False) -> None:
         ("Custom Menus", len(em.custom_menus)),
         ("Custom Menu Sets", len(em.custom_menu_sets)),
         ("Themes", len(em.themes)),
-        ("File References", len(em.file_references)),
+        ("File Access", len(em.file_references)),
     ]
     for name, count in rows:
         tbl.add_row(name, str(count))

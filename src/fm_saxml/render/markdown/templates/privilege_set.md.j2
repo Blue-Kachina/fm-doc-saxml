@@ -1,0 +1,64 @@
+---
+docId: {{ entity.doc_id }}
+entityType: privilegeSet
+name: {{ entity.name }}
+---
+
+# Privilege Set: {{ entity.name }}
+
+## Metadata
+
+| Name | Value |
+|---|---|
+| FMP ID | {{ entity.fmp_id }} |
+{% if entity.modified %}| Last Modified By | {{ entity.modified.account_name or entity.modified.user_name }}{% if entity.modified.user_name and entity.modified.user_name != entity.modified.account_name %} (user: {{ entity.modified.user_name }}){% endif %} |
+| Last Modified | {{ entity.modified.timestamp }} |
+{% endif %}{% if entity.description %}| Description | {{ entity.description | cell }} |
+{% endif %}{% if entity.built_in %}| Built-in | Yes |
+{% endif %}
+
+{% set categories = [("Records", "Table", entity.records), ("Layouts", "Layout", entity.layouts), ("Value Lists", "Value List", entity.value_lists), ("Scripts", "Script", entity.scripts)] %}
+{% if entity.records or entity.layouts or entity.value_lists or entity.scripts %}
+## Data Access and Design
+
+| Category | Access |
+|---|---|
+{% for label, item_label, cat in categories %}{% if cat %}| {{ label }} | {{ cat.summary or "—" }} |
+{% endif %}{% endfor %}
+{% for label, item_label, cat in categories %}{% if cat and cat.custom is not none %}
+
+### {{ label }}: custom privileges
+
+{% set columns = [] %}{% for item in cat.custom %}{% for col in item.access %}{% if col not in columns %}{% set _ = columns.append(col) %}{% endif %}{% endfor %}{% endfor %}
+{% set has_calcs = cat.custom | selectattr("calculations") | list %}
+| {{ item_label }} |{% for col in columns %} {{ col }} |{% endfor %}{% if has_calcs %} Limited by |{% endif %}
+
+|---|{% for col in columns %}---|{% endfor %}{% if has_calcs %}---|{% endif %}
+
+{% for item in cat.custom %}
+| {% if item.target_doc_id %}{{ link(item.target_doc_id, item.label) }}{% else %}{{ item.label or item.kind }}{% endif %} |{% for col in columns %} {{ access_label(item.access.get(col, "")) }} |{% endfor %}{% if has_calcs %} {% for c in item.calculations %}{{ c.role }}: `{{ c.text | cell }}`{% if not loop.last %}<br>{% endif %}{% endfor %} |{% endif %}
+
+{% endfor %}
+{% endif %}{% endfor %}
+{% endif %}
+
+{% if entity.other %}
+## Other Privileges
+
+| Privilege | Value |
+|---|---|
+{% for key, value in entity.other.items() %}
+| {{ other_label(key) }} | {{ other_value(key, value) }} |
+{% endfor %}
+{% endif %}
+
+{% set bl = backlinks(entity.doc_id) %}
+{% if bl %}
+## Used By
+
+| Source | Type | Relationship |
+|---|---|---|
+{% for b in bl %}
+| {{ link(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.relationshipType }} |
+{% endfor %}
+{% endif %}

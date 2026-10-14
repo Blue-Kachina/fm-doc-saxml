@@ -20,6 +20,7 @@ from .extractors.chunk_lists import extract_chunk_lists
 from .extractors.custom_functions import extract_custom_functions
 from .extractors.value_lists import extract_value_lists
 from .extractors.external_data_sources import extract_external_data_sources
+from .extractors.file_options import extract_file_options
 from .extractors.privileges import extract_privilege_sets
 from .extractors.accounts import extract_accounts
 from .extractors.extended_privileges import extract_extended_privileges
@@ -53,6 +54,7 @@ class RawModel:
     custom_menu_sets: list[dict[str, Any]] = field(default_factory=list)
     themes: list[dict[str, Any]] = field(default_factory=list)
     file_references: list[dict[str, Any]] = field(default_factory=list)
+    file_options: dict[str, Any] | None = None
     parse_warnings: list[str] = field(default_factory=list)
 
 
@@ -187,6 +189,7 @@ def _parse_v2(xml_path: Path, root, raw: RawModel) -> RawModel:
     raw.themes = extract_themes(container)
     raw.file_references = extract_file_references(container)
     raw.external_data_sources = extract_external_data_sources(container)
+    raw.file_options = extract_file_options(root)
 
     return raw
 

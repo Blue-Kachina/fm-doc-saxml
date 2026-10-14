@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import PurePosixPath
 from urllib.parse import quote
 
-from ...model.document_model import DocumentModel
+from ...model.document_model import DocumentModel, FILE_OPTIONS_DOC_ID
 from ...normalize.names import safe_slug
 from ...normalize.paths import (
     dedupe_paths,
@@ -154,6 +154,11 @@ class LinkResolver:
             self._title_by_doc_id[e.doc_id] = f"{layout_name} · {display}"
 
         self._path_by_doc_id.update(dedupe_paths(children))
+
+        # The file's own options (its OnFirstWindowOpen script, default layout) sit on the home page
+        if self._model.file_options is not None:
+            self._path_by_doc_id[FILE_OPTIONS_DOC_ID] = "index.md"
+            self._title_by_doc_id[FILE_OPTIONS_DOC_ID] = "File Options"
 
         # Targets in other files have no page here; show them readably, not as a raw scoped id
         for ref in self._model.references:

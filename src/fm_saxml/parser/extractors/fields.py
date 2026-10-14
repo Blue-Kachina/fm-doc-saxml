@@ -6,7 +6,7 @@ from typing import Any
 from lxml import etree
 
 from ._helpers import (
-    attr, find_child, find_all_children, find_all_descendants, calc_text_of, xml_path, modification_info, uuid_of,
+    attr, find_child, find_all_children, find_all_descendants, calc_text_of, text_of, xml_path, modification_info, uuid_of,
 )
 from .chunk_lists import ChunkLists, collect_calcs
 
@@ -72,7 +72,10 @@ def _parse_field(
     validation = _parse_validation(find_child(elem, "Validation"))
     storage = _parse_storage(find_child(elem, "Storage"))
     calculation_elem = find_child(elem, "Calculation")
-    summary_field = _parse_summary_field(find_child(elem, "SummaryField"), table_name)
+    summary_info = find_child(elem, "SummaryInfo")  # v2 wraps <SummaryField> in <SummaryInfo operation=...>
+    summary_field = _parse_summary_field(
+        find_child(summary_info if summary_info is not None else elem, "SummaryField"), table_name)
+    ae_elem = find_child(elem, "AutoEnter")
 
     return {
         "id": attr(elem, "id", "ID"),
@@ -90,6 +93,13 @@ def _parse_field(
         "validation": validation,
         "storage": storage,
         "summary_field": summary_field,
+        "summary": _parse_summary_info(summary_info),
+        # Calculation fields: <AutoEnter alwaysEvaluate="True"> = "Do not evaluate if all referenced
+        # fields are empty" is unchecked.
+        "always_evaluate": (
+            attr(ae_elem, "alwaysEvaluate").lower() == "true"
+            if ae_elem is not None and attr(ae_elem, "alwaysEvaluate") and not attr(ae_elem, "type") else None
+        ),
         "modified": modification_info(elem),
         "source_xml_path": xml_path(elem),
     }
@@ -113,6 +123,17 @@ def _parse_summary_field(elem: etree._Element | None, owning_table_name: str) ->
     base_table_ref = find_child(elem, "BaseTableReference")
     table_name = attr(base_table_ref, "name", "Name") if base_table_ref is not None else ""
     return {"name": field_name, "table": table_name or owning_table_name}
+
+
+def _parse_summary_info(elem: etree._Element | None) -> dict[str, Any] | None:
+    """``<SummaryInfo operation="Total" restartEachGroup="False" summarizeRepetition="Together">``."""
+    if elem is None or not attr(elem, "operation"):
+        return None
+    return {
+        "operation": attr(elem, "operation"),  # Total, Average, Count, Minimum, Maximum, StdDev, FractionOfTotal, List
+        "restart_each_group": attr(elem, "restartEachGroup").lower() == "true",
+        "summarize_repetition": attr(elem, "summarizeRepetition") or None,  # Together | Individually
+    }
 
 
 def _parse_auto_enter(elem: etree._Element | None) -> dict[str, Any] | None:
@@ -179,20 +200,37 @@ def _parse_auto_enter_v2(elem: etree._Element, v2_type: str) -> dict[str, Any]:
         value = v2_type[len("Modification"):] or None
     else:
         ae_type = v2_type[:1].lower() + v2_type[1:]  # e.g. LastVisited -> lastVisited
+    serial = find_child(elem, "SerialNumber") if v2_type == "SerialNumber" else None
+    overwrite = attr(elem, "overwriteExisting")
     return {
         "type": ae_type,
         "value": value,
         "calculation": calculation,
         "no_modify_auto_enter": attr(elem, "prohibitModification").lower() == "true",
+        # Calculated value: overwriteExisting="False" = "Do not replace existing value of field (if any)"
+        "overwrite_existing": overwrite.lower() == "true" if overwrite else None,
+        "serial": {
+            "increment": attr(serial, "increment") or None,
+            "generate": attr(serial, "generate") or None,  # OnCreation | OnCommit
+        } if serial is not None else None,
     }
 
 
+_VALIDATION_KNOWN = {"NotEmpty", "Required", "Unique", "MaximumCharacters", "ValueListReference", "Message",
+                     "Strict", "Calculation", "UUID"}
+
+
 def _parse_validation(elem: etree._Element | None) -> dict[str, Any] | None:
+    """Validation options; None when the field has no rule at all.
+
+    v2: ``<Validation type="OnlyDuringDataEntry|Always" allowOverride notEmpty unique existing>``
+    with ``<Strict>Numeric</Strict>``, ``<Message>…</Message>``, ``<ValueListReference/>`` and a
+    ``<Calculation>`` as children. v1 uses child elements (``<NotEmpty value="True"/>``) instead
+    of the attributes. Children not recognised here are kept in ``other`` rather than dropped.
+    """
     if elem is None:
         return None
 
-    # v2: notEmpty/unique/existing are inline attributes on <Validation>
-    # v1: they are child elements like <NotEmpty value="True"/>
     not_empty_elem = find_child(elem, "NotEmpty")
     required_elem = find_child(elem, "Required")
     unique_elem = find_child(elem, "Unique")
@@ -205,14 +243,38 @@ def _parse_validation(elem: etree._Element | None) -> dict[str, Any] | None:
 
     vl_ref = find_child(elem, "ValueListReference")
     value_list = attr(vl_ref, "name", "Name") if vl_ref is not None else ""
+    message_elem = find_child(elem, "Message")
+    strict_elem = find_child(elem, "Strict")
+    calc_elem = find_child(elem, "Calculation")
+    allow_override = attr(elem, "allowOverride")
+
+    other: dict[str, str] = {}
+    for child in elem:
+        if not isinstance(child.tag, str):
+            continue
+        tag = child.tag.split("}")[-1]
+        if tag in _VALIDATION_KNOWN:
+            continue
+        detail = (child.text or "").strip() or " ".join(f"{k}={v}" for k, v in child.attrib.items())
+        other[tag] = detail
 
     result = {
         "value_list": value_list or None,
         "required": _bool_attr(required_elem, "required"),
         "not_empty": _bool_attr(not_empty_elem, "notEmpty"),
         "unique": _bool_attr(unique_elem, "unique"),
+        "existing": _bool_attr(None, "existing"),  # "Existing value"
         "max_characters": None,
-        "message": attr(elem, "message", "Message") or None,
+        "strict_type": (strict_elem.text or "").strip() or None if strict_elem is not None else None,
+        "has_calculation": calc_elem is not None,  # its text is in the field's calculations (role "validation")
+        "other": other,
+        "message": (
+            attr(elem, "message", "Message")
+            or (text_of(message_elem) if message_elem is not None else "")
+            or None
+        ),
+        "validate": attr(elem, "type") or None,  # Always | OnlyDuringDataEntry
+        "allow_override": allow_override.lower() == "true" if allow_override else None,
     }
     if max_chars_elem is not None:
         try:
@@ -220,7 +282,9 @@ def _parse_validation(elem: etree._Element | None) -> dict[str, Any] | None:
         except ValueError:
             pass
 
-    if not any([result["required"], result["not_empty"], result["unique"], result["max_characters"], result["value_list"]]):
+    if not any([result["required"], result["not_empty"], result["unique"], result["existing"],
+                result["max_characters"], result["value_list"], result["strict_type"],
+                result["has_calculation"], result["message"], result["other"]]):
         return None
     return result
 
@@ -241,8 +305,10 @@ def _parse_storage(elem: etree._Element | None) -> dict[str, Any]:
         max_repeat = int(attr(elem, "maxRepetitions", "MaxRepetitions", "maxRepeat", "MaxRepeat") or "1")
     except ValueError:
         max_repeat = 1
+    stored = attr(elem, "storeCalculationResults")
     return {
         "global": global_val,
+        "stored": stored.lower() == "true" if stored else None,  # calculation fields only
         "indexed": indexed,
         "index": index_raw,
         "autoIndex": auto_index,

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..model.document_model import DocumentModel
+from ..model.document_model import DocumentModel, FILE_OPTIONS_DOC_ID
 from ..model.references import ReferenceRecord
 from .ids import (
     field_doc_id,
@@ -26,6 +26,7 @@ def resolve_references(model: DocumentModel) -> DocumentModel:
     _link_layout_objects(model)
     _link_scripts(model)
     _link_script_triggers(model)
+    _link_file_default_layout(model)
     _link_value_lists(model)
     _link_custom_menus(model)
     _link_field_validation_value_lists(model)
@@ -139,6 +140,20 @@ def _link_relationships(model: DocumentModel) -> None:
                         role=role,
                         confidence="exact",
                     ))
+        for side_name, side in (("left", rel.options.left), ("right", rel.options.right)):
+            for sf in side.sort if side is not None else []:
+                if not sf.field_doc_id or (sf.external is None and sf.field_doc_id not in model.entities.fields):
+                    continue
+                model.references.append(ReferenceRecord(
+                    sourceDocId=rel.doc_id,
+                    sourceEntityType="relationship",
+                    targetDocId=sf.field_doc_id,
+                    targetEntityType="field",
+                    relationshipType="sortsBy",
+                    role=f"{side_name}Sort",
+                    confidence="external" if sf.external is not None else "exact",
+                    externalTarget=sf.external,
+                ))
 
 
 # ---------------------------------------------------------------------------
@@ -308,17 +323,24 @@ def _link_scripts(model: DocumentModel) -> None:
 
 
 def _link_script_triggers(model: DocumentModel) -> None:
-    """Layout / layout object -> the script each of its script triggers runs (role: the event)."""
-    sources = [("layout", model.entities.layouts), ("layoutObject", model.entities.layout_objects)]
-    for source_type, entities in sources:
-        for entity in entities.values():
-            for trig in entity.script_triggers:
+    """Layout / layout object / the file itself -> the script each of its script triggers runs
+    (role: the event, e.g. OnFirstWindowOpen)."""
+    sources: list[tuple[str, list[tuple[str, list]]]] = [
+        (source_type, [(e.doc_id, e.script_triggers) for e in entities.values()])
+        for source_type, entities in (("layout", model.entities.layouts),
+                                      ("layoutObject", model.entities.layout_objects))
+    ]
+    if model.file_options is not None:
+        sources.append(("fileOptions", [(FILE_OPTIONS_DOC_ID, model.file_options.script_triggers)]))
+    for source_type, owners in sources:
+        for source_doc_id, triggers in owners:
+            for trig in triggers:
                 if trig.script_external is not None:
                     confidence = "external"
                 else:
                     confidence = "exact" if trig.script_doc_id in model.entities.scripts else "unresolved"
                 model.references.append(ReferenceRecord(
-                    sourceDocId=entity.doc_id,
+                    sourceDocId=source_doc_id,
                     sourceEntityType=source_type,
                     targetDocId=trig.script_doc_id,
                     targetEntityType="script",
@@ -327,6 +349,22 @@ def _link_script_triggers(model: DocumentModel) -> None:
                     confidence=confidence,
                     externalTarget=trig.script_external,
                 ))
+
+
+def _link_file_default_layout(model: DocumentModel) -> None:
+    """File Options -> the layout the file opens to."""
+    fo = model.file_options
+    if fo is None or not fo.default_layout:
+        return
+    model.references.append(ReferenceRecord(
+        sourceDocId=FILE_OPTIONS_DOC_ID,
+        sourceEntityType="fileOptions",
+        targetDocId=fo.default_layout,
+        targetEntityType="layout",
+        relationshipType="opensLayout",
+        role="defaultLayout",
+        confidence="exact" if fo.default_layout in model.entities.layouts else "unresolved",
+    ))
 
 
 def _link_accounts_to_privilege_sets(model: DocumentModel) -> None:
@@ -416,6 +454,29 @@ def _link_value_lists(model: DocumentModel) -> None:
                     role=role,
                     confidence="exact",
                 ))
+        for to, role in [(vl.source_field_to_doc_id, "sourceTableOccurrence"),
+                         (vl.related_from_to_doc_id, "relatedFrom")]:
+            if to and to in model.entities.table_occurrences:
+                model.references.append(ReferenceRecord(
+                    sourceDocId=vl.doc_id,
+                    sourceEntityType="valueList",
+                    targetDocId=to,
+                    targetEntityType="tableOccurrence",
+                    relationshipType="usesTableOccurrence",
+                    role=role,
+                    confidence="exact",
+                ))
+        if vl.external_value_list is not None:
+            model.references.append(ReferenceRecord(
+                sourceDocId=vl.doc_id,
+                sourceEntityType="valueList",
+                targetDocId=vl.external_value_list.scoped_doc_id,
+                targetEntityType="valueList",
+                relationshipType="usesValueList",
+                role="external",
+                confidence="external",
+                externalTarget=vl.external_value_list,
+            ))
 
 
 def _link_field_validation_value_lists(model: DocumentModel) -> None:

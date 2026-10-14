@@ -30,8 +30,27 @@ _No predicates defined._
 
 ## Options
 
+{% set o = entity.options %}
+{% if o.left or o.right %}
+| Option | {{ link(entity.left_table_occurrence_doc_id) }} (left) | {{ link(entity.right_table_occurrence_doc_id) }} (right) |
+|---|---|---|
+| Allow creation of records in this table via this relationship | {{ "Yes" if o.left and o.left.allow_create else "No" }} | {{ "Yes" if o.right and o.right.allow_create else "No" }} |
+| Delete related records in this table when a record is deleted in the other table | {{ "Yes" if o.left and o.left.delete else "No" }} | {{ "Yes" if o.right and o.right.delete else "No" }} |
+| Sort records | {{ "Yes" if o.left and o.left.sort else "No" }} | {{ "Yes" if o.right and o.right.sort else "No" }} |
+{% for side_name, side in [("Left", o.left), ("Right", o.right)] %}{% if side and side.sort %}
+
+### {{ side_name }} sort order
+
+| # | Field | Order |
+|---:|---|---|
+{% for sf in side.sort %}
+| {{ loop.index }} | {{ link(sf.field_doc_id) if sf.field_doc_id else "_(missing field)_" }} | {{ sf.order }}{% if sf.value_list_doc_id %} (by {{ link(sf.value_list_doc_id) }}){% endif %} |
+{% endfor %}
+{% endif %}{% endfor %}
+{% else %}
 | Name | Value |
 |---|---|
-| Allow Create Related Records | {{ "Yes" if entity.options.allow_create_related else "No" }} |
-| Delete Related Records | {{ "Yes" if entity.options.delete_related else "No" }} |
-| Sort Related Records | {{ "Yes" if entity.options.sort_related else "No" }} |
+| Allow Create Related Records | {{ "Yes" if o.allow_create_related else "No" }} |
+| Delete Related Records | {{ "Yes" if o.delete_related else "No" }} |
+| Sort Related Records | {{ "Yes" if o.sort_related else "No" }} |
+{% endif %}

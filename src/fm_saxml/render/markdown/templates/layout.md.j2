@@ -56,10 +56,10 @@ name: {{ entity.name }}
 {% if entity.layout_objects %}
 ## Layout Objects
 
-| ID | Type | Part | Name / Text | Field |
-|---|---|---|---|---|
+| ID | Type | Part | Name / Text | Field | Value List | Action |
+|---|---|---|---|---|---|---|
 {% for od in entity.layout_objects %}{% set obj = get_entity(od) %}
-| {{ obj.object_id }} | {{ obj.object_type }} | {{ obj.part or "" }} | {{ (obj.name or obj.raw_text or "") | cell }} | {{ link(obj.field_doc_id) if obj.field_doc_id else "" }} |
+| {{ link(od, obj.object_id) }} | {{ obj.object_type }} | {{ obj.part or "" }} | {{ (obj.name or obj.raw_text or "") | cell }} | {{ link(obj.field_doc_id) if obj.field_doc_id else "" }} | {{ link(obj.value_list_doc_id) if obj.value_list_doc_id else "" }} | {% if obj.button_script_doc_id %}Perform Script: {{ link(obj.button_script_doc_id) }}{% elif obj.button_step %}{{ obj.button_step | cell }}{% endif %} |
 {% endfor %}
 {% endif %}
 

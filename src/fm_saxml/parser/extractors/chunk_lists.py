@@ -7,7 +7,16 @@ from lxml import etree
 
 from ._helpers import attr, calc_text_of, find_all_children, find_child, text_of, _local
 
-ChunkLists = dict[str, list[dict[str, Any]]]
+class ChunkLists(dict):
+    """ChunkList key -> the entity references in that calculation (see ``extract_chunk_lists``).
+
+    Also carries ``step_texts``: each script step as FileMaker prints it in the Script
+    Workspace, from ``<DDR_INFO><Script>``, keyed like ``step_text_for`` looks them up.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.step_texts: dict[str, str] = {}
 
 
 def extract_chunk_lists(root: etree._Element) -> ChunkLists:
@@ -24,12 +33,14 @@ def extract_chunk_lists(root: etree._Element) -> ChunkLists:
     about what the calc uses and callers should fall back to the text.
     """
     ddr_info = find_child(root, "DDR_INFO")
+    result = ChunkLists()
+    if ddr_info is not None:
+        result.step_texts = _step_texts(ddr_info)
     section = find_child(ddr_info, "Calculation") if ddr_info is not None else None
     obj_list = find_child(section, "ObjectList") if section is not None else None
     if obj_list is None:
-        return {}
+        return result
 
-    result: ChunkLists = {}
     for entry in obj_list:
         if not isinstance(entry.tag, str):
             continue
@@ -37,6 +48,35 @@ def extract_chunk_lists(root: etree._Element) -> ChunkLists:
         if chunk_list is not None and find_all_children(chunk_list, "Chunk"):
             result[_local(entry.tag)] = _chunk_refs(chunk_list)
     return result
+
+
+def _step_texts(ddr_info: etree._Element) -> dict[str, str]:
+    """``<DDR_INFO><Script><ObjectList><_UUID hash="…" datatype="StepText">Set Variable [ $i; Value:1 ]``.
+
+    Keyed by the element name (the step's UUID). Steps without a UUID (a button's
+    single step) share the name ``_``, so those are keyed by ``#<hash>`` instead.
+    """
+    section = find_child(ddr_info, "Script")
+    obj_list = find_child(section, "ObjectList") if section is not None else None
+    texts: dict[str, str] = {}
+    for entry in obj_list if obj_list is not None else []:
+        if not isinstance(entry.tag, str) or attr(entry, "datatype") != "StepText":
+            continue
+        key = _local(entry.tag)
+        texts[key if key != "_" else f"#{attr(entry, 'hash')}"] = entry.text or ""
+    return texts
+
+
+def step_text_for(step_elem: etree._Element, chunk_lists: ChunkLists | None) -> str | None:
+    """FileMaker's own text for a ``<Step>``, via its ``<DDRREF kind="StepText">``; None if unknown."""
+    texts = getattr(chunk_lists, "step_texts", None)
+    ddr = find_child(step_elem, "DDRREF")
+    if not texts or ddr is None or attr(ddr, "kind") != "StepText":
+        return None
+    key = text_of(ddr)
+    if key and key != "_":
+        return texts.get(key)
+    return texts.get(f"#{attr(ddr, 'hash')}")
 
 
 def _chunk_refs(chunk_list: etree._Element) -> list[dict[str, Any]]:

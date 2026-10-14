@@ -25,11 +25,13 @@ from .entities import (
     ThemeEntity,
     FileReferenceEntity,
     VariableEntity,
+    ScriptTriggerInfo,
 )
 from .references import ReferenceRecord
 
 
-SCHEMA_VERSION = "0.3.0"  # 0.3.0: script step params, variables
+SCHEMA_VERSION = "0.4.0"  # 0.3.0: script step params, variables. 0.4.0: file options, per-side relationship
+#   options, value list sources, privilege set access, field and script options (all additive)
 
 
 class SourceInfo(BaseModel):
@@ -94,6 +96,27 @@ class EntityMaps(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+FILE_OPTIONS_DOC_ID = "fileOptions"  # source of the file's own script-trigger references
+
+
+class FileOptions(BaseModel):
+    """File > File Options: what runs and opens when the file does."""
+
+    default_layout: Optional[str] = Field(None, alias="defaultLayout")  # layout docId
+    minimum_version: Optional[str] = Field(None, alias="minimumVersion")  # minimum FileMaker version allowed
+    login_type: Optional[str] = Field(None, alias="loginType")  # FileMaker's raw value; "-1" = not set
+    login_account: Optional[str] = Field(None, alias="loginAccount")  # "Log in using" account (never its password)
+    encrypted: Optional[bool] = None
+    allow_save_password: Optional[bool] = Field(None, alias="allowSavePassword")
+    require_mobile_password: Optional[bool] = Field(None, alias="requireMobilePassword")
+    show_sign_in_fields: Optional[bool] = Field(None, alias="showSignInFields")
+    hide_from_client_sharing: Optional[bool] = Field(None, alias="hideFromClientSharing")
+    hide_from_webdirect_sharing: Optional[bool] = Field(None, alias="hideFromWebDirectSharing")
+    script_triggers: list[ScriptTriggerInfo] = Field([], alias="scriptTriggers")  # OnFirstWindowOpen, ...
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
 class Warning(BaseModel):
     code: str
     message: str
@@ -153,6 +176,7 @@ class DocumentModel(BaseModel):
     solution: SolutionInfo = Field(default_factory=SolutionInfo)
     entities: EntityMaps = Field(default_factory=EntityMaps)
     external_data_sources: list[ExternalDataSource] = Field([], alias="externalDataSources")
+    file_options: Optional[FileOptions] = Field(None, alias="fileOptions")
     references: list[ReferenceRecord] = []
     backlinks: dict[str, list[dict]] = {}
     warnings: list[Warning] = []

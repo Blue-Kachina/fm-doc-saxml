@@ -133,6 +133,8 @@ def _render_root_index(model: DocumentModel, output_dir: Path, env: Environment,
     tmpl = env.get_template("index.md.j2")
     ctx = _make_ctx(model, "index.md", links)
     ctx["counts"] = _counts(model)
+    ctx["file_options"] = model.file_options
+    ctx["external_data_sources"] = model.external_data_sources
     content = tmpl.render(**ctx)
     write_text(output_dir / "index.md", content)
 
@@ -466,6 +468,8 @@ def _render_value_lists(model: DocumentModel, output_dir: Path, env: Environment
     for entity in entities:
         rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
+        ctx["values_block"] = "\n".join(entity.values)  # exactly as typed, blank separator lines included
+        ctx["values_fence"] = code_fence(ctx["values_block"])
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
 
@@ -474,15 +478,45 @@ def _render_value_lists(model: DocumentModel, output_dir: Path, env: Environment
 # Privilege Sets
 # ---------------------------------------------------------------------------
 
+_PRIVILEGE_OTHER_LABELS = {
+    "Print": "Allow printing",
+    "Export": "Allow exporting",
+    "manageDatabase": "Manage database",
+    "manageCustomMenus": "Manage custom menus",
+    "manageAccounts": "Manage accounts (except Full Access)",
+    "manageExtPrivs": "Manage extended privileges",
+    "allowOverride": "Allow user to override data validation warnings",
+    "allowOpenQuickly": "Allow Open Quickly",
+    "disconnectIdle": "Disconnect user from server when idle",
+    "passwordChangeProhibited": "Allow user to modify their own password",
+    "commands": "Available menu commands",
+}
+
+
+def _privilege_access_label(value: str) -> str:
+    return {"ReadWrite": "Yes", "ReadOnly": "View only", "NoAccess": "No", "Limited": "Limited…"}.get(value, value)
+
+
+def _privilege_other_value(key: str, value: str) -> str:
+    if value.lower() in ("true", "false"):
+        yes = value.lower() == "true"
+        if key == "passwordChangeProhibited":
+            yes = not yes  # FileMaker's checkbox is the opposite: "Allow user to modify their own password"
+        return "Yes" if yes else "No"
+    return value
+
+
 def _render_privilege_sets(model: DocumentModel, output_dir: Path, env: Environment, links: LinkResolver) -> None:
     if not model.entities.privilege_sets:
         return
+    tmpl = env.get_template("privilege_set.md.j2")
     for entity in model.entities.privilege_sets.values():
         rel_path = links.path_for(entity.doc_id)
-        content = f"---\ndocId: {entity.doc_id}\nentityType: privilegeSet\nname: {entity.name}\n---\n\n# Privilege Set: {entity.name}\n\n| Name | Value |\n|---|---|\n| FMP ID | {entity.fmp_id} |\n"
-        if entity.description:
-            content += f"| Description | {entity.description} |\n"
-        write_text(output_dir / rel_path, content)
+        ctx = _make_ctx(model, rel_path, links, entity)
+        ctx["access_label"] = _privilege_access_label
+        ctx["other_label"] = lambda key: _PRIVILEGE_OTHER_LABELS.get(key, key)
+        ctx["other_value"] = _privilege_other_value
+        write_text(output_dir / rel_path, tmpl.render(**ctx))
 
     entities = list(model.entities.privilege_sets.values())
     _render_section_index(
@@ -632,8 +666,8 @@ def _render_file_references(model: DocumentModel, output_dir: Path, env: Environ
     entities = list(model.entities.file_references.values())
     _render_section_index(
         entities, output_dir / "FileAccess" / "index.md",
-        section_title="File References",
-        entity_type_label="file reference",
+        section_title="File Access",
+        entity_type_label="file access authorization",
         extra_header="Type",
         extra_col_fn=lambda e: e.ref_type,
         index_path="FileAccess/index.md",

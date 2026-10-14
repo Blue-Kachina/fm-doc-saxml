@@ -363,9 +363,13 @@ A few quirks worth knowing about:
 - `SaveAsXML` files are encoded as **UTF-16 LE**. Always open in binary mode and let `lxml` read the encoding declaration.
 - In FileMaker 22+, embedded layout images are duplicated inside every `<LayoutObject>` (rather than shared via `<LibraryCatalog>`), which can dramatically inflate file size. The layout extractor skips `<StreamList>` image data by default.
 - Layout objects in modern (v2) `SaveAsXML` files appear as `<LayoutObject>` inside `<Part><ObjectList>`. Older v1 exports use `<Object type="FieldObj">`. Both are parsed.
-- Relationship names, script folder paths, and script step display labels are **derived during normalization**, not read directly from the XML.
+- Relationship names and script folder paths are **derived during normalization**, not read directly from the XML.
+- Script steps are shown as **FileMaker prints them** in the Script Workspace, taken from the `StepText` entries in the export's `DDR_INFO` section (scrubbed like any calculation). Steps without one (older exports, older `model.json` files) are rebuilt from their parameters instead.
 
 ## Known limitations
+
+- **A missing "Called By" is not proof that a script is unused.** Buttons, button groups, layout and object triggers, File Options triggers and Perform Script steps are all traced, but a script can also be run from a custom menu item in another file, by name from a calculation (`Perform Script by name`), or by FileMaker Server schedules, none of which the export links to a script page.
+- **Custom privilege lists for layouts, value lists and scripts** are read generically (each row's object and its access columns), because the sample exports used for testing only have custom *record* privileges. Unusual shapes still come through, but their column names are FileMaker's raw element names.
 
 - **`UNUSED_FIELD_CANDIDATE` only sees references this tool already extracts** — relationships, layouts, layout objects, script steps, and custom-function calculations. It does **not** yet parse the calculation text of a field's own `Calculation` (e.g. a `FullName` calc field referencing `FirstName`/`LastName`) — fields referenced only from inside another field's formula will currently show up as false-positive unused candidates. Treat it as a lead to investigate, not a guarantee.
 - **`diff`'s script-step comparison is content-based, not line-by-line.** It tells you how many steps were added/removed per script, not exactly which ones or where — open the two `Scripts/<name>.md` pages side by side for that level of detail.

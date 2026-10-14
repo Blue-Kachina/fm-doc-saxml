@@ -59,6 +59,7 @@ class StorageOptions(BaseModel):
     index: str = "None"
     auto_index: bool = Field(False, alias="autoIndex")
     max_repeat: int = Field(1, alias="maxRepeat")
+    stored: Optional[bool] = None  # calculation fields: "Do not store calculation results" unchecked
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -67,7 +68,10 @@ class AutoEnterOptions(BaseModel):
     type: str = "none"  # none, serial, data, calculation, lookup, modification
     value: Optional[str] = None
     calculation: Optional[str] = None
-    no_modify_auto_enter: bool = False
+    no_modify_auto_enter: bool = False  # "Prohibit modification of value during data entry"
+    overwrite_existing: Optional[bool] = Field(None, alias="overwriteExisting")  # False = "Do not replace existing value"
+    serial_increment: Optional[str] = Field(None, alias="serialIncrement")
+    serial_generate: Optional[str] = Field(None, alias="serialGenerate")  # OnCreation | OnCommit
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -79,6 +83,12 @@ class ValidationOptions(BaseModel):
     max_characters: Optional[int] = None
     message: Optional[str] = None
     value_list_doc_id: Optional[str] = Field(None, alias="valueListDocId")  # "member of value list"
+    existing: bool = False  # "Existing value"
+    strict_type: Optional[str] = Field(None, alias="strictType")  # "Strict data type": Numeric, FourDigitYear, TimeOfDay
+    has_calculation: bool = Field(False, alias="hasCalculation")  # text: the field's calculations, role "validation"
+    validate_on: Optional[str] = Field(None, alias="validateOn")  # Always | OnlyDuringDataEntry
+    allow_override: Optional[bool] = Field(None, alias="allowOverride")  # "Allow user to override during data entry"
+    other: dict[str, str] = {}  # validation options not recognised by the parser, by element name
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -128,6 +138,11 @@ class FieldEntity(BaseModel):
     # The field this one summarizes, when this is itself a summary field
     # (e.g. a "Total Of" field) — always a field on this same base table.
     summary_field_doc_id: Optional[str] = Field(None, alias="summaryFieldDocId")
+    summary_operation: Optional[str] = Field(None, alias="summaryOperation")  # Total, Count, List, ...
+    summary_restart_each_group: Optional[bool] = Field(None, alias="summaryRestartEachGroup")
+    summary_repetitions: Optional[str] = Field(None, alias="summaryRepetitions")  # Together | Individually
+    # Calculation fields: True = "Do not evaluate if all referenced fields are empty" is unchecked
+    always_evaluate: Optional[bool] = Field(None, alias="alwaysEvaluate")
     calculations: list[EntityCalculation] = []  # formula, auto-enter, validation, storage location
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
@@ -168,10 +183,34 @@ class RelationshipPredicate(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+class SortField(BaseModel):
+    """One sort level: a field and its order. A custom order names the value list giving it."""
+
+    field_doc_id: Optional[str] = Field(None, alias="fieldDocId")  # None: FileMaker reports the field missing
+    order: str = "Ascending"  # Ascending | Descending | Custom
+    value_list_doc_id: Optional[str] = Field(None, alias="valueListDocId")
+    external: Optional[ExternalTarget] = None  # the field lives in another file
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class RelationshipSide(BaseModel):
+    """Options about the records of one side's table occurrence."""
+
+    allow_create: bool = Field(False, alias="allowCreate")  # create records here via this relationship
+    delete: bool = Field(False, alias="delete")  # delete records here when the other side's record is deleted
+    sort: list[SortField] = []
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
 class RelationshipOptions(BaseModel):
+    # True when either side has the option; see ``left`` / ``right`` for which one.
     allow_create_related: bool = Field(False, alias="allowCreateRelated")
     delete_related: bool = Field(False, alias="deleteRelated")
     sort_related: bool = Field(False, alias="sortRelated")
+    left: Optional[RelationshipSide] = None
+    right: Optional[RelationshipSide] = None
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -221,6 +260,16 @@ class LayoutObjectBounds(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+class PortalOptions(BaseModel):
+    """A portal's setup: which rows it shows and in what order (its filter is in the object's calculations)."""
+
+    initial_row: Optional[int] = Field(None, alias="initialRow")
+    rows: Optional[int] = None  # number of rows shown
+    sort: list[SortField] = []
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
 class LayoutObjectEntity(BaseModel):
     """A single object placed on a layout — a field, button, text block, portal, etc.
 
@@ -248,6 +297,7 @@ class LayoutObjectEntity(BaseModel):
     button_step: Optional[str] = Field(None, alias="buttonStep")  # single-step button's step, e.g. "Go to Layout [ X ]"
     # Container object (portal, tab/slide panel, button bar, popover) this one sits in
     parent_object_doc_id: Optional[str] = Field(None, alias="parentObjectDocId")
+    portal: Optional[PortalOptions] = None
     script_triggers: list[ScriptTriggerInfo] = Field([], alias="scriptTriggers")
     calculations: list[EntityCalculation] = []  # hide condition, conditional formatting, tooltip, ...
     # Direct targets of the button step and a portal's sort fields; same shape as ScriptStepEntity.references
@@ -279,6 +329,8 @@ class ScriptStepEntity(BaseModel):
     # What the Script Workspace shows between the brackets, in order: comment text, targets,
     # references, options, and calcs (by index into ``calculations``). See parser/extractors/scripts.py.
     params: list[dict[str, Any]] = []
+    # The step exactly as FileMaker prints it (DDR_INFO StepText), when the export carries it
+    fm_text: Optional[str] = Field(None, alias="fmText")
     calculations: list[StepCalculation] = []
     references: list[dict[str, Any]] = []  # values are strings, except "external" (an ExternalTarget)
 
@@ -293,6 +345,9 @@ class ScriptEntity(BaseModel):
     fmp_id: str = Field(alias="fmpId")
     uuid: Optional[str] = None
     folder_path: Optional[str] = Field(None, alias="folderPath")
+    run_with_full_access: Optional[bool] = Field(None, alias="runWithFullAccess")
+    show_in_menu: Optional[bool] = Field(None, alias="showInMenu")  # "Include in menu" (Scripts menu)
+    siri_shortcut: Optional[bool] = Field(None, alias="siriShortcut")
     steps: list[str] = []            # scriptStep docIds
     referenced_fields: list[str] = Field([], alias="referencedFields")
     referenced_layouts: list[str] = Field([], alias="referencedLayouts")
@@ -363,13 +418,43 @@ class ValueListEntity(BaseModel):
     name: str
     fmp_id: str = Field(alias="fmpId")
     uuid: Optional[str] = None
-    list_type: str = Field("customValues", alias="listType")  # customValues, field, related
-    values: list[str] = []
+    list_type: str = Field("customValues", alias="listType")  # customValues, field, related, external
+    values: list[str] = []  # custom values exactly as typed; "" is a blank separator line
     source_field_doc_id: Optional[str] = Field(None, alias="sourceFieldDocId")
     second_field_doc_id: Optional[str] = Field(None, alias="secondFieldDocId")
     source_field_external: Optional[ExternalTarget] = Field(None, alias="sourceFieldExternal")
     second_field_external: Optional[ExternalTarget] = Field(None, alias="secondFieldExternal")
+    # Table occurrences the values are read through (the field link goes to the base table's field)
+    source_field_to_doc_id: Optional[str] = Field(None, alias="sourceFieldToDocId")
+    second_field_to_doc_id: Optional[str] = Field(None, alias="secondFieldToDocId")
+    show_first_field: Optional[bool] = Field(None, alias="showFirstField")  # False = "Show values only from second field"
+    sort_by: Optional[str] = Field(None, alias="sortBy")  # "first" | "second" field
+    related_from_to_doc_id: Optional[str] = Field(None, alias="relatedFromToDocId")  # "Include only related values starting from"
+    external_value_list: Optional[ExternalTarget] = Field(None, alias="externalValueList")  # "Use value list from another file"
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class PrivilegeItem(BaseModel):
+    """One row of a custom privilege list: a table, layout, value list or script and its access."""
+
+    kind: str  # Table | Layout | ValueList | Script (FileMaker's element name)
+    target_doc_id: Optional[str] = Field(None, alias="targetDocId")  # None for the "[New ...]" row
+    label: str = ""
+    access: dict[str, str] = {}  # column -> value, e.g. {"View": "ReadWrite", "Delete": "NoAccess"}
+    calculations: list[EntityCalculation] = []  # "limited" access calcs; role = the column
+    attributes: dict[str, str] = {}
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class PrivilegeCategory(BaseModel):
+    """Records, Layouts, Value Lists or Scripts: a blanket setting, or a custom per-object list."""
+
+    summary: str = ""  # e.g. "Create, edit and delete in all", "View only", "No access", "Custom"
+    settings: dict[str, str] = {}  # the raw attributes
+    custom: Optional[list[PrivilegeItem]] = None
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -381,6 +466,15 @@ class PrivilegeSetEntity(BaseModel):
     name: str
     fmp_id: str = Field(alias="fmpId")
     description: Optional[str] = None
+    built_in: bool = Field(False, alias="builtIn")  # [Full Access], [Data Entry Only], [Read-Only Access]
+    records: Optional[PrivilegeCategory] = None
+    layouts: Optional[PrivilegeCategory] = None
+    value_lists: Optional[PrivilegeCategory] = Field(None, alias="valueLists")
+    scripts: Optional[PrivilegeCategory] = None
+    # Other privileges, as FileMaker names them: Print, Export, manageDatabase, manageAccounts,
+    # allowOverride (of data validation warnings), disconnectIdle, commands (menu commands: All |
+    # Editing | Minimal), passwordChangeProhibited, ...
+    other: dict[str, str] = {}
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
     model_config = ConfigDict(populate_by_name=True)

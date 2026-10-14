@@ -8,6 +8,7 @@ from lxml import etree
 from ._helpers import attr, find_child, find_all_children, find_all_descendants, xml_path, modification_info, uuid_of
 from .chunk_lists import ChunkLists, collect_calcs
 from .scripts import _parse_step, _sibling_data_source
+from .relationships import parse_sort_spec
 
 
 def extract_layouts(database_elem: etree._Element, chunk_lists: ChunkLists | None = None) -> list[dict[str, Any]]:
@@ -263,10 +264,14 @@ def _parse_portal(portal: etree._Element | None) -> dict[str, Any] | None:
         for fr in (find_all_descendants(sort_spec, "FieldReference") if sort_spec is not None else [])
         if attr(fr, "name", "Name")
     ]
+    options = find_child(portal, "Options")
     return {
         "to_id": attr(to_ref, "id", "ID") if to_ref is not None else "",
         "to_name": attr(to_ref, "name", "Name") if to_ref is not None else "",
         "sort_fields": sort_fields,
+        "sort": parse_sort_spec(sort_spec),  # with order and custom value list
+        "initial_row": attr(options, "index") or None if options is not None else None,
+        "rows": attr(options, "show") or None if options is not None else None,
     }
 
 
@@ -300,18 +305,20 @@ def _parse_layout_object(
     raw_text = _parse_text_content(find_child(lo, "Text"))
 
     # Button action: <Button><action><ScriptReference/> (Perform Script) or <action><Step/> (single step).
-    # Popover buttons carry the same <action>.
+    # Popover buttons and button groups (<GroupedButton>) carry the same <action>.
     button_script = None
     button_step = None
-    button_elem = find_child(lo, "Button", "PopoverButton")
-    action_elem = find_child(button_elem, "action") if button_elem is not None else None
+    action_elem = _button_action(lo)
     script_ref = find_child(action_elem, "ScriptReference") if action_elem is not None else None
     if script_ref is not None and attr(script_ref, "name", "Name"):
         button_script = _script_ref_dict(script_ref)
     step_elem = find_child(action_elem, "Step") if action_elem is not None else None
     if step_elem is not None:
-        step = _parse_step(step_elem, 0)  # its calcs are collected below with the object's own
-        button_step = {k: step[k] for k in ("name", "raw_text", "layout_ref", "field_refs", "value_list_refs")}
+        # The step keeps its own calcs so its full text can be built after scrubbing;
+        # they are also collected below with the object's own (for references).
+        step = _parse_step(step_elem, 0, chunk_lists)
+        button_step = {k: step[k] for k in ("name", "index", "enabled", "raw_text", "layout_ref", "field_refs",
+                                            "value_list_refs", "calculations", "params", "variable", "fm_text")}
         if button_script is None and step["script_ref"]:
             button_script = step["script_ref"]
 
@@ -334,6 +341,21 @@ def _parse_layout_object(
         "fallback_index": fallback_index,
         "source_xml_path": xml_path(lo),
     }
+
+
+def _button_action(lo: etree._Element) -> etree._Element | None:
+    """The ``<action>`` of a button-like object: any direct child of the LayoutObject that holds one.
+
+    Matching on the shape instead of a list of tags (Button, PopoverButton, GroupedButton)
+    keeps a future button kind from silently losing its action.
+    """
+    for child in lo:
+        if not isinstance(child.tag, str) or _local(child.tag) == "LayoutObject":
+            continue
+        action = find_child(child, "action")
+        if action is not None:
+            return action
+    return None
 
 
 def _parse_v1_object(obj: etree._Element, fallback_index: int) -> dict[str, Any] | None:

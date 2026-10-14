@@ -24,7 +24,7 @@ from typing import Any, Optional
 
 from .placeholders import PLACEHOLDER_RE
 
-_CALC_KEYS = {"calculation", "install_condition", "formula"}
+_CALC_KEYS = {"calculation", "install_condition", "formula", "fm_text"}  # fm_text: FileMaker's step text, holds calcs
 
 _SKIP_KEYS = {
     "name", "table", "type", "kind", "role", "parameter", "slot", "event", "part", "operator",

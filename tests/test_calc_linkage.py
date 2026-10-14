@@ -166,7 +166,7 @@ def test_portal_contents_are_collected_and_linked(model):
 
 def test_single_step_button_links_its_target(model):
     obj = model.entities.layout_objects["layoutObject:Inv Detail::8"]
-    assert obj.button_step == "Go to Layout [ Inv Detail ]"
+    assert obj.button_step == 'Go to Layout [ "Inv Detail" ]'
     assert _refs(model, obj.doc_id) == {("layout:Inv Detail", "buttonAction", "exact")}
 
 

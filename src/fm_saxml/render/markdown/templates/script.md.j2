@@ -14,6 +14,9 @@ name: {{ entity.name }}
 {% if entity.modified %}| Last Modified By | {{ entity.modified.account_name or entity.modified.user_name }}{% if entity.modified.user_name and entity.modified.user_name != entity.modified.account_name %} (user: {{ entity.modified.user_name }}){% endif %} |
 | Last Modified | {{ entity.modified.timestamp }} |
 {% endif %}{% if entity.folder_path %}| Folder | {{ entity.folder_path }} |
+{% endif %}{% if entity.run_with_full_access is not none %}| Run with full access privileges | {{ "Yes" if entity.run_with_full_access else "No" }} |
+{% endif %}{% if entity.show_in_menu is not none %}| Include in menu | {{ "Yes" if entity.show_in_menu else "No" }} |
+{% endif %}{% if entity.siri_shortcut %}| Available as Siri shortcut | Yes |
 {% endif %}| Step Count | {{ entity.steps | length }} |
 
 {% if entity.referenced_fields or entity.referenced_layouts or entity.referenced_scripts %}

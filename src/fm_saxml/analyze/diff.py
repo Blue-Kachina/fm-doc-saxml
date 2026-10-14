@@ -42,7 +42,7 @@ _ENTITY_TYPES: list[tuple[str, str, str]] = [
     ("custom_menus", "customMenu", "Custom Menus"),
     ("custom_menu_sets", "customMenuSet", "Custom Menu Sets"),
     ("themes", "theme", "Themes"),
-    ("file_references", "fileRef", "File References"),
+    ("file_references", "fileRef", "File Access"),
 ]
 
 # Fields excluded from change detection: volatile position/debug metadata
@@ -189,6 +189,11 @@ def _diff_fields(old_entity: Any, new_entity: Any) -> list[FieldChange]:
             continue
         if ov == nv:
             continue
+        if isinstance(ov, dict) and isinstance(nv, dict):
+            # Only the keys that changed, so the difference isn't cut off in a long object
+            diff_keys = {k for k in set(ov) | set(nv) if ov.get(k) != nv.get(k)}
+            ov = {k: v for k, v in ov.items() if k in diff_keys}
+            nv = {k: v for k, v in nv.items() if k in diff_keys}
         changes.append(FieldChange(field=key, old=_fmt(ov), new=_fmt(nv)))
     return changes
 

@@ -19,7 +19,10 @@ qualifiedName: {{ entity.qualified_name }}
 | Field Type | {{ entity.field_type }} |
 | Data Type | {{ entity.data_type }} |
 {% if entity.comment %}| Comment | {{ entity.comment }} |
+{% endif %}{% if entity.summary_operation %}| Summary Operation | {{ entity.summary_operation }} |
 {% endif %}{% if entity.summary_field_doc_id %}| Summarizes | {{ link(entity.summary_field_doc_id) }} |
+{% endif %}{% if entity.summary_restart_each_group %}| Restart Summary for Each Sorted Group | Yes |
+{% endif %}{% if entity.summary_repetitions %}| Summarize Repetitions | {{ entity.summary_repetitions }} |
 {% endif %}
 
 ## Storage Options
@@ -27,7 +30,9 @@ qualifiedName: {{ entity.qualified_name }}
 | Name | Value |
 |---|---|
 | Global | {{ "Yes" if entity.storage.global_storage else "No" }} |
-| Indexed | {{ "Yes" if entity.storage.indexed else "No" }} |
+{% if entity.storage.stored is not none %}| Stored | {{ "Yes" if entity.storage.stored else "No (unstored calculation)" }} |
+{% endif %}{% if entity.always_evaluate is not none %}| Do Not Evaluate If All Referenced Fields Are Empty | {{ "No" if entity.always_evaluate else "Yes" }} |
+{% endif %}| Indexed | {{ "Yes" if entity.storage.indexed else "No" }} |
 | Index Mode | {{ entity.storage.index }} |
 | Auto-Index | {{ "Yes" if entity.storage.auto_index else "No" }} |
 | Max Repetitions | {{ entity.storage.max_repeat }} |
@@ -44,12 +49,16 @@ _None._
 
 ## Auto-enter
 
-{% if entity.auto_enter and entity.auto_enter.type != 'none' %}
+{% if entity.auto_enter and (entity.auto_enter.type != 'none' or entity.auto_enter.no_modify_auto_enter) %}
 | Name | Value |
 |---|---|
 | Type | {{ entity.auto_enter.type }} |
 {% if entity.auto_enter.value %}| Value | `{{ entity.auto_enter.value }}` |
-{% endif %}
+{% endif %}{% if entity.auto_enter.serial_increment %}| Serial Increment By | {{ entity.auto_enter.serial_increment }} |
+{% endif %}{% if entity.auto_enter.serial_generate %}| Serial Generated | {{ "On creation" if entity.auto_enter.serial_generate == "OnCreation" else "On commit" if entity.auto_enter.serial_generate == "OnCommit" else entity.auto_enter.serial_generate }} |
+{% endif %}{% if entity.auto_enter.overwrite_existing is not none %}| Do Not Replace Existing Value | {{ "No" if entity.auto_enter.overwrite_existing else "Yes" }} |
+{% endif %}| Prohibit Modification During Data Entry | {{ "Yes" if entity.auto_enter.no_modify_auto_enter else "No" }} |
+
 {% if entity.auto_enter.calculation %}
 
 ```
@@ -62,15 +71,29 @@ _None._
 
 ## Validation
 
-{% if entity.validation %}
-| Rule | Enabled |
+{% if entity.validation %}{% set v = entity.validation %}
+| Rule | Value |
 |---|---|
-| Required | {{ "Yes" if entity.validation.required else "No" }} |
-| Not Empty | {{ "Yes" if entity.validation.not_empty else "No" }} |
-| Unique | {{ "Yes" if entity.validation.unique else "No" }} |
-{% if entity.validation.max_characters %}| Max Characters | {{ entity.validation.max_characters }} |
-{% endif %}{% if entity.validation.message %}| Message | {{ entity.validation.message }} |
+{% if v.validate_on %}| Validate | {{ "Always" if v.validate_on == "Always" else "Only during data entry" if v.validate_on == "OnlyDuringDataEntry" else v.validate_on }} |
+{% endif %}{% if v.allow_override is not none %}| Allow User to Override | {{ "Yes" if v.allow_override else "No" }} |
+{% endif %}{% if v.strict_type %}| Strict Data Type | {{ v.strict_type }} |
+{% endif %}{% if v.required %}| Required | Yes |
+{% endif %}| Not Empty | {{ "Yes" if v.not_empty else "No" }} |
+| Unique | {{ "Yes" if v.unique else "No" }} |
+{% if v.existing %}| Existing Value | Yes |
+{% endif %}{% if v.value_list_doc_id %}| Member of Value List | {{ link(v.value_list_doc_id) }} |
+{% endif %}{% if v.max_characters %}| Max Characters | {{ v.max_characters }} |
+{% endif %}{% for tag, detail in v.other.items() %}| {{ tag }} | {{ detail | cell }} |
+{% endfor %}{% if v.message %}| Custom Message | {{ v.message | cell }} |
 {% endif %}
+{% for c in entity.calculations if c.role == "validation" %}
+
+Validated by calculation:
+
+```
+{{ c.text }}
+```
+{% endfor %}
 {% else %}
 _None._
 {% endif %}

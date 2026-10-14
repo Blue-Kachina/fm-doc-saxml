@@ -12,7 +12,9 @@ from typing import Optional
 from ..model.document_model import DocumentModel
 from ..model.entities import TableOccurrenceEntity
 from ..model.references import ExternalTarget
-from .ids import field_doc_id, layout_doc_id, provisional_scope, script_doc_id, scoped_doc_id, table_doc_id
+from .ids import (
+    field_doc_id, layout_doc_id, provisional_scope, script_doc_id, scoped_doc_id, table_doc_id, value_list_doc_id,
+)
 
 
 class ExternalTargets:
@@ -57,6 +59,8 @@ class ExternalTargets:
             local = layout_doc_id(name)
         elif kind == "table":
             local = table_doc_id(name)
+        elif kind == "valueList":
+            local = value_list_doc_id(name)
         else:
             local = field_doc_id(kw.get("baseTable") or kw.get("tableOccurrence") or "", name)
         scope = provisional_scope(kw.get("dataSourceUuid"), kw["dataSource"])
@@ -123,4 +127,17 @@ class ExternalTargets:
             baseTable=to.external_base_table,
             baseTableId=to.external_base_table_id,
             baseTableUuid=to.external_base_table_uuid,
+        )
+
+    def value_list(
+        self, data_source: Optional[str], name: str,
+        fmp_id: Optional[str] = None, uuid: Optional[str] = None,
+        ds_id: Optional[str] = None, ds_uuid: Optional[str] = None,
+    ) -> Optional[ExternalTarget]:
+        """Target for a value list that takes its values from another file's value list."""
+        if not data_source or not name:
+            return None
+        return self._make(
+            **self._source_fields(data_source, ds_id, ds_uuid),
+            targetType="valueList", name=name, fmpId=fmp_id or None, uuid=uuid or None,
         )

@@ -215,6 +215,8 @@ def find_target(model: DocumentModel, t: ExternalTarget, index: Optional["_Targe
         return ix.scripts.find(t.uuid, t.fmp_id, t.name)
     if t.target_type == "layout":
         return ix.layouts.find(t.uuid, t.fmp_id, t.name)
+    if t.target_type == "valueList":
+        return ix.value_lists.find(t.uuid, t.fmp_id, t.name)
     if t.target_type == "field":
         if t.uuid and t.uuid in ix.field_by_uuid:
             return ix.field_by_uuid[t.uuid]
@@ -249,6 +251,7 @@ class _TargetIndex:
         self.tables = _Lookup(em.tables.values())
         self.scripts = _Lookup(em.scripts.values())
         self.layouts = _Lookup(em.layouts.values())
+        self.value_lists = _Lookup(em.value_lists.values())
         self.field_by_uuid = {f.uuid: f.doc_id for f in em.fields.values() if f.uuid}
         by_table: dict[str, list] = {}
         for f in em.fields.values():

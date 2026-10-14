@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 from lxml import etree
 
@@ -37,31 +38,58 @@ def _parse_options_entry(vl_wrapper: etree._Element) -> dict:
     source_elem = find_child(vl_wrapper, "Source")
     source_val = attr(source_elem, "value", "Value") if source_elem is not None else ""
 
-    values = []
-    source_field = None
-    second_field = None
+    out: dict[str, Any] = {"source": source_val or None, "values": [], "source_field": None, "second_field": None}
 
     if source_val == "Custom":
         custom_values = find_child(vl_wrapper, "CustomValues")
         if custom_values is not None:
             text_elem = find_child(custom_values, "Text")
-            raw_text = (text_elem.text or "") if text_elem is not None else ""
-            values = [v.strip() for v in raw_text.splitlines() if v.strip()]
+            out["values"] = split_custom_values((text_elem.text or "") if text_elem is not None else "")
     elif source_val == "FromField":
         field_wrapper = find_child(vl_wrapper, "Field")
         if field_wrapper is not None:
-            primary = find_child(field_wrapper, "PrimaryField")
-            if primary is not None:
-                field_ref = find_child(primary, "FieldReference")
+            for key, tag in (("source_field", "PrimaryField"), ("second_field", "SecondaryField")):
+                side = find_child(field_wrapper, tag)
+                field_ref = find_child(side, "FieldReference") if side is not None else None
                 if field_ref is not None:
-                    source_field = _field_ref_dict(field_ref)
-            secondary = find_child(field_wrapper, "SecondaryField")
-            if secondary is not None:
-                field_ref = find_child(secondary, "FieldReference")
-                if field_ref is not None:
-                    second_field = _field_ref_dict(field_ref)
+                    out[key] = _field_ref_dict(field_ref)
+                    out[key]["show"] = _flag(side, "show")
+                    out[key]["sort"] = _flag(side, "sort")
+            related = find_child(field_wrapper, "ShowRelated")
+            if related is not None and attr(related, "value").lower() == "true":
+                to_ref = find_child(related, "TableOccurrenceReference")
+                out["related_from"] = attr(to_ref, "name", "Name") if to_ref is not None else ""
+    elif source_val == "External":
+        external = find_child(vl_wrapper, "External")
+        ds_ref = find_child(external, "DataSourceReference") if external is not None else None
+        vl_ref = find_child(external, "ValueListReference") if external is not None else None
+        if ds_ref is not None and vl_ref is not None:
+            out["external"] = {
+                "data_source": attr(ds_ref, "name", "Name"),
+                "data_source_id": attr(ds_ref, "id", "ID") or None,
+                "data_source_uuid": attr(ds_ref, "UUID", "uuid") or None,
+                "name": attr(vl_ref, "name", "Name"),
+                "id": attr(vl_ref, "id", "ID") or None,
+                "uuid": attr(vl_ref, "UUID", "uuid") or None,
+            }
 
-    return {"values": values, "source_field": source_field, "second_field": second_field}
+    return out
+
+
+_LINE_BREAK = re.compile(r"\r\n|\r|\n")
+
+
+def split_custom_values(text: str) -> list[str]:
+    """Custom values exactly as typed: one per line, blank lines (separators) kept, nothing trimmed."""
+    lines = _LINE_BREAK.split(text)
+    while lines and lines[-1] == "":
+        lines.pop()  # a trailing newline is not a value
+    return lines
+
+
+def _flag(elem: etree._Element, name: str) -> bool | None:
+    value = attr(elem, name)
+    return value.lower() == "true" if value else None
 
 
 def _field_ref_dict(field_ref: etree._Element) -> dict:
@@ -84,6 +112,8 @@ def _parse_value_list(elem: etree._Element, options_map: dict[str, dict]) -> dic
             list_type_lower = "custom"
         elif source_val == "FromField":
             list_type_lower = "field"
+        elif source_val == "External":
+            list_type_lower = "external"
         else:
             list_type_lower = source_val.lower()
     else:
@@ -113,6 +143,8 @@ def _parse_value_list(elem: etree._Element, options_map: dict[str, dict]) -> dic
                 v = text_of(val_elem)
                 if v:
                     values.append(v)
+    elif list_type_lower == "external":
+        normalized_type = "external"
     elif "field" in list_type_lower or "related" in list_type_lower:
         normalized_type = "field" if "field" in list_type_lower else "related"
         source_field = opt.get("source_field")
@@ -146,6 +178,8 @@ def _parse_value_list(elem: etree._Element, options_map: dict[str, dict]) -> dic
         "source_field": source_field,
         "second_field": second_field,
         "source_table_name": source_table_name,
+        "related_from": opt.get("related_from"),
+        "external": opt.get("external"),
         "modified": modification_info(elem),
         "source_xml_path": xml_path(elem),
     }

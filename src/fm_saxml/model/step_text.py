@@ -95,8 +95,24 @@ def format_param(step: Any, item: dict) -> str | None:
     return None
 
 
+_DISABLED_PREFIX = re.compile(r"^//\s*")
+
+
 def step_text(step: Any) -> str:
-    """The full text of one step. May contain newlines (multi-line calcs and comments)."""
+    """The full text of one step. May contain newlines (multi-line calcs and comments).
+
+    FileMaker's own text (``fm_text``, from the export's DDR_INFO) is used when present: it
+    carries every option the Script Workspace shows. Otherwise the text is built from ``params``.
+    """
+    fm_text = _get(step, "fm_text")
+    if isinstance(fm_text, str):
+        text = _NEWLINES.sub("\n", fm_text)
+        return _DISABLED_PREFIX.sub("", text) if not _get(step, "enabled", True) else text
+    return built_step_text(step)
+
+
+def built_step_text(step: Any) -> str:
+    """The step's text built from its ``params`` (or the parser's ``raw_text`` preview)."""
     name = _get(step, "name") or ""
     params = _get(step, "params") or []
     if name == COMMENT_STEP:

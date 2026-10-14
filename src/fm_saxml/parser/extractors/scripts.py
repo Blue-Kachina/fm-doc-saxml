@@ -9,7 +9,7 @@ from ._helpers import (
     attr, calc_text_of, find_all_children, find_all_descendants, find_child, modification_info, text_of, uuid_of,
     xml_path,
 )
-from .chunk_lists import chunk_refs_for
+from .chunk_lists import chunk_refs_for, step_text_for
 
 
 def extract_scripts(
@@ -109,8 +109,27 @@ def _parse_script(elem: etree._Element, folder_path: str, steps_map: dict[str, l
         "uuid": uuid_of(elem),
         "folder_path": folder_path or None,
         "steps": steps,
+        "options": _script_options(elem),
         "modified": modification_info(elem),
         "source_xml_path": xml_path(elem),
+    }
+
+
+def _script_options(elem: etree._Element) -> dict[str, Any] | None:
+    """v2 ``<Options hidden="True" runwithfullaccess="False" SiriShortcutVisible="False" .../>`` on a script."""
+    opts = find_child(elem, "Options")
+    if opts is None or not attr(opts, "runwithfullaccess", "hidden"):
+        return None
+
+    def flag(name: str) -> bool | None:
+        value = attr(opts, name)
+        return value.lower() == "true" if value else None
+
+    hidden = flag("hidden")
+    return {
+        "run_with_full_access": flag("runwithfullaccess"),
+        "show_in_menu": None if hidden is None else not hidden,
+        "siri_shortcut": flag("SiriShortcutVisible"),
     }
 
 
@@ -174,6 +193,8 @@ def _parse_step(
         "calculations": calcs,
         "variable": _variable_name(elem),
         "params": params,
+        # FileMaker's own text for the step (DDR_INFO StepText); preferred over ours when present
+        "fm_text": step_text_for(elem, chunk_lists),
     }
 
 

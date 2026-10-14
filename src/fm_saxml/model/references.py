@@ -47,7 +47,7 @@ class ExternalTarget(BaseModel):
     data_source: str = Field(alias="dataSource")
     data_source_id: Optional[str] = Field(None, alias="dataSourceId")
     data_source_uuid: Optional[str] = Field(None, alias="dataSourceUuid")
-    target_type: str = Field(alias="targetType")  # field | script | layout
+    target_type: str = Field(alias="targetType")  # field | script | layout | table | valueList
     name: str = ""
     fmp_id: Optional[str] = Field(None, alias="fmpId")
     uuid: Optional[str] = None

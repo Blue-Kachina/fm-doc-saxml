@@ -125,7 +125,7 @@ def test_relationship_predicate(raw):
     pred = raw.relationships[0]["predicates"][0]
     assert pred["left_field_name"] == "ContactID"
     assert pred["right_field_name"] == "ContactID"
-    assert pred["operator"] == "equal"
+    assert pred["operator"] == "="
 
 
 # ---------------------------------------------------------------------------

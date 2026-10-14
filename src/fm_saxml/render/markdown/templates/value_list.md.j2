@@ -14,16 +14,20 @@ name: {{ entity.name }}
 {% if entity.modified %}| Last Modified By | {{ entity.modified.account_name or entity.modified.user_name }}{% if entity.modified.user_name and entity.modified.user_name != entity.modified.account_name %} (user: {{ entity.modified.user_name }}){% endif %} |
 | Last Modified | {{ entity.modified.timestamp }} |
 {% endif %}| Type | {{ entity.list_type }} |
-{% if entity.source_field_doc_id %}| Source Field | {{ link(entity.source_field_doc_id) }} |
-{% endif %}{% if entity.second_field_doc_id %}| Second Field | {{ link(entity.second_field_doc_id) }} |
+{% if entity.external_value_list %}| Values From | {{ link(entity.external_value_list.scoped_doc_id, entity.external_value_list.name ~ " (" ~ entity.external_value_list.data_source ~ ")") }} — value list in another file |
+{% endif %}{% if entity.source_field_doc_id %}| Source Field | {{ link(entity.source_field_doc_id) }}{% if entity.source_field_to_doc_id %} via {{ link(entity.source_field_to_doc_id) }}{% endif %} |
+{% endif %}{% if entity.second_field_doc_id %}| Second Field | {{ link(entity.second_field_doc_id) }}{% if entity.second_field_to_doc_id and entity.second_field_to_doc_id != entity.source_field_to_doc_id %} via {{ link(entity.second_field_to_doc_id) }}{% endif %} |
+{% endif %}{% if entity.show_first_field is not none %}| Show Values Only From Second Field | {{ "No" if entity.show_first_field else "Yes" }} |
+{% endif %}{% if entity.sort_by %}| Sort Values By | {{ entity.sort_by }} field |
+{% endif %}{% if entity.list_type in ("field", "related") %}| Include | {% if entity.related_from_to_doc_id %}Only related values, starting from {{ link(entity.related_from_to_doc_id) }}{% else %}All values{% endif %} |
 {% endif %}
 
 {% if entity.values %}
 ## Values
 
-{% for val in entity.values %}
-- {{ val }}
-{% endfor %}
+{{ values_fence }}
+{{ values_block }}
+{{ values_fence }}
 {% endif %}
 
 {% set bl = backlinks(entity.doc_id) %}

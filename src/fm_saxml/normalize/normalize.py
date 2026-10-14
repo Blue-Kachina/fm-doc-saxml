@@ -23,6 +23,11 @@ from ..model.entities import (
     EntityCalculation,
     ScriptTriggerInfo,
     ScriptEntity,
+    PrivilegeItem,
+    PrivilegeCategory,
+    PortalOptions,
+    SortField,
+    RelationshipSide,
     CustomFunctionEntity,
     ValueListEntity,
     PrivilegeSetEntity,
@@ -64,7 +69,8 @@ from .variables import build_variables
 from .field_resolver import build_field_resolver, resolve_field_or_fallback
 from .external import ExternalTargets
 from .calc_refs import CalcRefResolver, chunk_ref_models
-from ..model.document_model import ExternalDataSource
+from ..model.document_model import ExternalDataSource, FileOptions
+from ..model.step_text import step_text
 
 
 def normalize(
@@ -120,9 +126,30 @@ def normalize(
     _normalize_custom_menu_sets(raw, model)
     _normalize_themes(raw, model)
     _normalize_file_references(raw, model)
+    _normalize_file_options(raw, model)
     build_variables(model)  # needs scripts and every entity's calculations
 
     return model
+
+
+def _normalize_file_options(raw: RawModel, model: DocumentModel) -> None:
+    fo = raw.file_options
+    if not fo:
+        return
+    layout = fo.get("default_layout")
+    model.file_options = FileOptions(
+        defaultLayout=layout_doc_id(normalize_name(layout["name"])) if layout else None,
+        minimumVersion=fo.get("minimum_version"),
+        loginType=fo.get("login_type"),
+        loginAccount=fo.get("login_account"),
+        encrypted=fo.get("encrypted"),
+        allowSavePassword=fo.get("allow_save_password"),
+        requireMobilePassword=fo.get("require_mobile_password"),
+        showSignInFields=fo.get("show_sign_in_fields"),
+        hideFromClientSharing=fo.get("hide_from_client_sharing"),
+        hideFromWebDirectSharing=fo.get("hide_from_webdirect_sharing"),
+        scriptTriggers=_script_triggers(fo.get("script_triggers"), ExternalTargets(model)),
+    )
 
 
 def _extract_mtime(source_path: Optional[Path]) -> Optional[datetime]:
@@ -214,6 +241,7 @@ def _normalize_fields(raw: RawModel, model: DocumentModel) -> None:
             "index": storage_raw.get("index", "None"),
             "autoIndex": storage_raw.get("autoIndex", False),
             "maxRepeat": storage_raw.get("maxRepeat", 1),
+            "stored": storage_raw.get("stored"),
         })
 
         auto_enter = None
@@ -224,6 +252,9 @@ def _normalize_fields(raw: RawModel, model: DocumentModel) -> None:
                 value=ae_raw.get("value"),
                 calculation=ae_raw.get("calculation"),
                 no_modify_auto_enter=ae_raw.get("no_modify_auto_enter", False),
+                overwriteExisting=ae_raw.get("overwrite_existing"),
+                serialIncrement=(ae_raw.get("serial") or {}).get("increment"),
+                serialGenerate=(ae_raw.get("serial") or {}).get("generate"),
             )
 
         validation = None
@@ -239,6 +270,12 @@ def _normalize_fields(raw: RawModel, model: DocumentModel) -> None:
                     value_list_doc_id(normalize_name(val_raw["value_list"]))
                     if val_raw.get("value_list") else None
                 ),
+                existing=val_raw.get("existing", False),
+                strictType=val_raw.get("strict_type"),
+                hasCalculation=val_raw.get("has_calculation", False),
+                validateOn=val_raw.get("validate"),
+                allowOverride=val_raw.get("allow_override"),
+                other=val_raw.get("other") or {},
             )
 
         summary_field_did = None
@@ -262,6 +299,10 @@ def _normalize_fields(raw: RawModel, model: DocumentModel) -> None:
             validation=validation,
             storage=storage,
             summaryFieldDocId=summary_field_did,
+            summaryOperation=(f.get("summary") or {}).get("operation"),
+            summaryRestartEachGroup=(f.get("summary") or {}).get("restart_each_group"),
+            summaryRepetitions=(f.get("summary") or {}).get("summarize_repetition"),
+            alwaysEvaluate=f.get("always_evaluate"),
             calculations=_entity_calcs(f.get("calculations"), [
                 ("calculation", f.get("calculation")),
                 ("autoEnter", (ae_raw or {}).get("calculation")),
@@ -384,6 +425,8 @@ def _normalize_relationships(raw: RawModel, model: DocumentModel) -> None:
             allowCreateRelated=rel.get("allow_create_related", False),
             deleteRelated=rel.get("delete_related", False),
             sortRelated=rel.get("sort_related", False),
+            left=_relationship_side(rel.get("left"), resolve_field, ext),
+            right=_relationship_side(rel.get("right"), resolve_field, ext),
         )
 
         entity = RelationshipEntity(
@@ -404,6 +447,38 @@ def _normalize_relationships(raw: RawModel, model: DocumentModel) -> None:
             to_entity = model.entities.table_occurrences.get(to_doc)
             if to_entity and doc_id not in to_entity.relationships:
                 to_entity.relationships.append(doc_id)
+
+
+def _int_or_none(value: Any) -> Optional[int]:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _sort_fields(raw_sort: Optional[list[dict]], resolve_field, ext: ExternalTargets) -> list[SortField]:
+    out = []
+    for sf in raw_sort or []:
+        f_ext = ext.field(sf.get("table_name"), sf.get("field_name", ""), sf.get("field_id"), sf.get("field_uuid"))
+        field_did = (f_ext.scoped_doc_id if f_ext
+                     else resolve_field_or_fallback(resolve_field, sf.get("table_name", ""), sf.get("field_name", "")))
+        out.append(SortField(
+            fieldDocId=field_did,
+            order=sf.get("order") or "Ascending",
+            valueListDocId=value_list_doc_id(normalize_name(sf["value_list"])) if sf.get("value_list") else None,
+            external=f_ext,
+        ))
+    return out
+
+
+def _relationship_side(side: Optional[dict], resolve_field, ext: ExternalTargets) -> Optional[RelationshipSide]:
+    if side is None:
+        return None
+    return RelationshipSide(
+        allowCreate=side.get("allow_create", False),
+        delete=side.get("delete", False),
+        sort=_sort_fields(side.get("sort"), resolve_field, ext),
+    )
 
 
 def _resolve_pred_field(pred: dict, side: str, resolve_field) -> str:
@@ -585,10 +660,15 @@ def _normalize_layout_objects(raw: RawModel, model: DocumentModel) -> None:
                 externalTarget=field_external,
                 buttonScriptDocId=button_script_did,
                 buttonScriptExternal=button_script_external,
-                buttonStep=(obj.get("button_step") or {}).get("raw_text"),
+                buttonStep=step_text(obj["button_step"]) if obj.get("button_step") else None,
                 parentObjectDocId=(
                     layout_object_doc_id(layout_name, str(obj["parent_id"])) if obj.get("parent_id") else None
                 ),
+                portal=PortalOptions(
+                    initialRow=_int_or_none(portal.get("initial_row")),
+                    rows=_int_or_none(portal.get("rows")),
+                    sort=_sort_fields(portal.get("sort"), resolve_field, ext),
+                ) if portal else None,
                 scriptTriggers=_script_triggers(obj.get("script_triggers"), ext),
                 calculations=_entity_calcs(obj.get("calculations")),
                 references=obj_refs,
@@ -641,6 +721,9 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
             fmpId=str(s.get("id", "")),
             uuid=s.get("uuid"),
             folderPath=s.get("folder_path"),
+            runWithFullAccess=(s.get("options") or {}).get("run_with_full_access"),
+            showInMenu=(s.get("options") or {}).get("show_in_menu"),
+            siriShortcut=(s.get("options") or {}).get("siri_shortcut"),
             modified=ModificationInfo.model_validate(s["modified"]) if s.get("modified") else None,
             sourceXml=SourceXmlInfo(path=s.get("source_xml_path", "")) if s.get("source_xml_path") else None,
         )
@@ -712,6 +795,7 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
                 rawText=raw_step.get("raw_text"),
                 parameters={"variable": raw_step["variable"]} if raw_step.get("variable") else {},
                 params=raw_step.get("params") or [],
+                fmText=raw_step.get("fm_text"),
                 calculations=[
                     StepCalculation(position=c.get("position"), parameter=c.get("parameter"),
                                     slot=c.get("slot"), text=c["text"])
@@ -792,6 +876,7 @@ def _normalize_custom_functions(raw: RawModel, model: DocumentModel) -> None:
 def _normalize_value_lists(raw: RawModel, model: DocumentModel) -> None:
     resolve_field = build_field_resolver(model)
     ext = ExternalTargets(model)
+    to_name_map = {to.name: to.doc_id for to in model.entities.table_occurrences.values()}
     for vl in raw.value_lists:
         name = normalize_name(vl.get("name", ""))
         if not name:
@@ -822,6 +907,15 @@ def _normalize_value_lists(raw: RawModel, model: DocumentModel) -> None:
                 else resolve_field_or_fallback(resolve_field, t, fn)
             )
 
+        def to_did(table_occurrence: Optional[str]) -> Optional[str]:
+            return to_name_map.get(normalize_name(table_occurrence)) if table_occurrence else None
+
+        sort_by = None
+        if sf and sf.get("sort"):
+            sort_by = "first"
+        elif sf2 and sf2.get("sort"):
+            sort_by = "second"
+        ext_vl = vl.get("external")
         entity = ValueListEntity(
             docId=doc_id,
             name=name,
@@ -833,6 +927,16 @@ def _normalize_value_lists(raw: RawModel, model: DocumentModel) -> None:
             secondFieldDocId=second_field_doc,
             sourceFieldExternal=source_external,
             secondFieldExternal=second_external,
+            sourceFieldToDocId=to_did(sf.get("table")) if sf else None,
+            secondFieldToDocId=to_did(sf2.get("table")) if sf2 else None,
+            showFirstField=sf.get("show") if sf and sf2 else None,
+            sortBy=sort_by,
+            relatedFromToDocId=to_did(vl.get("related_from")),
+            externalValueList=(
+                ext.value_list(ext_vl.get("data_source"), ext_vl.get("name", ""), ext_vl.get("id"), ext_vl.get("uuid"),
+                               ext_vl.get("data_source_id"), ext_vl.get("data_source_uuid"))
+                if ext_vl else None
+            ),
             modified=ModificationInfo.model_validate(vl["modified"]) if vl.get("modified") else None,
             sourceXml=SourceXmlInfo(path=vl.get("source_xml_path", "")) if vl.get("source_xml_path") else None,
         )
@@ -843,17 +947,73 @@ def _normalize_value_lists(raw: RawModel, model: DocumentModel) -> None:
 # Privilege Sets
 # ---------------------------------------------------------------------------
 
+_PRIVILEGE_TARGETS = {
+    "BaseTableReference": table_doc_id,
+    "TableOccurrenceReference": to_doc_id,
+    "LayoutReference": layout_doc_id,
+    "ScriptReference": script_doc_id,
+    "ValueListReference": value_list_doc_id,
+}
+
+
+def _privilege_summary(settings: dict[str, str], custom: bool) -> str:
+    """FileMaker's wording for a blanket setting, e.g. "Create, edit, and delete in all tables"."""
+    if custom:
+        return "Custom privileges"
+    allowed = [verb for verb in ("Create", "Edit", "Delete") if settings.get(verb, "").lower() == "true"]
+    if allowed:
+        return ", ".join(v.lower() for v in allowed).capitalize()
+    view = settings.get("View")
+    if view:
+        return {"ReadOnly": "View only", "NoAccess": "No access", "ReadWrite": "Modifiable"}.get(view, view)
+    if any(v.lower() == "false" for v in settings.values()):
+        return "No access"
+    return ""
+
+
+def _privilege_category(raw_cat: Optional[dict]) -> Optional[PrivilegeCategory]:
+    if not raw_cat:
+        return None
+    settings = raw_cat.get("settings") or {}
+    custom = raw_cat.get("custom")
+    items = None
+    if custom is not None:
+        items = []
+        for it in custom:
+            make_id = _PRIVILEGE_TARGETS.get(it.get("reference_kind") or "")
+            name = normalize_name(it.get("name") or "")
+            target = make_id(name) if make_id and name else None
+            label = it.get("name") or (f"[Any new {it.get('kind', '').lower()}]" if it.get("type") == "New" else "")
+            items.append(PrivilegeItem(
+                kind=it.get("kind") or "",
+                targetDocId=target,
+                label=label,
+                access=it.get("access") or {},
+                calculations=[EntityCalculation(role=c["column"], text=c["calculation"])
+                              for c in it.get("calculations") or []],
+                attributes=it.get("attributes") or {},
+            ))
+    return PrivilegeCategory(summary=_privilege_summary(settings, custom is not None), settings=settings, custom=items)
+
+
 def _normalize_privilege_sets(raw: RawModel, model: DocumentModel) -> None:
     for ps in raw.privilege_sets:
         name = normalize_name(ps.get("name", ""))
         if not name:
             continue
         doc_id = privilege_set_doc_id(name)
+        access = ps.get("access") or {}
         entity = PrivilegeSetEntity(
             docId=doc_id,
             name=name,
             fmpId=str(ps.get("id", "")),
             description=ps.get("description"),
+            builtIn=bool(access.get("default")),
+            records=_privilege_category(access.get("records")),
+            layouts=_privilege_category(access.get("layouts")),
+            valueLists=_privilege_category(access.get("value_lists")),
+            scripts=_privilege_category(access.get("scripts")),
+            other=access.get("other") or {},
             modified=ModificationInfo.model_validate(ps["modified"]) if ps.get("modified") else None,
             sourceXml=SourceXmlInfo(path=ps.get("source_xml_path", "")) if ps.get("source_xml_path") else None,
         )

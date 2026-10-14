@@ -17,10 +17,31 @@ layout: {{ entity.layout_doc_id }}
 {% if entity.part %}| Part | {{ entity.part }} |
 {% endif %}{% if entity.uuid %}| UUID | {{ entity.uuid }} |
 {% endif %}{% if entity.field_doc_id %}| Field | {{ link(entity.field_doc_id) }} |
+{% endif %}{% if entity.value_list_doc_id %}| Value List | {{ link(entity.value_list_doc_id) }} |
 {% endif %}{% if entity.table_occurrence_doc_id %}| Table Occurrence | {{ link(entity.table_occurrence_doc_id) }} |
 {% endif %}{% if entity.parent_object_doc_id %}| Inside | {{ link(entity.parent_object_doc_id) }} |
 {% endif %}{% if entity.button_script_doc_id %}| Triggers Script | {{ link(entity.button_script_doc_id) }} |
 {% endif %}{% if entity.button_step %}| Button Action | {{ entity.button_step | cell }} |
+{% endif %}
+
+{% if entity.portal %}
+## Portal
+
+| Name | Value |
+|---|---|
+{% if entity.portal.rows %}| Rows Shown | {{ entity.portal.rows }} |
+{% endif %}{% if entity.portal.initial_row %}| Initial Row | {{ entity.portal.initial_row }} |
+{% endif %}| Sort Portal Records | {{ "Yes" if entity.portal.sort else "No" }} |
+{% if entity.calculations | selectattr("role", "equalto", "filter") | list %}| Filter Portal Records | Yes (see Calculations) |
+{% endif %}
+{% if entity.portal.sort %}
+
+| # | Sort Field | Order |
+|---:|---|---|
+{% for sf in entity.portal.sort %}
+| {{ loop.index }} | {{ link(sf.field_doc_id) if sf.field_doc_id else "_(missing field)_" }} | {{ sf.order }}{% if sf.value_list_doc_id %} (by {{ link(sf.value_list_doc_id) }}){% endif %} |
+{% endfor %}
+{% endif %}
 {% endif %}
 
 {% if entity.script_triggers %}
