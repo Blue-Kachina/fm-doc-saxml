@@ -167,6 +167,7 @@ fm-saxml build ./MySolution.xml --html
 
 - Browsers don't let a page opened from disk read other files, so each Markdown page is also written as a small script under `_viewer/pages/` (one per page). That's why it's opt-in.
 - The Markdown is rendered with [Milkdown Crepe](https://milkdown.dev/), loaded from a CDN (esm.sh and jsDelivr). Viewing needs internet access, at least until the browser has cached it. The `.md` files are unchanged and still work on their own.
+- Calculations are written as ` ```filemaker ` code blocks, and the viewer highlights them with FileMaker calculation syntax via [fmscriptui](https://github.com/Blue-Kachina/fmscriptui). If that can't load, calculations still show, just without highlighting.
 - Keep `index.html` and `_viewer/` together if you move or zip the folder.
 
 ### Multi-file solutions (FileMaker 26 folder exports)

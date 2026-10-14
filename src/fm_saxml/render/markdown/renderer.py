@@ -10,6 +10,8 @@ from jinja2 import Environment, PackageLoader, select_autoescape, Undefined
 
 from ...model.document_model import DocumentModel
 from ...model.step_text import code_fence, render_script_block
+from ...analyze.coverage import build_coverage
+from ...parser.coverage import CONTEXTS as COVERAGE_CONTEXTS
 from ...normalize.paths import relative_md_link
 from ...utils.file_writer import write_text
 from .link_resolver import LinkResolver, _esc as _esc_link_label
@@ -135,6 +137,8 @@ def _render_root_index(model: DocumentModel, output_dir: Path, env: Environment,
     ctx["counts"] = _counts(model)
     ctx["file_options"] = model.file_options
     ctx["external_data_sources"] = model.external_data_sources
+    ctx["graph_note_count"] = len(model.graph_notes)
+    ctx["coverage"] = build_coverage(model)
     content = tmpl.render(**ctx)
     write_text(output_dir / "index.md", content)
 
@@ -234,11 +238,40 @@ def _render_table_occurrences(model: DocumentModel, output_dir: Path, env: Envir
         index_path="TableOccurrences/index.md",
         links=links,
     )
+    notes_by_to: dict[str, list] = {}
+    for note in model.graph_notes:
+        for to in note.table_occurrence_doc_ids + note.below_doc_ids:
+            notes_by_to.setdefault(to, []).append(note)
     for entity in entities:
         rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
+        ctx["graph_notes"] = notes_by_to.get(entity.doc_id, [])
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
+    _render_graph_notes(model, output_dir, links)
+
+
+GRAPH_NOTES_PATH = "TableOccurrences/_GraphNotes.md"
+
+
+def _render_graph_notes(model: DocumentModel, output_dir: Path, links: LinkResolver) -> None:
+    """The relationship graph's text notes, with where they sit and the TOs they lie over."""
+    if not model.graph_notes:
+        return
+    lines = ["# Relationship Graph Notes", "",
+             f"{len(model.graph_notes)} text note(s) on the relationship graph, top to bottom. "
+             "\"Lies Over\" lists the table occurrences a note overlaps. Notes are often headings above a group: "
+             "\"Below\" lists the ones under a note, within its width, down to the next note (by position only).", "",
+             "| Note | Position (top, left) | Size | Lies Over | Below |", "|---|---|---|---|---|"]
+    ordered = sorted(model.graph_notes, key=lambda n: (n.bounds.top, n.bounds.left) if n.bounds else (0, 0))
+    for note in ordered:
+        b = note.bounds
+        pos = f"{b.top:g}, {b.left:g}" if b else ""
+        size = f"{b.right - b.left:g} × {b.bottom - b.top:g}" if b else ""
+        over = ", ".join(links.md_link(GRAPH_NOTES_PATH, d) for d in note.table_occurrence_doc_ids)
+        below = ", ".join(links.md_link(GRAPH_NOTES_PATH, d) for d in note.below_doc_ids)
+        lines.append(f"| {_md_cell(note.text) or '_(empty)_'} | {pos} | {size} | {over} | {below} |")
+    write_text(output_dir / GRAPH_NOTES_PATH, "\n".join(lines) + "\n")
 
 
 # ---------------------------------------------------------------------------
@@ -691,6 +724,11 @@ def _render_reports(model: DocumentModel, output_dir: Path, env: Environment, li
     unresolved = [r for r in model.references if r.confidence == "unresolved"]
     counts = _counts(model)
 
+    coverage = build_coverage(model)
+    areas: dict[str, list] = {}
+    for row in coverage.rows:
+        areas.setdefault(row.area, []).append(row)  # in MEASURES order, not alphabetical
+
     # Summary
     tmpl = env.get_template("reports/summary.md.j2")
     xml_modified_at = (
@@ -714,8 +752,13 @@ def _render_reports(model: DocumentModel, output_dir: Path, env: Environment, li
         external_references=sum(1 for r in model.references if r.confidence == "external"),
         warning_counts=dict(warning_counts),
         scrubbing=model.scrubbing,
+        coverage=coverage,
     )
     write_text(reports_dir / "summary.md", content)
+
+    # Coverage
+    tmpl = env.get_template("reports/coverage.md.j2")
+    write_text(reports_dir / "coverage.md", tmpl.render(report=coverage, areas=areas, context_count=len(COVERAGE_CONTEXTS)))
 
     # Redactions
     if model.scrubbing is not None:

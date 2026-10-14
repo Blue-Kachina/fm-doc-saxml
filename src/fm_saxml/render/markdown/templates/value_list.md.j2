@@ -15,6 +15,9 @@ name: {{ entity.name }}
 | Last Modified | {{ entity.modified.timestamp }} |
 {% endif %}| Type | {{ entity.list_type }} |
 {% if entity.external_value_list %}| Values From | {{ link(entity.external_value_list.scoped_doc_id, entity.external_value_list.name ~ " (" ~ entity.external_value_list.data_source ~ ")") }} — value list in another file |
+{% elif "external list" in entity.missing %}| Values From | _(missing: a value list FileMaker can no longer find in {{ entity.external_data_source or "the other file" }})_ |
+{% endif %}{% if "source field" in entity.missing %}| Source Field | _(missing: a field FileMaker can no longer find)_ |
+{% endif %}{% if "second field" in entity.missing %}| Second Field | _(missing: a field FileMaker can no longer find)_ |
 {% endif %}{% if entity.source_field_doc_id %}| Source Field | {{ link(entity.source_field_doc_id) }}{% if entity.source_field_to_doc_id %} via {{ link(entity.source_field_to_doc_id) }}{% endif %} |
 {% endif %}{% if entity.second_field_doc_id %}| Second Field | {{ link(entity.second_field_doc_id) }}{% if entity.second_field_to_doc_id and entity.second_field_to_doc_id != entity.source_field_to_doc_id %} via {{ link(entity.second_field_to_doc_id) }}{% endif %} |
 {% endif %}{% if entity.show_first_field is not none %}| Show Values Only From Second Field | {{ "No" if entity.show_first_field else "Yes" }} |

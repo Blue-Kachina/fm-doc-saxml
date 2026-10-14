@@ -16,9 +16,20 @@ name: {{ entity.name }}
 {% endif %}{% if entity.folder_path %}| Folder | {{ entity.folder_path }} |
 {% endif %}
 {% if entity.base_table_occurrence_doc_id %}| Table Occurrence | {{ link(entity.base_table_occurrence_doc_id) }} |
+{% endif %}{% if entity.menu_set %}| Menu Set | {{ entity.menu_set }} |
 {% endif %}{% if entity.theme %}| Theme | {{ entity.theme }} |
 {% endif %}| Field Count | {{ entity.referenced_fields | length }} |
 | Layout Object Count | {{ entity.layout_objects | length }} |
+
+{% if entity.parts %}
+## Parts
+
+| Part | Height (pt) | Objects | Break Field |
+|---|---:|---:|---|
+{% for p in entity.parts %}
+| {{ p.name or p.type }} | {{ p.height if p.height is not none else "" }} | {{ p.object_count }} | {{ link(p.break_field_doc_id) if p.break_field_doc_id else "" }} |
+{% endfor %}
+{% endif %}
 
 {% if entity.referenced_fields %}
 ## Fields on Layout
@@ -46,7 +57,7 @@ name: {{ entity.name }}
 {% for c in entity.calculations %}
 ### {{ c.role }}
 
-```
+```filemaker
 {{ c.text }}
 ```
 

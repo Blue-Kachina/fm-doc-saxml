@@ -78,5 +78,6 @@ def extract_file_options(root: etree._Element) -> dict[str, Any] | None:
         "show_sign_in_fields": enabled("ShowSignInFields"),
         "hide_from_client_sharing": enabled("HideClientSharing"),
         "hide_from_webdirect_sharing": enabled("HideWebDirectSharing"),
+        "use_default_fields": enabled("UseDefaultFields"),
         "script_triggers": triggers,
     }

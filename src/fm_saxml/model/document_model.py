@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Optional
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, PrivateAttr
 
 from .entities import (
     TableEntity,
@@ -26,6 +26,7 @@ from .entities import (
     FileReferenceEntity,
     VariableEntity,
     ScriptTriggerInfo,
+    GraphRect,
 )
 from .references import ReferenceRecord
 
@@ -112,7 +113,32 @@ class FileOptions(BaseModel):
     show_sign_in_fields: Optional[bool] = Field(None, alias="showSignInFields")
     hide_from_client_sharing: Optional[bool] = Field(None, alias="hideFromClientSharing")
     hide_from_webdirect_sharing: Optional[bool] = Field(None, alias="hideFromWebDirectSharing")
+    use_default_fields: Optional[bool] = Field(None, alias="useDefaultFields")  # new tables get the default fields
+    default_menu_set: Optional[str] = Field(None, alias="defaultMenuSet")  # Manage Custom Menus: default for this file
     script_triggers: list[ScriptTriggerInfo] = Field([], alias="scriptTriggers")  # OnFirstWindowOpen, ...
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class GraphNote(BaseModel):
+    """A text note on the relationship graph, and the table occurrences it lies over."""
+
+    text: str = ""
+    bounds: Optional[GraphRect] = None
+    table_occurrence_doc_ids: list[str] = Field([], alias="tableOccurrenceDocIds")
+    # By position only: TOs below the note, within its width, down to the next such note.
+    # Notes are usually headings over a group of TOs; this is that group, as laid out.
+    below_doc_ids: list[str] = Field([], alias="belowDocIds")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class XmlInventory(BaseModel):
+    """What the export contains, counted from the XML for the coverage report (parser/coverage.py)."""
+
+    measures: dict[str, int] = {}
+    unrecognised: dict[str, dict[str, int]] = {}  # context -> element / @attribute name -> count
+    skipped: dict[str, dict[str, int]] = {}  # left out on purpose
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -177,12 +203,35 @@ class DocumentModel(BaseModel):
     entities: EntityMaps = Field(default_factory=EntityMaps)
     external_data_sources: list[ExternalDataSource] = Field([], alias="externalDataSources")
     file_options: Optional[FileOptions] = Field(None, alias="fileOptions")
+    graph_notes: list[GraphNote] = Field([], alias="graphNotes")
+    coverage_inventory: Optional[XmlInventory] = Field(None, alias="coverageInventory")
     references: list[ReferenceRecord] = []
     backlinks: dict[str, list[dict]] = {}
     warnings: list[Warning] = []
     scrubbing: Optional[ScrubSummary] = None
 
     model_config = ConfigDict(populate_by_name=True)
+
+    # FileMaker script id -> docId, built from the export before anything links to a script.
+    # FileMaker allows two scripts with one name; the later ones get a docId with their id.
+    _script_doc_ids: dict[str, str] = PrivateAttr(default_factory=dict)
+    _layout_doc_ids: dict[str, str] = PrivateAttr(default_factory=dict)  # same, for layouts
+
+    def local_layout_doc_id(self, name: str, fmp_id: Optional[str] = None) -> str:
+        """docId of a layout in this file: by FileMaker id when known, else by name."""
+        from ..normalize.ids import layout_doc_id
+        from ..normalize.names import normalize_name
+        if fmp_id and str(fmp_id) in self._layout_doc_ids:
+            return self._layout_doc_ids[str(fmp_id)]
+        return layout_doc_id(normalize_name(name))
+
+    def local_script_doc_id(self, name: str, fmp_id: Optional[str] = None) -> str:
+        """docId of a script in this file: by FileMaker id when known, else by name."""
+        from ..normalize.ids import script_doc_id
+        from ..normalize.names import normalize_name
+        if fmp_id and str(fmp_id) in self._script_doc_ids:
+            return self._script_doc_ids[str(fmp_id)]
+        return script_doc_id(normalize_name(name))
 
     def get_entity(self, doc_id: str):
         """Return any entity by docId, searching across all entity maps."""

@@ -108,8 +108,20 @@ def _parse_menu_item(item_elem: etree._Element) -> dict[str, Any]:
     return item
 
 
+def _menu_set_catalog(container: etree._Element) -> etree._Element | None:
+    # FileMaker writes "CustomMenuSetCatalog"; the plural is kept for older hand-made fixtures.
+    return find_child(container, "CustomMenuSetCatalog", "CustomMenuSetsCatalog")
+
+
+def default_menu_set(container: etree._Element) -> str | None:
+    """The file's default menu set: the ``<CustomMenuSetReference>`` directly in the catalog."""
+    catalog = _menu_set_catalog(container)
+    ref = find_child(catalog, "CustomMenuSetReference") if catalog is not None else None
+    return (attr(ref, "name", "Name") or None) if ref is not None else None
+
+
 def extract_custom_menu_sets(container: etree._Element) -> list[dict[str, Any]]:
-    catalog = find_child(container, "CustomMenuSetsCatalog")
+    catalog = _menu_set_catalog(container)
     if catalog is None:
         return []
 

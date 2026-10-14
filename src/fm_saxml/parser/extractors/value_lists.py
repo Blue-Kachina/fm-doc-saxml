@@ -126,6 +126,10 @@ def _parse_value_list(elem: etree._Element, options_map: dict[str, dict]) -> dic
 
     # Merge from options map (v2 supplementary data)
     opt = options_map.get(vl_id, {})
+    if not opt and find_child(elem, "CustomValues", "Field", "External") is not None:
+        # Newer exports (FileMaker 26) put the details inline in the catalog entry,
+        # with the same children <OptionsForValueLists> uses.
+        opt = _parse_options_entry(elem)
 
     if "custom" in list_type_lower:
         normalized_type = "customValues"
@@ -149,7 +153,10 @@ def _parse_value_list(elem: etree._Element, options_map: dict[str, dict]) -> dic
         normalized_type = "field" if "field" in list_type_lower else "related"
         source_field = opt.get("source_field")
         if source_field is None:
-            src = find_child(elem, "SourceField", "Field")
+            src = find_child(elem, "SourceField")
+            v1_field = find_child(elem, "Field")
+            if src is None and v1_field is not None and attr(v1_field, "name", "Name"):
+                src = v1_field  # v1: <Field name="" table=""/>; v2's <Field> is a wrapper, not a field
             if src is not None:
                 source_field = {
                     "id": attr(src, "id", "ID"),

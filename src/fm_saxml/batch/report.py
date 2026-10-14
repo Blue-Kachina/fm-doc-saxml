@@ -73,6 +73,22 @@ def heading_anchor(text: str) -> str:
     return re.sub(r"\s", "-", re.sub(r"[^\w\s-]", "", text.strip().lower()))
 
 
+def _coverage_cell(model) -> str:
+    from ..analyze.coverage import build_coverage
+
+    report = build_coverage(model)
+    if not report.available:
+        return "n/a"
+    if report.ok:
+        return "complete"
+    parts = []
+    if report.problems:
+        parts.append(f"{len(report.problems)} check(s) to look at")
+    if report.unrecognised:
+        parts.append(f"{report.unrecognised_count} unrecognised")
+    return "**" + ", ".join(parts) + "**"
+
+
 def _natural(placeholder: str) -> tuple:
     """[EMAIL#9] before [EMAIL#10]."""
     m = re.search(r"#(\d+)\]$", placeholder)
@@ -151,6 +167,7 @@ def _context(result: BatchResult) -> dict:
             "refs_from": sorted(names[s] for s in refs_from.get(f.folder, ())),
             "unresolved": sum(1 for r in f.model.references if r.confidence == "unresolved"),
             "redactions": len(f.model.scrubbing.redactions) if f.model.scrubbing and f.model.scrubbing.applied else None,
+            "coverage": _coverage_cell(f.model),
         })
 
     xrefs = result.links.references

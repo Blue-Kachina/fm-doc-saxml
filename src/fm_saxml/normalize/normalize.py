@@ -26,6 +26,8 @@ from ..model.entities import (
     PrivilegeItem,
     PrivilegeCategory,
     PortalOptions,
+    LayoutPart,
+    GraphRect,
     SortField,
     RelationshipSide,
     CustomFunctionEntity,
@@ -69,7 +71,7 @@ from .variables import build_variables
 from .field_resolver import build_field_resolver, resolve_field_or_fallback
 from .external import ExternalTargets
 from .calc_refs import CalcRefResolver, chunk_ref_models
-from ..model.document_model import ExternalDataSource, FileOptions
+from ..model.document_model import ExternalDataSource, FileOptions, GraphNote, XmlInventory
 from ..model.step_text import step_text
 
 
@@ -110,10 +112,13 @@ def normalize(
     for w in raw.parse_warnings:
         model.add_warning("PARSE_WARNING", w)
 
+    _index_script_ids(raw, model)  # before anything links to a script
     _normalize_tables(raw, model)
     _normalize_fields(raw, model)
     _normalize_table_occurrences(raw, model)
     _normalize_relationships(raw, model)
+    _normalize_graph_notes(raw, model)
+    _resolve_lookups(model)  # needs table occurrences
     _normalize_value_lists(raw, model)  # before layouts/scripts: their calcs reference value lists by name
     _normalize_layouts(raw, model)
     _normalize_layout_objects(raw, model)
@@ -127,9 +132,45 @@ def normalize(
     _normalize_themes(raw, model)
     _normalize_file_references(raw, model)
     _normalize_file_options(raw, model)
+    if raw.coverage is not None:
+        model.coverage_inventory = XmlInventory.model_validate(raw.coverage)
     build_variables(model)  # needs scripts and every entity's calculations
 
     return model
+
+
+def _resolve_lookups(model: DocumentModel) -> None:
+    resolve_field = build_field_resolver(model)
+    ext = ExternalTargets(model)
+    for f in model.entities.fields.values():
+        ae = f.auto_enter
+        if ae is None or not ae.lookup_field:
+            continue
+        ae.lookup_external = ext.field(ae.lookup_table_occurrence, ae.lookup_field)
+        ae.lookup_field_doc_id = (
+            ae.lookup_external.scoped_doc_id if ae.lookup_external
+            else resolve_field_or_fallback(resolve_field, ae.lookup_table_occurrence or "", ae.lookup_field)
+        )
+
+
+def _normalize_graph_notes(raw: RawModel, model: DocumentModel) -> None:
+    tos = [to for to in model.entities.table_occurrences.values() if to.graph_bounds is not None]
+    notes = [GraphRect(**n["bounds"]) if n.get("bounds") else None for n in raw.graph_notes]
+
+    def same_column(a: GraphRect, b: GraphRect) -> bool:
+        return a.left < b.right and b.left < a.right
+
+    for note, bounds in zip(raw.graph_notes, notes):
+        covered, below = [], []
+        if bounds is not None:
+            covered = sorted(to.doc_id for to in tos if bounds.overlaps(to.graph_bounds))
+            stop = min((n.top for n in notes if n is not None and n is not bounds
+                        and n.top >= bounds.bottom and same_column(n, bounds)), default=float("inf"))
+            below = [to.doc_id for to in sorted(tos, key=lambda t: (t.graph_bounds.top, t.graph_bounds.left))
+                     if to.doc_id not in covered and bounds.bottom <= to.graph_bounds.top < stop
+                     and same_column(to.graph_bounds, bounds)]
+        model.graph_notes.append(GraphNote(text=note.get("text") or "", bounds=bounds,
+                                           tableOccurrenceDocIds=covered, belowDocIds=below))
 
 
 def _normalize_file_options(raw: RawModel, model: DocumentModel) -> None:
@@ -138,7 +179,7 @@ def _normalize_file_options(raw: RawModel, model: DocumentModel) -> None:
         return
     layout = fo.get("default_layout")
     model.file_options = FileOptions(
-        defaultLayout=layout_doc_id(normalize_name(layout["name"])) if layout else None,
+        defaultLayout=model.local_layout_doc_id(layout["name"], layout.get("id")) if layout else None,
         minimumVersion=fo.get("minimum_version"),
         loginType=fo.get("login_type"),
         loginAccount=fo.get("login_account"),
@@ -148,8 +189,36 @@ def _normalize_file_options(raw: RawModel, model: DocumentModel) -> None:
         showSignInFields=fo.get("show_sign_in_fields"),
         hideFromClientSharing=fo.get("hide_from_client_sharing"),
         hideFromWebDirectSharing=fo.get("hide_from_webdirect_sharing"),
-        scriptTriggers=_script_triggers(fo.get("script_triggers"), ExternalTargets(model)),
+        useDefaultFields=fo.get("use_default_fields"),
+        defaultMenuSet=fo.get("default_menu_set"),
+        scriptTriggers=_script_triggers(fo.get("script_triggers"), ExternalTargets(model), model),
     )
+
+
+def _index_script_ids(raw: RawModel, model: DocumentModel) -> None:
+    """FileMaker id -> docId for every script and layout. A name used twice gets a docId with the id."""
+    taken_layouts: set[str] = set()
+    for lay in raw.layouts:
+        name = normalize_name(lay.get("name", ""))
+        if not name:
+            continue
+        doc_id = layout_doc_id(name)
+        if doc_id in taken_layouts:
+            doc_id = layout_doc_id(f"{name} (#{lay.get('id', '')})")
+        taken_layouts.add(doc_id)
+        if lay.get("id"):
+            model._layout_doc_ids[str(lay["id"])] = doc_id
+    taken: set[str] = set()
+    for s in raw.scripts:
+        name = normalize_name(s.get("name", ""))
+        if not name:
+            continue
+        doc_id = script_doc_id(name)
+        if doc_id in taken:
+            doc_id = script_doc_id(f"{name} (#{s.get('id', '')})")
+        taken.add(doc_id)
+        if s.get("id"):
+            model._script_doc_ids[str(s["id"])] = doc_id
 
 
 def _extract_mtime(source_path: Optional[Path]) -> Optional[datetime]:
@@ -206,14 +275,15 @@ def _entity_calcs(
     ]
 
 
-def _script_triggers(raw_triggers: Optional[list[dict]], ext: ExternalTargets) -> list[ScriptTriggerInfo]:
+def _script_triggers(raw_triggers: Optional[list[dict]], ext: ExternalTargets,
+                     model: DocumentModel) -> list[ScriptTriggerInfo]:
     triggers = []
     for t in raw_triggers or []:
         sref = t["script"]
         s_ext = ext.script(sref.get("data_source"), sref["name"], sref.get("id"), sref.get("uuid"))
         triggers.append(ScriptTriggerInfo(
             event=t.get("event") or "",
-            scriptDocId=s_ext.scoped_doc_id if s_ext else script_doc_id(normalize_name(sref["name"])),
+            scriptDocId=s_ext.scoped_doc_id if s_ext else model.local_script_doc_id(sref["name"], sref.get("id")),
             scriptExternal=s_ext,
         ))
     return triggers
@@ -242,6 +312,8 @@ def _normalize_fields(raw: RawModel, model: DocumentModel) -> None:
             "autoIndex": storage_raw.get("autoIndex", False),
             "maxRepeat": storage_raw.get("maxRepeat", 1),
             "stored": storage_raw.get("stored"),
+            "externalStorage": (storage_raw.get("external_storage") or {}).get("type"),
+            "externalStorageDirectory": (storage_raw.get("external_storage") or {}).get("base_directory"),
         })
 
         auto_enter = None
@@ -255,6 +327,12 @@ def _normalize_fields(raw: RawModel, model: DocumentModel) -> None:
                 overwriteExisting=ae_raw.get("overwrite_existing"),
                 serialIncrement=(ae_raw.get("serial") or {}).get("increment"),
                 serialGenerate=(ae_raw.get("serial") or {}).get("generate"),
+                lookupTableOccurrence=(ae_raw.get("lookup") or {}).get("table_name"),
+                lookupField=(ae_raw.get("lookup") or {}).get("field_name"),
+                lookupContext=(ae_raw.get("lookup") or {}).get("context"),
+                lookupDontCopyIfEmpty=(ae_raw.get("lookup") or {}).get("dont_copy_if_empty"),
+                lookupNoMatch=(ae_raw.get("lookup") or {}).get("no_match"),
+                lookupNoMatchValue=(ae_raw.get("lookup") or {}).get("no_match_value"),
             )
 
         validation = None
@@ -273,6 +351,9 @@ def _normalize_fields(raw: RawModel, model: DocumentModel) -> None:
                 existing=val_raw.get("existing", False),
                 strictType=val_raw.get("strict_type"),
                 hasCalculation=val_raw.get("has_calculation", False),
+                hasMessageCalculation=val_raw.get("has_message_calculation", False),
+                alwaysValidate=val_raw.get("always_validate"),
+                range=val_raw.get("range"),
                 validateOn=val_raw.get("validate"),
                 allowOverride=val_raw.get("allow_override"),
                 other=val_raw.get("other") or {},
@@ -299,6 +380,7 @@ def _normalize_fields(raw: RawModel, model: DocumentModel) -> None:
             validation=validation,
             storage=storage,
             summaryFieldDocId=summary_field_did,
+            annotation=f.get("annotation"),
             summaryOperation=(f.get("summary") or {}).get("operation"),
             summaryRestartEachGroup=(f.get("summary") or {}).get("restart_each_group"),
             summaryRepetitions=(f.get("summary") or {}).get("summarize_repetition"),
@@ -359,6 +441,8 @@ def _normalize_table_occurrences(raw: RawModel, model: DocumentModel) -> None:
             externalBaseTableUuid=to.get("external_base_table_uuid"),
             fmpId=str(to.get("id", "")),
             uuid=to.get("uuid"),
+            graphBounds=to.get("graph_bounds"),
+            collapsed=to.get("collapsed"),
             modified=ModificationInfo.model_validate(to["modified"]) if to.get("modified") else None,
             sourceXml=SourceXmlInfo(path=to.get("source_xml_path", "")) if to.get("source_xml_path") else None,
         )
@@ -508,7 +592,9 @@ def _normalize_layouts(raw: RawModel, model: DocumentModel) -> None:
         name = normalize_name(layout.get("name", ""))
         if not name:
             continue
-        doc_id = layout_doc_id(name)
+        doc_id = model.local_layout_doc_id(name, layout.get("id"))
+        if doc_id in model.entities.layouts:  # same name and no id to tell them apart
+            doc_id = layout_doc_id(f"{name} (#{layout.get('id', '') or len(model.entities.layouts)})")
 
         to_id = str(layout.get("table_occurrence_id", ""))
         to_name = layout.get("table_occurrence_name", "")
@@ -539,7 +625,22 @@ def _normalize_layouts(raw: RawModel, model: DocumentModel) -> None:
             theme=layout.get("theme"),
             folderPath=layout.get("folder_path"),
             referencedFields=ref_field_doc_ids,
-            scriptTriggers=_script_triggers(layout.get("script_triggers"), ext),
+            menuSet=layout.get("menu_set"),
+            parts=[
+                LayoutPart(
+                    type=p.get("type") or "",
+                    name=p.get("name"),
+                    height=p.get("height"),
+                    breakFieldDocId=(
+                        resolve_field_or_fallback(resolve_field, p["break_field"]["table_name"],
+                                                  p["break_field"]["field_name"])
+                        if p.get("break_field") else None
+                    ),
+                    objectCount=p.get("object_count", 0),
+                )
+                for p in layout.get("parts") or []
+            ],
+            scriptTriggers=_script_triggers(layout.get("script_triggers"), ext, model),
             calculations=_entity_calcs(layout.get("calculations")),
             modified=ModificationInfo.model_validate(layout["modified"]) if layout.get("modified") else None,
             sourceXml=SourceXmlInfo(path=layout.get("source_xml_path", "")) if layout.get("source_xml_path") else None,
@@ -561,14 +662,17 @@ def _normalize_layout_objects(raw: RawModel, model: DocumentModel) -> None:
     resolve_field = build_field_resolver(model)
     to_id_map = {to.fmp_id: to.doc_id for to in model.entities.table_occurrences.values()}
     to_name_map = {to.name: to.doc_id for to in model.entities.table_occurrences.values()}
+    # name -> docId, plus "#<FileMaker id>" -> docId (two layouts can share a name)
     layout_name_map = {ly.name: ly.doc_id for ly in model.entities.layouts.values()}
+    layout_name_map.update({f"#{ly.fmp_id}": ly.doc_id for ly in model.entities.layouts.values() if ly.fmp_id})
     ext = ExternalTargets(model)
 
     for raw_layout in raw.layouts:
         layout_name = normalize_name(raw_layout.get("name", ""))
         if not layout_name:
             continue
-        layout_did = layout_doc_id(layout_name)
+        layout_did = model.local_layout_doc_id(layout_name, raw_layout.get("id"))
+        layout_key = layout_did.split(":", 1)[1]  # the layout's name, or "name (#id)" for a duplicate
         layout_entity = model.entities.layouts.get(layout_did)
         if layout_entity is None:
             continue
@@ -583,7 +687,7 @@ def _normalize_layout_objects(raw: RawModel, model: DocumentModel) -> None:
         for obj in objects:
             obj_id = str(obj.get("id", "") or "")
             fallback_idx = int(obj.get("fallback_index", 0) or 0)
-            doc_id = layout_object_doc_id(layout_name, obj_id, fallback_idx)
+            doc_id = layout_object_doc_id(layout_key, obj_id, fallback_idx)
 
             bounds_raw = obj.get("bounds") or {}
             bounds = (
@@ -638,7 +742,7 @@ def _normalize_layout_objects(raw: RawModel, model: DocumentModel) -> None:
                 button_script_external = ext.script(bs.get("data_source"), bs["name"], bs.get("id"), bs.get("uuid"))
                 button_script_did = (
                     button_script_external.scoped_doc_id if button_script_external
-                    else script_doc_id(normalize_name(bs["name"]))
+                    else model.local_script_doc_id(bs["name"], bs.get("id"))
                 )
 
             entity = LayoutObjectEntity(
@@ -661,15 +765,16 @@ def _normalize_layout_objects(raw: RawModel, model: DocumentModel) -> None:
                 buttonScriptDocId=button_script_did,
                 buttonScriptExternal=button_script_external,
                 buttonStep=step_text(obj["button_step"]) if obj.get("button_step") else None,
+                buttonKind=obj.get("button_kind"),
                 parentObjectDocId=(
-                    layout_object_doc_id(layout_name, str(obj["parent_id"])) if obj.get("parent_id") else None
+                    layout_object_doc_id(layout_key, str(obj["parent_id"])) if obj.get("parent_id") else None
                 ),
                 portal=PortalOptions(
                     initialRow=_int_or_none(portal.get("initial_row")),
                     rows=_int_or_none(portal.get("rows")),
                     sort=_sort_fields(portal.get("sort"), resolve_field, ext),
                 ) if portal else None,
-                scriptTriggers=_script_triggers(obj.get("script_triggers"), ext),
+                scriptTriggers=_script_triggers(obj.get("script_triggers"), ext, model),
                 calculations=_entity_calcs(obj.get("calculations")),
                 references=obj_refs,
                 rawText=obj.get("raw_text"),
@@ -705,7 +810,9 @@ def _ext(target) -> dict:
 
 
 def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
+    # name -> docId, plus "#<FileMaker id>" -> docId (two layouts can share a name)
     layout_name_map = {ly.name: ly.doc_id for ly in model.entities.layouts.values()}
+    layout_name_map.update({f"#{ly.fmp_id}": ly.doc_id for ly in model.entities.layouts.values() if ly.fmp_id})
     script_name_map_prelim: dict[str, str] = {}
 
     # First pass — create script entities without step cross-references
@@ -714,7 +821,9 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
         name = normalize_name(s.get("name", ""))
         if not name:
             continue
-        doc_id = script_doc_id(name)
+        doc_id = model.local_script_doc_id(name, s.get("id"))
+        if doc_id in model.entities.scripts:  # same name and no id to tell them apart
+            doc_id = script_doc_id(f"{name} (#{s.get('id', '') or len(model.entities.scripts)})")
         entity = ScriptEntity(
             docId=doc_id,
             name=name,
@@ -743,7 +852,7 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
         ref_scripts: list[str] = []
 
         for raw_step in s.get("steps", []):
-            step_doc = script_step_doc_id(script_entity.name, raw_step.get("index", 0))
+            step_doc = script_step_doc_id(script_entity.doc_id.split(":", 1)[1], raw_step.get("index", 0))
             calcs = raw_step.get("calculations")
             if calcs is None:  # raw step with only the joined calculation text
                 calcs = [{"text": raw_step["calculation"]}] if raw_step.get("calculation") else []
@@ -779,7 +888,7 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
                 if s_ext:
                     sd = s_ext.scoped_doc_id
                 else:
-                    sd = script_name_map_prelim.get(sn) or script_doc_id(sn)
+                    sd = model.local_script_doc_id(sn, sr.get("id"))
                 step_refs.append({"kind": "script", "targetDocId": sd, "role": "callee", **_ext(s_ext)})
                 if sd not in ref_scripts:
                     ref_scripts.append(sd)
@@ -826,7 +935,10 @@ def _step_target_refs(
     if lr and lr.get("name"):
         # Go to Related Record through an External TO -> layout is in the other file
         l_ext = ext.layout(lr.get("via_to"), lr["name"], lr.get("id"), lr.get("uuid"))
-        ld = l_ext.scoped_doc_id if l_ext else (layout_name_map.get(lr["name"]) or layout_doc_id(lr["name"]))
+        ld = l_ext.scoped_doc_id if l_ext else (
+            (layout_name_map.get(f"#{lr['id']}") if lr.get("id") else None)
+            or layout_name_map.get(lr["name"]) or layout_doc_id(lr["name"])
+        )
         refs.append({"kind": "layout", "targetDocId": ld, "role": role, **_ext(l_ext)})
 
     for fr in step.get("field_refs", []):
@@ -916,6 +1028,12 @@ def _normalize_value_lists(raw: RawModel, model: DocumentModel) -> None:
         elif sf2 and sf2.get("sort"):
             sort_by = "second"
         ext_vl = vl.get("external")
+        missing = [label for label, part in (("source field", sf), ("second field", sf2))
+                   if part is not None and not part.get("name")]
+        if vl.get("list_type") == "field" and sf is None:
+            missing.append("source field")  # a list "from field" whose field FileMaker can't find
+        if ext_vl is not None and not ext_vl.get("name"):
+            missing.append("external list")
         entity = ValueListEntity(
             docId=doc_id,
             name=name,
@@ -932,6 +1050,8 @@ def _normalize_value_lists(raw: RawModel, model: DocumentModel) -> None:
             showFirstField=sf.get("show") if sf and sf2 else None,
             sortBy=sort_by,
             relatedFromToDocId=to_did(vl.get("related_from")),
+            externalDataSource=ext_vl.get("data_source") if ext_vl else None,
+            missing=missing,
             externalValueList=(
                 ext.value_list(ext_vl.get("data_source"), ext_vl.get("name", ""), ext_vl.get("id"), ext_vl.get("uuid"),
                                ext_vl.get("data_source_id"), ext_vl.get("data_source_uuid"))
@@ -1096,7 +1216,7 @@ def _normalize_custom_menus(raw: RawModel, model: DocumentModel) -> None:
             if s_ext:
                 script_did = s_ext.scoped_doc_id
             else:
-                script_did = script_name_map.get(sref["name"]) or script_doc_id(sref["name"]) if sref else None
+                script_did = model.local_script_doc_id(sref["name"], sref.get("id")) if sref else None
             items.append(CustomMenuItem(
                 name=item.get("name", ""),
                 actionType=item.get("action_type", ""),
@@ -1182,6 +1302,8 @@ def _normalize_file_references(raw: RawModel, model: DocumentModel) -> None:
         if not display_name:
             continue
         doc_id = file_reference_doc_id(ref_type, display_name)
+        if doc_id in model.entities.file_references:  # FileMaker allows two with one name
+            doc_id = file_reference_doc_id(ref_type, f"{display_name} (#{fr.get('id', '') or len(model.entities.file_references)})")
         entity = FileReferenceEntity(
             docId=doc_id,
             name=display_name,

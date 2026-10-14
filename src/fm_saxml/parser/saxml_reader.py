@@ -12,7 +12,7 @@ from .version_detector import detect_version, strip_namespace
 from .extractors._helpers import find_child
 from .extractors.tables import extract_tables
 from .extractors.fields import extract_fields
-from .extractors.table_occurrences import extract_table_occurrences
+from .extractors.table_occurrences import extract_table_occurrences, extract_graph_notes
 from .extractors.relationships import extract_relationships
 from .extractors.layouts import extract_layouts
 from .extractors.scripts import extract_scripts
@@ -21,10 +21,11 @@ from .extractors.custom_functions import extract_custom_functions
 from .extractors.value_lists import extract_value_lists
 from .extractors.external_data_sources import extract_external_data_sources
 from .extractors.file_options import extract_file_options
+from .coverage import xml_inventory
 from .extractors.privileges import extract_privilege_sets
 from .extractors.accounts import extract_accounts
 from .extractors.extended_privileges import extract_extended_privileges
-from .extractors.custom_menus import extract_custom_menus, extract_custom_menu_sets
+from .extractors.custom_menus import extract_custom_menus, extract_custom_menu_sets, default_menu_set
 from .extractors.themes import extract_themes
 from .extractors.file_access import extract_file_references
 
@@ -55,6 +56,8 @@ class RawModel:
     themes: list[dict[str, Any]] = field(default_factory=list)
     file_references: list[dict[str, Any]] = field(default_factory=list)
     file_options: dict[str, Any] | None = None
+    graph_notes: list[dict[str, Any]] = field(default_factory=list)
+    coverage: dict[str, Any] | None = None  # parser/coverage.py: what the XML contains, for the report
     parse_warnings: list[str] = field(default_factory=list)
 
 
@@ -176,6 +179,7 @@ def _parse_v2(xml_path: Path, root, raw: RawModel) -> RawModel:
     raw.tables = extract_tables(container)
     raw.fields = extract_fields(container, v2_fields_elem=fields_for_tables, chunk_lists=chunk_lists)
     raw.table_occurrences = extract_table_occurrences(container)
+    raw.graph_notes = extract_graph_notes(container)
     raw.relationships = extract_relationships(container)
     raw.layouts = extract_layouts(container, chunk_lists=chunk_lists)
     raw.scripts = extract_scripts(container, v2_steps_elem=steps_for_scripts, chunk_lists=chunk_lists)
@@ -190,6 +194,9 @@ def _parse_v2(xml_path: Path, root, raw: RawModel) -> RawModel:
     raw.file_references = extract_file_references(container)
     raw.external_data_sources = extract_external_data_sources(container)
     raw.file_options = extract_file_options(root)
+    raw.coverage = xml_inventory(root)
+    if raw.file_options is not None:
+        raw.file_options["default_menu_set"] = default_menu_set(container)
 
     return raw
 

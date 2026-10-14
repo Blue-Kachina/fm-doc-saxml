@@ -117,6 +117,34 @@ FailOnSecretsOpt = Annotated[bool, typer.Option(
 )]
 
 
+FailOnCoverageOpt = Annotated[bool, typer.Option(
+    "--fail-on-coverage-gap",
+    help="Exit with status 1 if anything in the export didn't reach the docs, or the export has XML the "
+         "converter doesn't recognise (see Reports/coverage.md). For CI.",
+)]
+
+
+def _report_coverage(models, fail: bool) -> None:
+    """One console line about coverage; with --fail-on-coverage-gap, exit 1 on any gap."""
+    from .analyze.coverage import build_coverage
+
+    reports = [build_coverage(m) for m in models]
+    reports = [r for r in reports if r.available]
+    if not reports:
+        return
+    problems = sum(len(r.problems) for r in reports)
+    unrecognised = sum(r.unrecognised_count for r in reports)
+    checks = sum(len(r.rows) for r in reports)
+    if not problems and not unrecognised:
+        console.print(f"[dim]Coverage: all {checks} checks complete, no unrecognised XML.[/dim]")
+        return
+    err_console.print(f"[yellow]Coverage: {problems} check(s) short or over, {unrecognised} unrecognised "
+                      f"XML name(s). See Reports/coverage.md.[/yellow]")
+    if fail:
+        err_console.print("[red]--fail-on-coverage-gap: coverage is incomplete.[/red]")
+        raise typer.Exit(1)
+
+
 def _check_fail_on_secrets(enabled: bool, *summaries) -> None:
     """Run after all output is written, so the report is there to explain the failure."""
     if not enabled:
@@ -229,6 +257,7 @@ def build(
     scrub_keyword: ScrubKeywordOpt = None,
     scrub_allow: ScrubAllowOpt = None,
     fail_on_secrets: FailOnSecretsOpt = False,
+    fail_on_coverage_gap: FailOnCoverageOpt = False,
 ) -> None:
     """Parse a FileMaker XML export and render Markdown documentation.
 
@@ -247,7 +276,8 @@ def build(
                   "Each file's data is in entities.json and references.json inside its own folder.")
         scrubber = _make_scrubber(disable_scrubbing, scrub_level, scrub_keyword, scrub_allow)
         _build_batch(scan, out, scrubber, include_json=include_json, strict=strict, force=force or yes,
-                     html=html, fail_on_secrets=fail_on_secrets, open_when_done=open_when_done)
+                     html=html, fail_on_secrets=fail_on_secrets, open_when_done=open_when_done,
+                     fail_on_coverage_gap=fail_on_coverage_gap)
         return
 
     scrubber = _make_scrubber(disable_scrubbing, scrub_level, scrub_keyword, scrub_allow)
@@ -288,6 +318,7 @@ def build(
             raise typer.Exit(1)
 
     _check_fail_on_secrets(fail_on_secrets, model.scrubbing)
+    _report_coverage([model], fail_on_coverage_gap)
 
     if open_when_done:
         _open_folder(out)
@@ -298,7 +329,8 @@ _RESERVED_BATCH_FOLDERS = {"reports", "_viewer"}
 
 
 def _build_batch(scan, out: Path, scrubber, *, include_json: bool, strict: bool, force: bool,
-                 html: bool, fail_on_secrets: bool, open_when_done: bool) -> None:
+                 html: bool, fail_on_secrets: bool, open_when_done: bool,
+                 fail_on_coverage_gap: bool = False) -> None:
     """Convert every export in a folder into its own subfolder of ``out``, with cross-file links."""
     from .batch.links import link_batch
     from .batch.report import BatchResult, combined_scrubbing, write_batch_reports
@@ -349,6 +381,7 @@ def _build_batch(scan, out: Path, scrubber, *, include_json: bool, strict: bool,
             raise typer.Exit(1)
 
     _check_fail_on_secrets(fail_on_secrets, *(f.model.scrubbing for f in files))
+    _report_coverage([f.model for f in files], fail_on_coverage_gap)
     if failed:
         raise typer.Exit(1)
     if open_when_done:

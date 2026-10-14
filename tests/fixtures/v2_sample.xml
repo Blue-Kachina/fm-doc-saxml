@@ -260,7 +260,7 @@ Prospect]]></Text>
           </CustomMenu>
         </ObjectList>
       </CustomMenuCatalog>
-      <CustomMenuSetsCatalog membercount="1">
+      <CustomMenuSetCatalog membercount="1">
         <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000D0</UUID>
         <TagList></TagList>
         <ObjectList membercount="1">
@@ -270,7 +270,7 @@ Prospect]]></Text>
             <CustomMenuReference id="2" name="EmptyMenu"></CustomMenuReference>
           </CustomMenuSet>
         </ObjectList>
-      </CustomMenuSetsCatalog>
+      </CustomMenuSetCatalog>
       <ThemeCatalog membercount="1">
         <UUID modifications="0" userName="Admin" accountName="" timestamp="2026-01-01T00:00:00">00000000-0000-0000-0000-0000000000E0</UUID>
         <TagList></TagList>

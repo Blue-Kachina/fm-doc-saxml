@@ -19,6 +19,7 @@ qualifiedName: {{ entity.qualified_name }}
 | Field Type | {{ entity.field_type }} |
 | Data Type | {{ entity.data_type }} |
 {% if entity.comment %}| Comment | {{ entity.comment }} |
+{% endif %}{% if entity.annotation %}| Annotation | {{ entity.annotation | cell }} |
 {% endif %}{% if entity.summary_operation %}| Summary Operation | {{ entity.summary_operation }} |
 {% endif %}{% if entity.summary_field_doc_id %}| Summarizes | {{ link(entity.summary_field_doc_id) }} |
 {% endif %}{% if entity.summary_restart_each_group %}| Restart Summary for Each Sorted Group | Yes |
@@ -36,11 +37,13 @@ qualifiedName: {{ entity.qualified_name }}
 | Index Mode | {{ entity.storage.index }} |
 | Auto-Index | {{ "Yes" if entity.storage.auto_index else "No" }} |
 | Max Repetitions | {{ entity.storage.max_repeat }} |
-
+{% if entity.storage.external_storage %}| Store Container Data Externally | {{ "Secure storage" if entity.storage.external_storage == "Secure" else "Open storage" if entity.storage.external_storage == "Open" else entity.storage.external_storage }}{% if entity.storage.external_storage_directory %} in `{{ entity.storage.external_storage_directory }}`{% endif %} |
+{% endif %}{% for c in entity.calculations if c.role == "storageLocation" %}| Storage Location (calculation) | `{{ c.text | cell }}` |
+{% endfor %}
 ## Calculation
 
 {% if entity.calculation %}
-```
+```filemaker
 {{ entity.calculation }}
 ```
 {% else %}
@@ -56,12 +59,15 @@ _None._
 {% if entity.auto_enter.value %}| Value | `{{ entity.auto_enter.value }}` |
 {% endif %}{% if entity.auto_enter.serial_increment %}| Serial Increment By | {{ entity.auto_enter.serial_increment }} |
 {% endif %}{% if entity.auto_enter.serial_generate %}| Serial Generated | {{ "On creation" if entity.auto_enter.serial_generate == "OnCreation" else "On commit" if entity.auto_enter.serial_generate == "OnCommit" else entity.auto_enter.serial_generate }} |
+{% endif %}{% if entity.auto_enter.lookup_field %}| Looked-up Value From | {{ link(entity.auto_enter.lookup_field_doc_id) if entity.auto_enter.lookup_field_doc_id else entity.auto_enter.lookup_table_occurrence ~ "::" ~ entity.auto_enter.lookup_field }}{% if entity.auto_enter.lookup_table_occurrence %} via {{ entity.auto_enter.lookup_table_occurrence }}{% endif %}{% if entity.auto_enter.lookup_context %}, starting from {{ entity.auto_enter.lookup_context }}{% endif %} |
+| If No Exact Match | {{ {"DoNotCopy": "Do not copy", "CopyNext": "Copy next lower value", "CopyPrevious": "Copy next higher value", "Constant": "Use " ~ (entity.auto_enter.lookup_no_match_value or "")}.get(entity.auto_enter.lookup_no_match, entity.auto_enter.lookup_no_match or "") }} |
+| Don't Copy Contents If Empty | {{ "Yes" if entity.auto_enter.lookup_dont_copy_if_empty else "No" }} |
 {% endif %}{% if entity.auto_enter.overwrite_existing is not none %}| Do Not Replace Existing Value | {{ "No" if entity.auto_enter.overwrite_existing else "Yes" }} |
 {% endif %}| Prohibit Modification During Data Entry | {{ "Yes" if entity.auto_enter.no_modify_auto_enter else "No" }} |
 
 {% if entity.auto_enter.calculation %}
 
-```
+```filemaker
 {{ entity.auto_enter.calculation }}
 ```
 {% endif %}
@@ -84,13 +90,22 @@ _None._
 {% endif %}{% if v.value_list_doc_id %}| Member of Value List | {{ link(v.value_list_doc_id) }} |
 {% endif %}{% if v.max_characters %}| Max Characters | {{ v.max_characters }} |
 {% endif %}{% for tag, detail in v.other.items() %}| {{ tag }} | {{ detail | cell }} |
-{% endfor %}{% if v.message %}| Custom Message | {{ v.message | cell }} |
+{% endfor %}{% if v.range %}| In Range | {{ v.range | cell }} |
+{% endif %}{% if v.always_validate is not none and v.has_calculation %}| Validate Only If Field Has Been Modified | {{ "No" if v.always_validate else "Yes" }} |
+{% endif %}{% if v.message %}| Custom Message | {{ v.message | cell }} |
 {% endif %}
 {% for c in entity.calculations if c.role == "validation" %}
 
 Validated by calculation:
 
+```filemaker
+{{ c.text }}
 ```
+{% endfor %}{% for c in entity.calculations if c.role == "validationMessage" %}
+
+Custom message (calculation):
+
+```filemaker
 {{ c.text }}
 ```
 {% endfor %}

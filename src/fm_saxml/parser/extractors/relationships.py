@@ -111,15 +111,13 @@ def parse_sort_spec(spec: etree._Element | None) -> list[dict[str, Any]]:
     for sort in find_all_descendants(spec, "Sort"):
         primary = find_child(sort, "PrimaryField")
         fr = find_child(primary, "FieldReference") if primary is not None else None
-        if fr is None:
-            continue
-        # name="" is a field FileMaker can't find any more: kept, shown as missing
-        to_ref = find_child(fr, "TableOccurrenceReference")
+        # No field, or name="": a field FileMaker can't find any more. Kept, shown as missing.
+        to_ref = find_child(fr, "TableOccurrenceReference") if fr is not None else None
         vl_ref = find_child(sort, "ValueListReference")
         out.append({
-            "field_id": attr(fr, "id", "ID"),
-            "field_name": attr(fr, "name", "Name"),
-            "field_uuid": attr(fr, "UUID", "uuid"),
+            "field_id": attr(fr, "id", "ID") if fr is not None else "",
+            "field_name": attr(fr, "name", "Name") if fr is not None else "",
+            "field_uuid": attr(fr, "UUID", "uuid") if fr is not None else "",
             "table_name": attr(to_ref, "name", "Name") if to_ref is not None else "",
             "order": attr(sort, "type") or "Ascending",
             "value_list": attr(vl_ref, "name", "Name") or None if vl_ref is not None else None,

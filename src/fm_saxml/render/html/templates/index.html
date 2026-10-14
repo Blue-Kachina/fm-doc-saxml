@@ -208,6 +208,11 @@ window.FMDocs = {
 <script type="module">
 // deps pin: npm's codemirror@6.65.7 is a mis-published v5 build that ^6.0.1 would pick up.
 const CREPE_URL = 'https://esm.sh/@milkdown/crepe@7.22.1?deps=codemirror@6.0.2';
+// ```filemaker fences (calculations) highlight via fmscriptui's CodeMirror language. esm.sh resolves its
+// @codemirror/language peer to the same module instance Crepe uses, which the Language facet requires.
+const CM_LANGUAGE_URL = 'https://esm.sh/@codemirror/language@^6.0.0';
+const CM_LANGUAGE_DATA_URL = 'https://esm.sh/@codemirror/language-data@^6.3.1';
+const FM_CALC_URL = 'https://esm.sh/gh/Blue-Kachina/fmscriptui@v0.4.0/src/filemaker-codemirror.js';
 
 const $ = (id) => document.getElementById(id);
 const content = $('content');
@@ -233,6 +238,21 @@ try {
         + 'This viewer needs an internet connection. The <code>.md</code> files in this folder can still be opened directly.'
         + `<br><small>${esc(err && err.message)}</small>`);
     throw err;
+}
+
+// Best-effort: without it, calculations still render, just unhighlighted.
+let codeLanguages = null;
+try {
+    const [{ LanguageDescription }, { languages }] = await Promise.all([
+        import(CM_LANGUAGE_URL), import(CM_LANGUAGE_DATA_URL),
+    ]);
+    codeLanguages = [...languages, LanguageDescription.of({
+        name: 'FileMaker',
+        alias: ['filemaker', 'fmfn'],
+        load: () => import(FM_CALC_URL).then((m) => m.filemakerCalc()),
+    })];
+} catch (err) {
+    console.warn('FileMaker calculation highlighting unavailable:', err);
 }
 
 // ---- Paths & routing -------------------------------------------------------
@@ -358,6 +378,7 @@ const features = {};
 for (const name of ['Placeholder', 'Latex', 'Toolbar', 'BlockEdit', 'LinkTooltip', 'ImageBlock', 'Cursor', 'TopBar', 'AI']) {
     if (Crepe.Feature[name] !== undefined) features[Crepe.Feature[name]] = false;
 }
+const featureConfigs = codeLanguages ? { [Crepe.Feature.CodeMirror]: { languages: codeLanguages } } : {};
 
 function renderHead(path, page) {
     const parts = path.split('/');
@@ -397,7 +418,7 @@ async function show(path, seq) {
     const entry = byPath.get(path);
     document.title = `${entry.t} · ${data.title}`;
 
-    const editor = new Crepe({ root: content, defaultValue: page.md, features });
+    const editor = new Crepe({ root: content, defaultValue: page.md, features, featureConfigs });
     editor.setReadonly(true);
     await editor.create();
     crepe = editor;

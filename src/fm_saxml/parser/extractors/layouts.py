@@ -105,6 +105,8 @@ def _parse_layout(elem: etree._Element, chunk_lists: ChunkLists | None = None) -
         "theme": theme,
         "referenced_fields": referenced_fields,
         "layout_objects": layout_objects,
+        "parts": _parse_parts(elem),
+        "menu_set": _menu_set(elem),
         "script_triggers": _parse_script_triggers(elem),
         "calculations": (
             collect_calcs(triggers_elem, chunk_lists, lambda _path: "scriptTriggerParameter")
@@ -115,6 +117,41 @@ def _parse_layout(elem: etree._Element, chunk_lists: ChunkLists | None = None) -
     }
 
 
+
+
+def _menu_set(layout_elem: etree._Element) -> str | None:
+    """``<MenuSet><CustomMenuSetReference name="…"/>``: the layout's menu set (None = the file default)."""
+    menu_set = find_child(layout_elem, "MenuSet")
+    ref = find_child(menu_set, "CustomMenuSetReference") if menu_set is not None else None
+    name = attr(ref, "name", "Name") if ref is not None else ""
+    return name if name and name != "[File Default]" else None
+
+
+def _parse_parts(layout_elem: etree._Element) -> list[dict[str, Any]]:
+    """``<PartsList><Part type kind name><Definition size …><FieldReference/>`` in layout order.
+
+    A sub-summary part's break field is the ``<FieldReference>`` in its definition;
+    other parts carry an empty one.
+    """
+    parts_list = find_child(layout_elem, "PartsList")
+    parts = []
+    for part in find_all_children(parts_list, "Part") if parts_list is not None else []:
+        definition = find_child(part, "Definition")
+        fr = find_child(definition, "FieldReference") if definition is not None else None
+        obj_list = find_child(part, "ObjectList")
+        try:
+            height = int(attr(definition, "size")) if definition is not None and attr(definition, "size") else None
+        except ValueError:
+            height = None
+        parts.append({
+            "type": attr(part, "type", "Type"),
+            "name": attr(part, "name") or None,
+            "height": height,
+            "break_field": _field_ref_dict(fr) if fr is not None and attr(fr, "name", "Name") else None,
+            "object_count": len(find_all_children(obj_list, "LayoutObject")) if obj_list is not None else 0,
+            "options": attr(definition, "Options") or None if definition is not None else None,
+        })
+    return parts
 
 
 def _collect_layout_objects(
@@ -210,6 +247,7 @@ _OBJECT_CALC_ROLES = (
     ("Title", "popoverTitle"),
     ("Select", "activeSegment"),
     ("TabPanel", "tabLabel"),
+    ("Portal", "portalFilter"),       # a portal's own calc is its "Filter portal records" formula
 )
 
 
@@ -308,7 +346,7 @@ def _parse_layout_object(
     # Popover buttons and button groups (<GroupedButton>) carry the same <action>.
     button_script = None
     button_step = None
-    action_elem = _button_action(lo)
+    action_elem, button_kind = _button_action(lo)
     script_ref = find_child(action_elem, "ScriptReference") if action_elem is not None else None
     if script_ref is not None and attr(script_ref, "name", "Name"):
         button_script = _script_ref_dict(script_ref)
@@ -335,6 +373,7 @@ def _parse_layout_object(
         "raw_text": raw_text,
         "button_script": button_script,
         "button_step": button_step,
+        "button_kind": button_kind if (button_script or button_step) else None,
         "portal": _parse_portal(find_child(lo, "Portal")),
         "script_triggers": _parse_script_triggers(lo),
         "calculations": collect_calcs(lo, chunk_lists, _object_calc_role, stop_at=("LayoutObject",)),
@@ -343,8 +382,12 @@ def _parse_layout_object(
     }
 
 
-def _button_action(lo: etree._Element) -> etree._Element | None:
-    """The ``<action>`` of a button-like object: any direct child of the LayoutObject that holds one.
+_BUTTON_KINDS = {"Button": "button", "GroupedButton": "buttonGroup", "PopoverButton": "popoverButton"}
+
+
+def _button_action(lo: etree._Element) -> tuple[etree._Element | None, str | None]:
+    """The ``<action>`` of a button-like object (any direct child of the LayoutObject that holds
+    one) and the kind of button it is.
 
     Matching on the shape instead of a list of tags (Button, PopoverButton, GroupedButton)
     keeps a future button kind from silently losing its action.
@@ -354,8 +397,9 @@ def _button_action(lo: etree._Element) -> etree._Element | None:
             continue
         action = find_child(child, "action")
         if action is not None:
-            return action
-    return None
+            tag = _local(child.tag)
+            return action, _BUTTON_KINDS.get(tag, tag[:1].lower() + tag[1:])
+    return None, None
 
 
 def _parse_v1_object(obj: etree._Element, fallback_index: int) -> dict[str, Any] | None:

@@ -20,6 +20,7 @@ def resolve_references(model: DocumentModel) -> DocumentModel:
     """Populate model.references by resolving entity cross-references."""
     _link_fields_to_tables(model)
     _link_summary_fields(model)
+    _link_lookups(model)
     _link_tos_to_tables(model)
     _link_relationships(model)
     _link_layouts(model)
@@ -50,6 +51,24 @@ def _link_fields_to_tables(model: DocumentModel) -> None:
                 targetEntityType="field",
                 relationshipType="contains",
                 confidence="exact",
+            ))
+
+
+def _link_lookups(model: DocumentModel) -> None:
+    """Field -> the field its looked-up value is copied from."""
+    for f in model.entities.fields.values():
+        src = f.auto_enter.lookup_field_doc_id if f.auto_enter else None
+        external = f.auto_enter.lookup_external if f.auto_enter else None
+        if src and (external is not None or src in model.entities.fields):
+            model.references.append(ReferenceRecord(
+                sourceDocId=f.doc_id,
+                sourceEntityType="field",
+                targetDocId=src,
+                targetEntityType="field",
+                relationshipType="looksUp",
+                role="lookupSource",
+                confidence="external" if external is not None else "exact",
+                externalTarget=external,
             ))
 
 

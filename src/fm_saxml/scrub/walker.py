@@ -37,7 +37,8 @@ _SKIP_SUFFIX_RE = re.compile(
 )
 # Keys whose whole subtree is identifiers / bookkeeping.
 _SKIP_SUBTREES = {"references", "backlinks", "scrubbing", "field_refs", "layout_ref", "script_ref",
-                  "value_list_refs", "referenced_fields", "privilege_set_refs", "storage"}
+                  "value_list_refs", "referenced_fields", "privilege_set_refs", "storage",
+                  "coverage", "coverage_inventory"}  # counts and XML element names only
 _PERSON_KEYS = {"user_name", "account_name"}
 _STEP_COLLECTIONS = ("steps", "script_steps", "button_step")
 

@@ -60,6 +60,8 @@ class StorageOptions(BaseModel):
     auto_index: bool = Field(False, alias="autoIndex")
     max_repeat: int = Field(1, alias="maxRepeat")
     stored: Optional[bool] = None  # calculation fields: "Do not store calculation results" unchecked
+    external_storage: Optional[str] = Field(None, alias="externalStorage")  # container stored externally: Secure | Open
+    external_storage_directory: Optional[str] = Field(None, alias="externalStorageDirectory")
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -72,6 +74,15 @@ class AutoEnterOptions(BaseModel):
     overwrite_existing: Optional[bool] = Field(None, alias="overwriteExisting")  # False = "Do not replace existing value"
     serial_increment: Optional[str] = Field(None, alias="serialIncrement")
     serial_generate: Optional[str] = Field(None, alias="serialGenerate")  # OnCreation | OnCommit
+    # Looked-up value: copied from this field, starting from the context TO
+    lookup_table_occurrence: Optional[str] = Field(None, alias="lookupTableOccurrence")
+    lookup_field: Optional[str] = Field(None, alias="lookupField")
+    lookup_field_doc_id: Optional[str] = Field(None, alias="lookupFieldDocId")
+    lookup_external: Optional[ExternalTarget] = Field(None, alias="lookupExternal")  # source field in another file
+    lookup_context: Optional[str] = Field(None, alias="lookupContext")
+    lookup_dont_copy_if_empty: Optional[bool] = Field(None, alias="lookupDontCopyIfEmpty")
+    lookup_no_match: Optional[str] = Field(None, alias="lookupNoMatch")  # DoNotCopy | CopyNext | CopyPrevious | Constant
+    lookup_no_match_value: Optional[str] = Field(None, alias="lookupNoMatchValue")
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -86,6 +97,9 @@ class ValidationOptions(BaseModel):
     existing: bool = False  # "Existing value"
     strict_type: Optional[str] = Field(None, alias="strictType")  # "Strict data type": Numeric, FourDigitYear, TimeOfDay
     has_calculation: bool = Field(False, alias="hasCalculation")  # text: the field's calculations, role "validation"
+    has_message_calculation: bool = Field(False, alias="hasMessageCalculation")  # role "validationMessage"
+    always_validate: Optional[bool] = Field(None, alias="alwaysValidate")  # False = "only if field has been modified"
+    range: Optional[str] = None
     validate_on: Optional[str] = Field(None, alias="validateOn")  # Always | OnlyDuringDataEntry
     allow_override: Optional[bool] = Field(None, alias="allowOverride")  # "Allow user to override during data entry"
     other: dict[str, str] = {}  # validation options not recognised by the parser, by element name
@@ -138,6 +152,7 @@ class FieldEntity(BaseModel):
     # The field this one summarizes, when this is itself a summary field
     # (e.g. a "Total Of" field) — always a field on this same base table.
     summary_field_doc_id: Optional[str] = Field(None, alias="summaryFieldDocId")
+    annotation: Optional[str] = None  # the field's annotation (FileMaker 2025+)
     summary_operation: Optional[str] = Field(None, alias="summaryOperation")  # Total, Count, List, ...
     summary_restart_each_group: Optional[bool] = Field(None, alias="summaryRestartEachGroup")
     summary_repetitions: Optional[str] = Field(None, alias="summaryRepetitions")  # Together | Individually
@@ -147,6 +162,19 @@ class FieldEntity(BaseModel):
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
     model_config = ConfigDict(populate_by_name=True)
+
+
+class GraphRect(BaseModel):
+    """A rectangle on the relationship graph (or a layout), in points."""
+
+    top: float
+    left: float
+    bottom: float
+    right: float
+
+    def overlaps(self, other: "GraphRect") -> bool:
+        return not (other.left >= self.right or other.right <= self.left
+                    or other.top >= self.bottom or other.bottom <= self.top)
 
 
 class TableOccurrenceEntity(BaseModel):
@@ -167,6 +195,8 @@ class TableOccurrenceEntity(BaseModel):
     # Scoped docId of that base table (the target of this TO's external basedOnBaseTable reference)
     external_base_table_doc_id: Optional[str] = Field(None, alias="externalBaseTableDocId")
     relationships: list[str] = []    # relationship docIds
+    graph_bounds: Optional[GraphRect] = Field(None, alias="graphBounds")  # where it sits on the relationship graph
+    collapsed: Optional[bool] = None  # shown collapsed on the graph
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
     model_config = ConfigDict(populate_by_name=True)
@@ -230,6 +260,18 @@ class RelationshipEntity(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+class LayoutPart(BaseModel):
+    """A layout part (Header, Body, Sub-summary, ...), top to bottom."""
+
+    type: str
+    name: Optional[str] = None  # e.g. "Sub-summary by idEntite (Leading)"
+    height: Optional[int] = None  # points
+    break_field_doc_id: Optional[str] = Field(None, alias="breakFieldDocId")  # sub-summary "when sorted by"
+    object_count: int = Field(0, alias="objectCount")  # objects placed directly in the part
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
 class LayoutEntity(BaseModel):
     doc_id: str = Field(alias="docId")
     entity_type: str = Field("layout", alias="entityType")
@@ -242,6 +284,8 @@ class LayoutEntity(BaseModel):
     folder_path: Optional[str] = Field(None, alias="folderPath")  # layout folder(s), e.g. "DEV/Old"
     referenced_fields: list[str] = Field([], alias="referencedFields")
     layout_objects: list[str] = Field([], alias="layoutObjects")  # LayoutObject docIds
+    parts: list[LayoutPart] = []
+    menu_set: Optional[str] = Field(None, alias="menuSet")  # custom menu set used on this layout
     script_triggers: list[ScriptTriggerInfo] = Field([], alias="scriptTriggers")
     calculations: list[EntityCalculation] = []  # script trigger parameters
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
@@ -294,6 +338,7 @@ class LayoutObjectEntity(BaseModel):
     external_target: Optional["ExternalTarget"] = Field(None, alias="externalTarget")  # field lives in another file
     button_script_doc_id: Optional[str] = Field(None, alias="buttonScriptDocId")  # script this button performs
     button_script_external: Optional["ExternalTarget"] = Field(None, alias="buttonScriptExternal")
+    button_kind: Optional[str] = Field(None, alias="buttonKind")  # button | buttonGroup | popoverButton
     button_step: Optional[str] = Field(None, alias="buttonStep")  # single-step button's step, e.g. "Go to Layout [ X ]"
     # Container object (portal, tab/slide panel, button bar, popover) this one sits in
     parent_object_doc_id: Optional[str] = Field(None, alias="parentObjectDocId")
@@ -431,6 +476,9 @@ class ValueListEntity(BaseModel):
     sort_by: Optional[str] = Field(None, alias="sortBy")  # "first" | "second" field
     related_from_to_doc_id: Optional[str] = Field(None, alias="relatedFromToDocId")  # "Include only related values starting from"
     external_value_list: Optional[ExternalTarget] = Field(None, alias="externalValueList")  # "Use value list from another file"
+    external_data_source: Optional[str] = Field(None, alias="externalDataSource")  # that file, even if the list is gone
+    # Parts FileMaker reports as missing (a deleted field or list): "source field", "second field", "external list"
+    missing: list[str] = []
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
     model_config = ConfigDict(populate_by_name=True)

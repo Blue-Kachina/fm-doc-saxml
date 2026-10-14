@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, find_child, find_all_descendants, xml_path, modification_info
+from ._helpers import attr, find_child, find_all_descendants, find_descendant, xml_path, modification_info
 
 
 def extract_table_occurrences(database_elem: etree._Element) -> list[dict[str, Any]]:
@@ -29,6 +29,8 @@ def extract_table_occurrences(database_elem: etree._Element) -> list[dict[str, A
             "uuid": attr(to_elem, "uuid", "UUID") or None,
             "base_table_id": base_table_id,
             **_external_details(to_elem),
+            "graph_bounds": _rect(find_child(to_elem, "CoordRect")),
+            "collapsed": attr(to_elem, "View").lower() == "collapse" if attr(to_elem, "View") else None,
             "modified": modification_info(to_elem),
             "source_xml_path": xml_path(to_elem),
         })
@@ -69,3 +71,37 @@ def _get_base_table_id(to_elem: etree._Element) -> str:
         if bt_ref is not None:
             return attr(bt_ref, "id", "ID")
     return ""
+
+
+def _rect(elem: etree._Element | None) -> dict[str, float] | None:
+    """``<CoordRect top left bottom right>`` / ``<Bounds …>`` as numbers, or None."""
+    if elem is None:
+        return None
+    out = {}
+    for side in ("top", "left", "bottom", "right"):
+        try:
+            out[side] = float(attr(elem, side))
+        except ValueError:
+            return None
+    return out
+
+
+def extract_graph_notes(database_elem: etree._Element) -> list[dict[str, Any]]:
+    """Text notes on the relationship graph.
+
+    ``<TableOccurrenceCatalog><TableOccurrenceNotes><ObjectList><LayoutObject type="Text">``
+    with the note's text in ``<Text><StyledText><Data>`` and its place in ``<Bounds>``.
+    """
+    catalog = find_child(database_elem, "TableOccurrenceCatalog")
+    notes_elem = find_child(catalog, "TableOccurrenceNotes") if catalog is not None else None
+    if notes_elem is None:
+        return []
+    notes = []
+    for lo in find_all_descendants(notes_elem, "LayoutObject"):
+        data = find_descendant(lo, "Data")
+        notes.append({
+            "id": attr(lo, "id"),
+            "text": (data.text or "") if data is not None else "",
+            "bounds": _rect(find_child(lo, "Bounds")),
+        })
+    return notes

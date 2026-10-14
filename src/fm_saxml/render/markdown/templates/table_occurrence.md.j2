@@ -15,7 +15,9 @@ name: {{ entity.name }}
 | Last Modified | {{ entity.modified.timestamp }} |
 {% endif %}{% if entity.external_data_source %}| Base Table | External — table {% if entity.external_base_table_doc_id and has_page(entity.external_base_table_doc_id) %}{{ link(entity.external_base_table_doc_id, entity.external_base_table) }}{% else %}`{{ entity.external_base_table or "?" }}`{% endif %} in file `{{ entity.external_data_source }}` |
 {% else %}| Base Table | {{ link(entity.base_table_doc_id) }} |
-{% endif %}
+{% endif %}{% if entity.graph_bounds %}| Graph Position (top, left) | {{ "%g" | format(entity.graph_bounds.top) }}, {{ "%g" | format(entity.graph_bounds.left) }}{% if entity.collapsed %} (collapsed){% endif %} |
+{% endif %}{% for note in graph_notes %}| Graph Note | {{ note.text | cell }} |
+{% endfor %}
 
 ## Relationships
 

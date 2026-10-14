@@ -168,3 +168,27 @@ Tests: `tests/test_competitor_gaps.py` (21 tests, including an end-to-end check 
 | Custom privilege rows: layouts / scripts / tables | 711 / 249 / 138 | 711 / 249 / 138 |
 | Scripts with steps and no "Called By" | 106 before | 58 (templates, tests, post-migrations, callbacks run by name) |
 | Redactions in Post-Migration 1.8 (base64 images) | false positive | 0 |
+
+## 6. Third pass (2026-10-14): the remaining items, and a coverage report
+
+**Coverage report** (`Reports/coverage.md` in every file's docs; a Coverage column in the batch summary; one line on the home page; `--fail-on-coverage-gap` for CI). `parser/coverage.py` counts 72 things straight from the XML with XPath, independently of the extractors. `analyze/coverage.py` counts the same things in the finished model. "Shown" checks look at the rendered text: a Set Variable name counts only if it is in the step's text, and a step calc only if its whole text is. The report also lists, for 27 kinds of element, every child element or attribute the converter has no rule for ("Unrecognised XML"), plus what it skips on purpose (images, CSS, geometry).
+
+Its first run on the 25 production files found these losses, all fixed:
+
+| Found | Cause |
+|---|---|
+| Synapse value lists had no values, source fields or other-file links | FileMaker 26 puts the details inline in `ValueListCatalog`; we only read `OptionsForValueLists` |
+| Custom menu sets never extracted | FileMaker writes `CustomMenuSetCatalog`; the extractor (and our fixture) used `CustomMenuSetsCatalog` |
+| 2 scripts with one name: one overwritten (Synapse, NEXUS) | docIds came from names; scripts and layouts now resolve by FileMaker id, duplicates get `name (#id)` |
+| Layouts with one name overwritten (BLITZ, idiItems) | same |
+| File Access authorizations with one name overwritten | same |
+| Validation by calculation not shown (42 fields) | it is `<Calculated>`, not `<Calculation>`; also `MaximumSize`, `MessageCalc`, `alwaysValidate` |
+| Go to Related Record's new-window name/size gone | FileMaker's own step text omits them; parameters missing from FileMaker's text are now added as `{ also: … }` |
+| Missing fields / lists silently dropped | a deleted field in a sort or a value list, or a deleted list in another file, now shows as "missing" |
+| Lookups not described (81 fields) | `<Looked_up>`: source field (cross-file links in batch builds), context, no-match option |
+
+Also done: relationship graph notes (with the TOs under each, by position; `TableOccurrences/_GraphNotes.md`), layout parts with sub-summary break fields, a layout's own menu set, the file's default menu set and "use default fields", container external storage, field annotations, `buttonKind` on layout objects, and the portal filter calc's role is now `portalFilter`.
+
+All 25 production files, NEXUS, disRenewal and EverythingBagel: every check complete, nothing unrecognised. `tests/test_coverage.py` keeps the samples at that floor.
+
+**Still open:** portal "Allow deletion of portal records". It is only in the `<Portal><Options>` bitmask. Across 412 portals, bit 8 matches "sorted" and bit 128 matches "filtered" exactly, but no XML evidence identifies deletion. Two portals in NEXUS settle it: "GROUP Add/Edit Card" object 127 (flags 17) and "GROUP" object 148 (flags 16) differ only in bit 1.

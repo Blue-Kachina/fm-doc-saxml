@@ -96,19 +96,48 @@ def format_param(step: Any, item: dict) -> str | None:
 
 
 _DISABLED_PREFIX = re.compile(r"^//\s*")
+_WS = re.compile(r"\s+")
+
+
+def comparable(text: str) -> str:
+    """Text reduced for "is this calc in that step text" checks: whitespace, quote style and
+    letter case (FileMaker's text normalises function names: CurrentTimeStamp -> CurrentTimestamp)."""
+    return _WS.sub(" ", text.replace("“", '"').replace("”", '"')).strip().casefold()
 
 
 def step_text(step: Any) -> str:
     """The full text of one step. May contain newlines (multi-line calcs and comments).
 
     FileMaker's own text (``fm_text``, from the export's DDR_INFO) is used when present: it
-    carries every option the Script Workspace shows. Otherwise the text is built from ``params``.
+    carries every option the Script Workspace shows. A few steps leave parameters out of it
+    (Go to Related Record doesn't print its new window's name or size); those are added after
+    it as ``{ also: … }``. Otherwise the text is built from ``params``.
     """
     fm_text = _get(step, "fm_text")
     if isinstance(fm_text, str):
         text = _NEWLINES.sub("\n", fm_text)
-        return _DISABLED_PREFIX.sub("", text) if not _get(step, "enabled", True) else text
+        if not _get(step, "enabled", True):
+            text = _DISABLED_PREFIX.sub("", text)
+        omitted = _omitted_params(step, text)
+        return f"{text} {{ also: {'; '.join(omitted)} }}" if omitted else text
     return built_step_text(step)
+
+
+def _omitted_params(step: Any, text: str) -> list[str]:
+    """Calculated parameters whose calc doesn't appear in FileMaker's text for the step."""
+    shown = comparable(text)
+    out = []
+    for item in _get(step, "params") or []:
+        if item.get("kind") != "calc":
+            continue
+        calc = _calc_text(step, item.get("calc"))
+        if not calc or not calc.strip() or (item.get("label") == "Repetition" and calc.strip() == "1"):
+            continue
+        if comparable(calc) not in shown:
+            formatted = format_param(step, item)
+            if formatted:
+                out.append(formatted)
+    return out
 
 
 def built_step_text(step: Any) -> str:

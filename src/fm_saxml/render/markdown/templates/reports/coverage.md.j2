@@ -1,0 +1,66 @@
+---
+title: Coverage Report
+---
+
+# Coverage
+
+{% if not report.available %}
+_Not available: coverage is counted for "Save a Copy as XML" (v2) exports only, and this model has no counts (an older v1 export, or a model.json saved by an earlier version)._
+{% else %}
+{% set problems = report.problems %}
+{% if report.ok %}
+**All {{ report.rows | length }} checks complete; no unrecognised XML.** Everything counted in the export reached these docs, and every element and attribute under the {{ context_count }} kinds of element checked has a rule.
+{% else %}
+**{{ report.rows | length - problems | length }} of {{ report.rows | length }} checks complete; {{ problems | length }} short or over; {{ report.unrecognised_count }} unrecognised XML name(s).** Rows that need a look come first.
+{% endif %}
+
+Each check counts something in the export's XML, independently of the converter, and the same thing in the finished docs. "Shown" checks look at the rendered text, not just the data: a Set Variable name only counts if it is in the step's text.
+
+{% if problems %}
+## Needs a look
+
+| Area | Check | In XML | In docs | Status |
+|---|---|---:|---:|---|
+{% for r in problems %}
+| {{ r.area }} | {{ r.label }} | {{ r.in_xml }} | {{ r.in_docs }} | {{ "**missing " ~ (r.in_xml - r.in_docs) ~ "**" if r.status == "missing" else "surplus " ~ (r.in_docs - r.in_xml) }} |
+{% endfor %}
+
+"Missing" means something in the export did not reach the docs. "Surplus" usually means the two sides count a little differently; it is listed so neither goes unnoticed.
+{% endif %}
+
+{% if report.unrecognised %}
+## Unrecognised XML
+
+Element and attribute names (`@name`) that appear in this export but that the converter has no rule for, by the kind of element they sit under. They are probably options this version doesn't document yet.
+
+| Under | Name | Count |
+|---|---|---:|
+{% for ctx, names in report.unrecognised | dictsort %}{% for name, n in names | dictsort %}
+| {{ ctx }} | `{{ name }}` | {{ n }} |
+{% endfor %}{% endfor %}
+{% endif %}
+
+## All checks
+
+{% for area, rows in areas.items() %}
+### {{ area }}
+
+| Check | In XML | In docs | Status |
+|---|---:|---:|---|
+{% for r in rows %}
+| {{ r.label }}{% if r.note %} <br>_{{ r.note }}_{% endif %} | {{ r.in_xml }} | {{ r.in_docs }} | {{ "complete" if r.status == "complete" else ("**missing " ~ (r.in_xml - r.in_docs) ~ "**" if r.status == "missing" else "surplus " ~ (r.in_docs - r.in_xml)) }} |
+{% endfor %}
+
+{% endfor %}
+{% if report.skipped %}
+## Left out on purpose
+
+Names the converter reads past deliberately: images, styling, layout geometry and bookkeeping. Counted here so it's clear they were seen.
+
+| Under | Names (count) |
+|---|---|
+{% for ctx, names in report.skipped | dictsort %}
+| {{ ctx }} | {% for name, n in names | dictsort %}`{{ name }}` ({{ n }}){% if not loop.last %}, {% endif %}{% endfor %} |
+{% endfor %}
+{% endif %}
+{% endif %}
