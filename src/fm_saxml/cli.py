@@ -225,7 +225,7 @@ def build(
     open_when_done: Annotated[bool, typer.Option("--open", help="Open the output folder when finished")] = False,
     html: HtmlOpt = False,
     disable_scrubbing: DisableScrubbingOpt = False,
-    scrub_level: ScrubLevelOpt = ScrubLevel.STANDARD,
+    scrub_level: ScrubLevelOpt = ScrubLevel.SECRETS,
     scrub_keyword: ScrubKeywordOpt = None,
     scrub_allow: ScrubAllowOpt = None,
     fail_on_secrets: FailOnSecretsOpt = False,
@@ -407,7 +407,8 @@ def _analyze_batch(scan, scrubber, folders: dict[str, str]):
             s, (raw, summary, source_file, path), known = scrubbed.pop(0)
             progress.update(task, description=f"Analyzing {s.name}")
             if scrubber is not None and len(scrubber.registry) > known:
-                summary = scrubber.summary(summary.findings + scrubber.scrub_raw(raw).findings)
+                # Pass-1 previews were taken before the later files' values were known.
+                summary = scrubber.summary(scrubber.refresh(summary.findings) + scrubber.scrub_raw(raw).findings)
                 source_file = scrubber.substitute(source_file)
             model = _normalize_scrubbed(raw, summary, source_file, path, step=lambda _desc: None)
             del raw  # keep only the models in memory
@@ -483,7 +484,7 @@ def parse(
     input_xml: Annotated[Path, typer.Argument(help="FileMaker SaveAsXML file")],
     out: Annotated[Path, typer.Option("--out", "-o", help="Output model.json path")] = Path("./build/model.json"),
     disable_scrubbing: DisableScrubbingOpt = False,
-    scrub_level: ScrubLevelOpt = ScrubLevel.STANDARD,
+    scrub_level: ScrubLevelOpt = ScrubLevel.SECRETS,
     scrub_keyword: ScrubKeywordOpt = None,
     scrub_allow: ScrubAllowOpt = None,
     fail_on_secrets: FailOnSecretsOpt = False,
@@ -517,7 +518,7 @@ def render(
     yes: Annotated[bool, typer.Option("--yes", "-y", help="Assume yes to all interactive prompts")] = False,
     html: HtmlOpt = False,
     disable_scrubbing: DisableScrubbingOpt = False,
-    scrub_level: ScrubLevelOpt = ScrubLevel.STANDARD,
+    scrub_level: ScrubLevelOpt = ScrubLevel.SECRETS,
     scrub_keyword: ScrubKeywordOpt = None,
     scrub_allow: ScrubAllowOpt = None,
     fail_on_secrets: FailOnSecretsOpt = False,
@@ -557,7 +558,7 @@ def inspect(
     input_xml = _normalize_path(input_xml)
     _validate_input(input_xml, allow_dir=True)
     scan, source = _resolve_input(input_xml)
-    scrubber = _make_scrubber(False, ScrubLevel.STANDARD, None, None)
+    scrubber = _make_scrubber(False, ScrubLevel.SECRETS, None, None)
     if scan is not None and scan.is_batch:
         from .batch.links import link_batch
 
@@ -582,7 +583,7 @@ def validate(
     input_xml = _normalize_path(input_xml)
     _validate_input(input_xml, allow_dir=True)
     scan, source = _resolve_input(input_xml)
-    scrubber = _make_scrubber(False, ScrubLevel.STANDARD, None, None)
+    scrubber = _make_scrubber(False, ScrubLevel.SECRETS, None, None)
     if scan is not None and scan.is_batch:
         from .batch.links import link_batch
 
@@ -619,7 +620,7 @@ def diff(
     out: Annotated[Optional[Path], typer.Option("--out", "-o", help="Write a Markdown diff report to this path")] = None,
     strict: Annotated[bool, typer.Option("--strict", help="Exit non-zero if any difference is found")] = False,
     disable_scrubbing: DisableScrubbingOpt = False,
-    scrub_level: ScrubLevelOpt = ScrubLevel.STANDARD,
+    scrub_level: ScrubLevelOpt = ScrubLevel.SECRETS,
     scrub_keyword: ScrubKeywordOpt = None,
     scrub_allow: ScrubAllowOpt = None,
     fail_on_secrets: FailOnSecretsOpt = False,
@@ -672,7 +673,7 @@ def scrub(
     report: Annotated[Optional[Path], typer.Option("--report", help="Also write a Markdown redaction report here")] = None,
     force: Annotated[bool, typer.Option("--force", "-f", help="Overwrite the output file without prompting")] = False,
     yes: Annotated[bool, typer.Option("--yes", "-y", help="Assume yes to all interactive prompts")] = False,
-    scrub_level: ScrubLevelOpt = ScrubLevel.STANDARD,
+    scrub_level: ScrubLevelOpt = ScrubLevel.SECRETS,
     scrub_keyword: ScrubKeywordOpt = None,
     scrub_allow: ScrubAllowOpt = None,
     fail_on_secrets: FailOnSecretsOpt = False,

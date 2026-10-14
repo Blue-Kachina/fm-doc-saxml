@@ -23,25 +23,33 @@ This is a heuristic scrubber, not a guarantee. Review the documentation before s
 {% for f in per_file %}
 | [{{ f.name | cell }}](../{{ f.folder | urlencode }}/Reports/redactions.md) | {{ f.distinct }} | {{ f.places }} | {{ f.flagged }} |
 {% endfor %}
-{% if scrubbing.counts %}
+{% if categories %}
 
 ## By Category
 
-| Category | Distinct Values |
-|---|---:|
-{% for category, count in scrubbing.counts.items() %}
-| {{ category }} | {{ count }} |
+Secrets first, then infrastructure, then personal data. Each category links to its placeholders below.
+
+| Category | Kind | Distinct Values | Places | Files |
+|---|---|---:|---:|---:|
+{% for c in categories %}
+| [{{ c.category }}](#{{ c.anchor }}) | {{ c.kind }} | {{ c.rows | length }} | {{ c.places }} | {{ c.files | length }} |
 {% endfor %}
 
 ## Placeholders
 
-{% if shared_count %}{{ shared_count }} value(s) appear in more than one file; they're listed first.{% else %}No value appears in more than one file.{% endif %}
+{% if shared_count %}{{ shared_count }} value(s) appear in more than one file; in each category they're listed first.{% else %}No value appears in more than one file.{% endif %}
 
+{% for c in categories %}
 
-| Placeholder | Category | Places | Files |
-|---|---|---:|---|
-{% for p in placeholders %}
-| `{{ p.placeholder }}` | {{ p.category }} | {{ p.places }} | {% for folder, name in p.files.items() %}[{{ name | cell }}](../{{ folder | urlencode }}/Reports/redactions.md){{ ", " if not loop.last }}{% endfor %} |
+### {{ c.category }}
+
+_{{ c.kind }}: {{ c.rows | length }} distinct value(s) in {{ c.places }} place(s) across {{ c.files | length }} file(s){% if c.shared %}; {{ c.shared }} shared by more than one file{% endif %}._
+
+| Placeholder | Places | Files |
+|---|---:|---|
+{% for p in c.rows %}
+| `{{ p.placeholder }}` | {{ p.places }} | {% for folder, name in p.files.items() %}[{{ name | cell }}](../{{ folder | urlencode }}/Reports/redactions.md){{ ", " if not loop.last }}{% endfor %} |
+{% endfor %}
 {% endfor %}
 {% endif %}
 {% if flagged %}
@@ -68,7 +76,7 @@ Marked `fm-saxml:allow` in a comment, so left exactly as written.
 | {{ file.name | cell }} | {{ f.location | cell }} | {{ f.note | cell }} |
 {% endfor %}
 {% endif %}
-{% if not scrubbing.counts and not flagged and not allowed %}
+{% if not categories and not flagged and not allowed %}
 
 _Nothing needed redacting._
 {% endif %}

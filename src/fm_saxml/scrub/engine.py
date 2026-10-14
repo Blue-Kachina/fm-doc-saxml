@@ -110,6 +110,14 @@ class Scrubber:
             counts=dict(sorted(counts.items())), findings=findings,
         )
 
+    def refresh(self, findings: list[ScrubFinding]) -> list[ScrubFinding]:
+        """Re-apply known values to earlier findings' text, after later files taught us more."""
+        return [
+            f.model_copy(update={"location": self.substitute(f.location), "preview": self.substitute(f.preview),
+                                 "note": self.substitute(f.note)})
+            for f in findings
+        ]
+
     def guard_values(self) -> dict[str, str]:
         return self.registry.substitutable_values()
 
@@ -229,8 +237,12 @@ class Scrubber:
     def _scrub_person(self, text: str, location: str, slot: Optional[Slot]) -> str:
         bare = text.strip()
         # [Guest], [Full Access] and directory-group UUIDs are not people.
-        if not self.policy.strict or not bare or (bare.startswith("[") and bare.endswith("]")) or _UUID_RE.fullmatch(bare):
+        if not bare or (bare.startswith("[") and bare.endswith("]")) or _UUID_RE.fullmatch(bare):
             return text
+        if not self.policy.strict:
+            # The name stays, but an account named by its email address is still an
+            # email: otherwise substitution later swaps a known first name inside it.
+            return self._scrub_text(text, location, slot)
         return self._apply(text, [Hit(0, len(text), "person", "person_name", 80)], location, slot)
 
     def _text_hits(self, text: str) -> list[Hit]:

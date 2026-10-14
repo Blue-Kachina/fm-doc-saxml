@@ -206,6 +206,8 @@ def _classify(key: str, collection: str | None, step_like: bool) -> str | None:
         return "calc"
     if key == "raw_text":
         return "calc" if step_like else "text"
+    if key == "display_name" and collection == "themes":
+        return "text"  # free text shown as the page title; the theme's id is its `name`
     if key in _SKIP_KEYS or _SKIP_SUFFIX_RE.search(key):
         return None
     return "text"

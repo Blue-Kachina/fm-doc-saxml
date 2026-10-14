@@ -188,7 +188,7 @@ Each file gets its own subfolder (named after the FileMaker file, e.g. `Clients/
 
 ### Secret and personal-data scrubbing
 
-Scrubbing is **on by default** for `build`, `parse`, `render` and `diff`. Before any output is written, credentials, tokens, internal hostnames and personal data found in the export are replaced with numbered placeholders. The calculation logic around them is left intact:
+Scrubbing is **on by default** for `build`, `parse`, `render` and `diff`. Before any output is written, credentials, tokens and other secrets found in the export are replaced with numbered placeholders. Personal data (emails, card numbers, home-folder usernames) and internal hostnames are kept unless you raise `--scrub-level` to `standard` or `strict`. The calculation logic around them is left intact:
 
 ```text
 Let ( [ $apikey = "sk-proj-a8Kz9…" ; $url = "https://fms.corp.local/api" ] ; … )
@@ -200,8 +200,8 @@ The same value gets the same placeholder everywhere, so a reader can still tell 
 
 | Flag | Purpose |
 |---|---|
-| `--disable-scrubbing` | Turn scrubbing off. Output contains secrets and personal data as-is, and the report says so. |
-| `--scrub-level secrets\|standard\|strict` | `secrets`: credentials only. `standard` (default): also internal hosts and private IPs, home-folder usernames, emails, card numbers. `strict`: also random-looking string literals and account / modified-by names. |
+| `--disable-scrubbing` | Turn scrubbing off. Output contains secrets as-is, and the report says so. |
+| `--scrub-level secrets\|standard\|strict` | `secrets` (default): credentials only. `standard`: also internal hosts and private IPs, home-folder usernames, emails, card numbers. `strict`: also random-looking string literals and account / modified-by names. |
 | `--scrub-keyword WORD` | Treat names containing `WORD` as credentials, in addition to the built-in list (`apikey`, `token`, `password`, `secret`, …). Repeatable. |
 | `--scrub-allow REGEX` | Never redact values matching `REGEX`. Repeatable. |
 | `--fail-on-secrets` | Exit with status 1 (after writing everything) if the export contains hardcoded credentials. For CI. |
@@ -287,6 +287,7 @@ saxml2doc/
 ├─ LayoutObjects/
 │  └─ <LayoutName>/
 ├─ Scripts/
+├─ Variables/          ($$globals; each script's $locals are on its page)
 ├─ CustomFunctions/
 ├─ ValueLists/
 ├─ Reports/
@@ -299,6 +300,8 @@ saxml2doc/
    ├─ manifest.js
    └─ pages/
 ```
+
+**Script pages** list every step as FileMaker's Script Workspace shows it: comments, `Set Variable [ $name ; Value: … ]`, `Set Field [ Table::field ; … ]`, Perform Script parameters and step options, with nothing truncated. If/Loop blocks are indented and disabled steps are prefixed with `//`. Step numbers match FileMaker's. A **Variables** table on each script page shows where each variable is set and read. `Variables/index.md` lists every `$$global` (with a page showing where it is set and read across scripts, fields, layouts and custom functions) and each script's `$locals`. Locals that are read but never set are flagged: they are always empty, which usually means a typo.
 
 File names are safe on Windows, macOS and Linux: invalid characters and Windows reserved names (`CON`, `NUL`, …) are replaced, long names are truncated with a short hash, and names that would collide on a case-insensitive file system (`Invoices` vs `invoices`, or an entity named `index`) get a `-2`, `-3`… suffix. Links always point at the final file names.
 

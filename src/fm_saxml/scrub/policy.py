@@ -56,7 +56,7 @@ def category_from_name(name: str) -> str:
 
 @dataclass
 class ScrubPolicy:
-    level: ScrubLevel = ScrubLevel.STANDARD
+    level: ScrubLevel = ScrubLevel.SECRETS
     extra_keywords: list[str] = field(default_factory=list)
     allow_patterns: list[str] = field(default_factory=list)
 

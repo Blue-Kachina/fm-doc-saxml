@@ -20,6 +20,7 @@ from dataclasses import dataclass, field as dc_field
 from typing import Any, Optional
 
 from ..model.document_model import DocumentModel
+from ..model.step_text import step_text
 
 # (EntityMaps field name, entityType tag, human label). Order controls
 # report/section order. script_steps is intentionally excluded — see module
@@ -254,4 +255,5 @@ def _diff_script_steps(old: DocumentModel, new: DocumentModel) -> list[StepDiff]
 def _step_signature(step: Optional[Any]) -> str:
     if step is None:
         return ""
-    return f"{step.name}|{step.enabled}|{step.raw_text or ''}"
+    # The full step text: the raw_text preview stops at 80 characters, hiding later edits
+    return f"{step.name}|{step.enabled}|{step_text(step)}"

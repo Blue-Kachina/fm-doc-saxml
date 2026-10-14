@@ -404,6 +404,18 @@ async function show(path, seq) {
     document.body.dataset.rendered = path; // lets automated checks wait for a page
     $('main').scrollTop = 0;
     markActive(path);
+    if (pendingAnchor) { scrollToAnchor(pendingAnchor); pendingAnchor = null; }
+}
+
+// "#some-heading" links: headings get GitHub-style ids (lowercased, punctuation
+// dropped, spaces to dashes), matched here against the rendered headings' text.
+let pendingAnchor = null;
+const headingSlug = (text) => text.trim().toLowerCase().replace(/[^\p{L}\p{N}_\s-]/gu, '').replace(/\s/g, '-');
+
+function scrollToAnchor(anchor) {
+    const id = decodeURIComponent(anchor);
+    const heading = [...content.querySelectorAll('h1, h2, h3, h4, h5, h6')].find((h) => headingSlug(h.textContent) === id);
+    if (heading) heading.scrollIntoView({ block: 'start' });
 }
 
 function route() {
@@ -428,7 +440,17 @@ content.addEventListener('click', (event) => {
         window.open(href, '_blank', 'noopener');
         return;
     }
-    const target = resolveLink(currentPath(), href.split('#')[0]);
+    const [linkPath, anchor] = href.split('#');
+    if (!linkPath) {
+        if (anchor) scrollToAnchor(anchor);
+        return;
+    }
+    const target = resolveLink(currentPath(), linkPath);
+    if (target === currentPath()) {
+        if (anchor) scrollToAnchor(anchor);
+        return;
+    }
+    pendingAnchor = anchor || null;
     location.hash = hrefFor(target);
 }, true);
 

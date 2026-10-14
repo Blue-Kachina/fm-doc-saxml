@@ -49,7 +49,8 @@ def _all_output(*paths: Path) -> str:
 def test_build_scrubs_every_output_file(tmp_path):
     xml = _secret_xml(tmp_path)
     out, model = tmp_path / "docs", tmp_path / "model.json"
-    result = runner.invoke(app, ["build", str(xml), "-o", str(out), "--model-out", str(model)])
+    result = runner.invoke(app, ["build", str(xml), "-o", str(out), "--model-out", str(model),
+                                 "--scrub-level", "standard"])
     assert result.exit_code == 0, result.output
 
     everything = _all_output(out, model)
@@ -76,10 +77,10 @@ def test_disable_scrubbing_writes_values_as_is(tmp_path):
     assert "Scrubbing was disabled" in (out / "Reports" / "redactions.md").read_text(encoding="utf-8")
 
 
-def test_scrub_level_secrets_keeps_hosts_and_emails(tmp_path):
+def test_default_scrub_level_keeps_hosts_and_emails(tmp_path):
     xml = _secret_xml(tmp_path)
     out = tmp_path / "docs"
-    result = runner.invoke(app, ["build", str(xml), "-o", str(out), "--scrub-level", "secrets"])
+    result = runner.invoke(app, ["build", str(xml), "-o", str(out)])
     assert result.exit_code == 0, result.output
     everything = _all_output(out)
     assert "jane.doe@example.com" in everything
@@ -111,7 +112,7 @@ def test_render_scrubs_a_model_saved_unscrubbed(tmp_path):
     assert "Hunter2Secret!" in model.read_text(encoding="utf-8")
 
     out = tmp_path / "docs"
-    result = runner.invoke(app, ["render", "markdown", "-m", str(model), "-o", str(out)])
+    result = runner.invoke(app, ["render", "markdown", "-m", str(model), "-o", str(out), "--scrub-level", "standard"])
     assert result.exit_code == 0, result.output
     assert "scrubbing it now" in result.output
     everything = _all_output(out)
@@ -161,12 +162,12 @@ def test_report_step_numbers_match_the_script_page(tmp_path):
 
     xml = _secret_xml(tmp_path)
     out = tmp_path / "docs"
-    assert runner.invoke(app, ["build", str(xml), "-o", str(out)]).exit_code == 0
+    assert runner.invoke(app, ["build", str(xml), "-o", str(out), "--scrub-level", "standard"]).exit_code == 0
     report = (out / "Reports" / "redactions.md").read_text(encoding="utf-8")
     m = re.search(r"Script 'Login' › Step (\d+): Set Variable", report)
     assert m, report
     page = next(out.joinpath("Scripts").rglob("Login.md")).read_text(encoding="utf-8")
-    row = next(line for line in page.splitlines() if line.startswith(f"| {m.group(1)} |"))
+    row = next(line for line in page.splitlines() if re.match(rf"\s*{m.group(1)}  \S", line))
     assert "Set Variable" in row and "[EMAIL#" in row
 
 

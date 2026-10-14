@@ -234,9 +234,12 @@ def test_scrub_replaces_every_copy_and_drops_hashes(tmp_path):
     text = out.read_text(encoding="utf-8")
 
     assert "ab1" not in text and "swordfish99" not in text
-    assert text.count("[REDACTED:password#1]") == 3   # calc, ChunkList chunk, StepText
-    assert '<Text><![CDATA["[REDACTED:password#1]"]]></Text>' in text  # CDATA kept
-    assert "&quot;[REDACTED:password#1]&quot;" in text                 # entity style kept
+    # The comment step's password is numbered first; the Re-Login password gets its own placeholder
+    assert 'value="Send the email. temp password is [REDACTED:password#1]"' in text
+    relogin = "[REDACTED:password#2]"
+    assert text.count(relogin) == 3   # calc, ChunkList chunk, StepText
+    assert f'<Text><![CDATA["{relogin}"]]></Text>' in text  # CDATA kept
+    assert f"&quot;{relogin}&quot;" in text                 # entity style kept
     assert '"svc"' in text                                              # account name kept
     for h in ("CCCC", "DDDD", "FFFF", "AAAA"):                          # changed: digests gone
         assert f'hash="{h}"' not in text

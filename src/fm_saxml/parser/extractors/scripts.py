@@ -133,9 +133,12 @@ def _parse_step(
     name = attr(elem, "name", "Name")
 
     # Collect step parameters — layout refs, field refs, script refs, calculations
+    params: list[dict[str, Any]] = []
     if find_child(elem, "ParameterValues") is not None:
         # v2: references are nested in <ParameterValues><Parameter> as *Reference elements
-        layout_ref, field_refs, script_ref, calcs, value_list_refs = _extract_v2_step_refs(elem, chunk_lists)
+        layout_ref, field_refs, script_ref, calcs, value_list_refs, calc_index = _extract_v2_step_refs(
+            elem, chunk_lists)
+        params = _step_params(elem, name, calc_index)
     else:
         layout_ref = _extract_layout_ref(elem)
         field_refs = _extract_field_refs(elem)
@@ -170,6 +173,7 @@ def _parse_step(
         "calculation": calc,
         "calculations": calcs,
         "variable": _variable_name(elem),
+        "params": params,
     }
 
 
@@ -201,17 +205,19 @@ def _calc_entry(
 def _extract_v2_step_refs(
     elem: etree._Element,
     chunk_lists: dict[str, list[dict]] | None = None,
-) -> tuple[dict | None, list[dict], dict | None, list[dict], list[dict]]:
+) -> tuple[dict | None, list[dict], dict | None, list[dict], list[dict], dict]:
     """Pull layout / field / script / value-list references and calculations from a v2 step.
 
     In v2 a field reference's table half is a ``<TableOccurrenceReference>``
-    child of ``<FieldReference>`` (i.e. a table *occurrence* name).
+    child of ``<FieldReference>`` (i.e. a table *occurrence* name). The last item
+    maps each calc's ``<Calculation>`` element to its index in the calcs list.
     """
     layout_ref = None
     script_ref = None
     field_refs: list[dict] = []
     value_list_refs: list[dict] = []
     calcs: list[dict] = []
+    calc_index: dict[etree._Element, int] = {}
 
     for node in elem.iter():
         if not isinstance(node.tag, str):
@@ -238,9 +244,211 @@ def _extract_v2_step_refs(
         elif tag == "Calculation" and find_child(node, "Text") is not None:
             text = calc_text_of(node)
             if text:
+                calc_index[node] = len(calcs)
                 calcs.append(_v2_calc_entry(node, text, chunk_lists))
 
-    return layout_ref, field_refs, script_ref, calcs, value_list_refs
+    return layout_ref, field_refs, script_ref, calcs, value_list_refs, calc_index
+
+
+# ---------------------------------------------------------------------------
+# Structured step parameters
+# ---------------------------------------------------------------------------
+#
+# Each step gets an ordered ``params`` list describing what FileMaker's Script
+# Workspace shows between the brackets. Items are small dicts keyed by ``kind``:
+#
+#   comment   {"text"}                    the comment step's text
+#   calc      {"label", "calc"}           ``calc`` indexes the step's calculations
+#   field     {"label", "name", "repetition"}   name is "TO::field"
+#   variable  {"label", "name", "repetition"}   a variable the step assigns
+#   script / layout / to / valueList / file / menuSet / privilegeSet   {"label", "name"}
+#             (a script also has "dataSource": the other file it is in, or None)
+#   option    {"label", "value"}          a setting: "With dialog: Off", "Animation: None"
+#   text      {"label", "text"}           literal text: a path, Insert Text's text
+#
+# Calcs are referenced by index, not copied, so formatting the step after the
+# calculations are scrubbed can only ever show scrubbed text.
+
+_QUIET = {"Options", "Bounds", "SortSpecification", "ImportField", "Export", "FindRequestSet",
+          "Send", "PageSetup", "Print"}
+"""Containers whose settings are noise next to the step text: only calcs and references inside them are kept."""
+
+_SKIP_BOOLEANS = {"Collapsed", "Commit"}  # editor state (If/Loop collapse); dialog button commit flag
+_BOOLEAN_LABELS = {"Password": "Expire password"}  # Reset Account Password / Add Account
+
+_LABELS = {
+    "value": "Value", "Name": "Name", "Rename": "New Title", "Label": "Layout",
+    "Parameter": "Parameter", "height": "Height", "width": "Width", "top": "Top", "left": "Left",
+    "Start": "Start", "End": "End", "To": "To", "CC": "CC", "BCC": "BCC", "Subject": "Subject",
+    "Message": "Message", "Title": "Title", "id": "File ID", "size": "Amount", "URL": "URL",
+    "Password": "Password", "Install": "Install", "Location": None,
+}
+_UNLABELLED_PARAMS = {"Calculation", "None", "List", "Boolean", "Records", "Related", "Target",
+                      "LayoutReferenceContainer", "FieldReference", "WindowReference", "Parameter"}
+
+
+def _step_params(
+    elem: etree._Element,
+    step_name: str,
+    calc_index: dict[etree._Element, int],
+) -> list[dict[str, Any]]:
+    """The step's parameters, in order, as structured items (see above)."""
+    pv = find_child(elem, "ParameterValues")
+    items: list[dict[str, Any]] = []
+    if pv is None:
+        return items
+    for param in find_all_children(pv, "Parameter"):
+        ptype = attr(param, "type", "Type")
+        if ptype == "Comment":
+            comment = find_child(param, "Comment")
+            items.append({"kind": "comment", "text": attr(comment, "value") if comment is not None else ""})
+        elif ptype == "Variable":  # Set Variable / Get Folder Path: the target, then its value
+            name = find_child(param, "Name")
+            items.append({"kind": "variable", "label": None,
+                          "name": attr(name, "value", "Value") if name is not None else "",
+                          "repetition": _calc_in(find_child(param, "repetition"), calc_index)})
+            value = _calc_in(find_child(param, "value"), calc_index)
+            if value is not None:
+                items.append({"kind": "calc", "label": "Value", "calc": value})
+        else:
+            if ptype.startswith("Button") and attr(param, "value"):  # Show Custom Dialog
+                items.append({"kind": "option", "label": f"Button {ptype[6:]}", "value": attr(param, "value")})
+            label = None if ptype in _UNLABELLED_PARAMS else _LABELS.get(ptype, ptype)
+            if step_name == "Loop" and ptype == "List":
+                label = "Flush"
+            start = len(items)
+            _param_items(param, label, calc_index, items, quiet=False)
+            if ptype == "Related":  # Go to Related Record: name the parts as FileMaker does
+                _label_first(items, start, "to", "Get related record from")
+                _label_first(items, start, "layout", "Using layout")
+            elif ptype == "WindowReference":  # New Window
+                _label_first(items, start, "layout", "Using layout")
+    return _dedupe(items)
+
+
+def _label_first(items: list[dict[str, Any]], start: int, kind: str, label: str) -> None:
+    item = next((i for i in items[start:] if i["kind"] == kind and not i.get("label")), None)
+    if item is not None:
+        item["label"] = label
+
+
+def _dedupe(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Drop repeated references (a new window's layout repeats the step's own layout)."""
+    seen: set[tuple] = set()
+    out = []
+    for item in items:
+        if item["kind"] in ("layout", "to", "script", "valueList", "file"):
+            key = (item["kind"], item.get("name"))
+            if key in seen:
+                continue
+            seen.add(key)
+        out.append(item)
+    return out
+
+
+def _calc_in(holder: etree._Element | None, calc_index: dict[etree._Element, int]) -> int | None:
+    """Index of the calc held by ``holder`` (``<x><Calculation><Calculation><Text>``), if any."""
+    if holder is None:
+        return None
+    outer = find_child(holder, "Calculation")
+    if outer is None:
+        return None
+    inner = find_child(outer, "Calculation")
+    return calc_index.get(inner if inner is not None else outer)
+
+
+def _param_items(
+    node: etree._Element,
+    label: str | None,
+    calc_index: dict[etree._Element, int],
+    items: list[dict[str, Any]],
+    quiet: bool,
+) -> None:
+    """Describe ``node``'s children. ``label`` names a calc held directly by ``node``."""
+    for child in node:
+        if not isinstance(child.tag, str):
+            continue
+        tag = _local(child.tag)
+        name = attr(child, "name", "Name")
+        if tag == "Calculation":
+            inner = find_child(child, "Calculation")
+            idx = calc_index.get(inner if inner is not None else child)
+            if idx is not None:
+                items.append({"kind": "calc", "label": label, "calc": idx})
+        elif tag == "FieldReference":
+            to_ref = find_child(child, "TableOccurrenceReference")
+            to_name = attr(to_ref, "name", "Name") if to_ref is not None else ""
+            items.append({"kind": "field", "label": label if label != "Value" else None,
+                          "name": f"{to_name}::{name}" if to_name else name,
+                          "repetition": _calc_in(find_child(child, "repetition"), calc_index)})
+        elif tag == "Variable":  # a Target: Insert from URL, Insert Calculated Result, ...
+            items.append({"kind": "variable", "label": "Target",
+                          "name": attr(child, "value", "Value"),
+                          "repetition": _calc_in(find_child(child, "repetition"), calc_index)})
+        elif tag in _REF_KINDS:
+            kind = _REF_KINDS[tag]
+            if name:
+                item: dict[str, Any] = {"kind": kind, "label": None, "name": name}
+                if kind == "script":
+                    item["dataSource"] = _sibling_data_source(child)
+                items.append(item)
+            _param_items(child, None, calc_index, items, quiet)
+        elif tag == "DataSourceReference":
+            if name:
+                items.append({"kind": "file", "label": None, "name": name})
+            _param_items(child, None, calc_index, items, quiet)
+        elif tag in ("UUID", "DDRREF"):
+            continue
+        elif tag == "repetition":
+            # Install OnTimer Script keeps its script parameter here; elsewhere it is an
+            # object's repetition (Go to Object). Field and variable repetitions are read above.
+            rep_label = "Parameter" if _local(node.tag) == "ScriptReference" else "Repetition"
+            _param_items(child, rep_label, calc_index, items, quiet)
+        elif tag == "LayoutReferenceContainer" and len(child) == 0:
+            continue  # no layout chosen: the current one
+        elif quiet or tag in _QUIET:
+            _param_items(child, _LABELS.get(tag), calc_index, items, quiet=True)
+        elif tag == "Boolean":
+            btype = attr(child, "type", "Type")
+            if btype not in _SKIP_BOOLEANS:
+                on = attr(child, "value", "Value").lower() == "true"
+                items.append({"kind": "option", "label": _BOOLEAN_LABELS.get(btype, btype) or None,
+                              "value": "On" if on else "Off"})
+            _param_items(child, btype or label, calc_index, items, quiet)
+        elif tag == "List":
+            name = name.rstrip(": ")
+            has_calc = find_child(child, "Calculation") is not None
+            if has_calc:  # e.g. Perform Script "By name": the calc is the script name
+                _param_items(child, name or label, calc_index, items, quiet)
+                continue
+            if name and not (name == "From list" and find_child(child, "ScriptReference") is not None):
+                items.append({"kind": "option", "label": label, "value": name})
+            _param_items(child, None, calc_index, items, quiet)
+        elif tag == "Animation":
+            items.append({"kind": "option", "label": "Animation", "value": name})
+        elif tag == "Restore":
+            if attr(child, "value", "Value").lower() == "true":
+                items.append({"kind": "option", "label": None, "value": "Restore"})
+        elif tag == "Style":
+            items.append({"kind": "option", "label": "Style", "value": name})
+        elif tag == "Select" and attr(child, "type", "Type"):  # WindowReference
+            wtype = attr(child, "type", "Type")
+            if wtype.lower() == "current":
+                items.append({"kind": "option", "label": None, "value": "Current Window"})
+            _param_items(child, "Window name", calc_index, items, quiet)
+        elif len(child) == 0 and (child.text or "").strip():
+            items.append({"kind": "text", "label": _LABELS.get(tag, tag), "text": child.text.strip()})
+        elif len(child) == 0 and (name or attr(child, "value", "Value")):
+            items.append({"kind": "option", "label": _LABELS.get(tag, tag), "value": name or attr(child, "value")})
+        else:
+            _param_items(child, _LABELS.get(tag, tag), calc_index, items, quiet)
+
+
+_REF_KINDS = {
+    "ScriptReference": "script", "LayoutReference": "layout", "TableOccurrenceReference": "to",
+    "ValueListReference": "valueList", "CustomMenuSetReference": "menuSet",
+    "PrivilegeSetReference": "privilegeSet",
+}
 
 
 def _v2_calc_entry(

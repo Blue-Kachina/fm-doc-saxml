@@ -274,8 +274,11 @@ class ScriptStepEntity(BaseModel):
     step_id: str = Field(alias="stepId")   # FileMaker's built-in step type ID
     name: str
     enabled: bool = True
-    raw_text: Optional[str] = Field(None, alias="rawText")
+    raw_text: Optional[str] = Field(None, alias="rawText")  # short preview; see model/step_text.py for the full text
     parameters: dict[str, Any] = {}
+    # What the Script Workspace shows between the brackets, in order: comment text, targets,
+    # references, options, and calcs (by index into ``calculations``). See parser/extractors/scripts.py.
+    params: list[dict[str, Any]] = []
     calculations: list[StepCalculation] = []
     references: list[dict[str, Any]] = []  # values are strings, except "external" (an ExternalTarget)
 
@@ -294,10 +297,47 @@ class ScriptEntity(BaseModel):
     referenced_fields: list[str] = Field([], alias="referencedFields")
     referenced_layouts: list[str] = Field([], alias="referencedLayouts")
     referenced_scripts: list[str] = Field([], alias="referencedScripts")
+    variables: list[str] = []        # variable docIds set or read by the script's steps
     warnings: list[str] = []
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
     model_config = ConfigDict(populate_by_name=True)
+
+
+class VariableUse(BaseModel):
+    """One place a variable is assigned or read."""
+
+    source_doc_id: str = Field(alias="sourceDocId")      # a script step, field, layout object, ...
+    script_doc_id: Optional[str] = Field(None, alias="scriptDocId")
+    step: Optional[int] = None    # 1-based step number, for script steps
+    access: str                   # set | read
+    via: str                      # step name ("Set Variable", "Insert from URL"), "Let", or a calc role
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class VariableEntity(BaseModel):
+    """A ``$$global`` (file-wide) or a ``$local`` (one script) variable.
+
+    FileMaker variable names are case-insensitive; ``name`` keeps the first spelling seen.
+    """
+
+    doc_id: str = Field(alias="docId")
+    entity_type: str = Field("variable", alias="entityType")
+    name: str
+    scope: str                    # global | local
+    script_doc_id: Optional[str] = Field(None, alias="scriptDocId")  # locals only
+    uses: list[VariableUse] = []
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    @property
+    def sets(self) -> list[VariableUse]:
+        return [u for u in self.uses if u.access == "set"]
+
+    @property
+    def reads(self) -> list[VariableUse]:
+        return [u for u in self.uses if u.access == "read"]
 
 
 class CustomFunctionEntity(BaseModel):

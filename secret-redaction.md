@@ -274,12 +274,12 @@ Applies to `build`, `parse`, `render` and `diff`.
 | Option | Default | Meaning | Status |
 |---|---|---|---|
 | `--disable-scrubbing` | off | Turn scrubbing off entirely. | done |
-| `--scrub-level [secrets\|standard\|strict]` | `standard` | `secrets`: credentials only. `standard`: plus hosts, home-dir users, emails, cards. `strict`: plus high-entropy literals and account / modified-by names. | done (phone/IBAN/SSN still to come) |
+| `--scrub-level [secrets\|standard\|strict]` | `secrets` | `secrets`: credentials only. `standard`: plus hosts, home-dir users, emails, cards. `strict`: plus high-entropy literals and account / modified-by names. | done (phone/IBAN/SSN still to come) |
 | `--scrub-keyword WORD` | – | Extra credential keyword (repeatable). | done |
 | `--scrub-allow REGEX` | – | Never redact values that fully match (repeatable). Also silences the guard for them. | done |
 | `--fail-on-secrets` | off | Exit 1 (after writing everything) if a hardcoded credential was redacted or flagged. Hosts and personal data don't count. For CI. Renamed from the proposed `--fail-on-redaction`. | done |
 
-The flags use "scrub" rather than the proposal's "redact", to match `--disable-scrubbing`. `inspect` and `validate` always scrub at `standard`, since they only print.
+The flags use "scrub" rather than the proposal's "redact", to match `--disable-scrubbing`. `inspect` and `validate` always scrub at `secrets`, since they only print. The default level was lowered from `standard` to `secrets` so personal data and hosts are only redacted on request.
 
 `--disable-scrubbing` prints a red warning, records `scrubbing: {"applied": false}` in the model, and makes `Reports/redactions.md` and `Reports/summary.md` say the output is unredacted. The guard (exit 2) only runs when scrubbing is on.
 

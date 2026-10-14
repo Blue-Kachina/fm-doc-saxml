@@ -9,6 +9,7 @@ from typing import Any
 from jinja2 import Environment, PackageLoader, select_autoescape, Undefined
 
 from ...model.document_model import DocumentModel
+from ...model.step_text import code_fence, render_script_block
 from ...normalize.paths import relative_md_link
 from ...utils.file_writer import write_text
 from .link_resolver import LinkResolver, _esc as _esc_link_label
@@ -43,6 +44,7 @@ def render_markdown(
     _render_layouts(model, output_dir, env, links)
     _render_layout_objects(model, output_dir, env, links)
     _render_scripts(model, output_dir, env, links)
+    _render_variables(model, output_dir, env, links)
     _render_custom_functions(model, output_dir, env, links)
     _render_value_lists(model, output_dir, env, links)
     _render_privilege_sets(model, output_dir, env, links)
@@ -347,8 +349,75 @@ def _render_scripts(model: DocumentModel, output_dir: Path, env: Environment, li
     for entity in entities:
         rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
+        steps = [model.entities.script_steps[d] for d in entity.steps if d in model.entities.script_steps]
+        block = render_script_block(steps)
+        ctx["steps_block"] = block
+        ctx["steps_fence"] = code_fence(block)
+        ctx["variables"] = _script_variables(model, entity)
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
+
+
+def _script_variables(model: DocumentModel, script) -> list[dict[str, Any]]:
+    """Rows for a script page's Variables table: each variable with this script's set / read steps."""
+    rows = []
+    for doc_id in script.variables:
+        var = model.entities.variables.get(doc_id)
+        if var is None:
+            continue
+        here = [u for u in var.uses if u.script_doc_id == script.doc_id]
+        sets = sorted({u.step for u in here if u.access == "set" and u.step})
+        reads = sorted({u.step for u in here if u.access == "read" and u.step})
+        note = ""
+        if var.scope == "local" and reads and not sets:
+            note = "Never set in this script: always empty (a typo?)"
+        elif var.scope == "global" and not var.sets:
+            note = "Never set in this file"
+        rows.append({"doc_id": doc_id, "name": var.name, "scope": var.scope,
+                     "sets": sets, "reads": reads, "note": note})
+    rows.sort(key=lambda r: (r["scope"] != "global", r["name"].lower()))
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# Variables
+# ---------------------------------------------------------------------------
+
+def _render_variables(model: DocumentModel, output_dir: Path, env: Environment, links: LinkResolver) -> None:
+    """A page per ``$$global``, and an index of globals plus each script's ``$locals``."""
+    variables = list(model.entities.variables.values())
+    if not variables:
+        return
+    tmpl = env.get_template("variable.md.j2")
+    globals_ = [v for v in variables if v.scope == "global"]
+    for entity in globals_:
+        rel_path = links.path_for(entity.doc_id)
+        ctx = _make_ctx(model, rel_path, links, entity)
+        write_text(output_dir / rel_path, tmpl.render(**ctx))
+
+    index = "Variables/index.md"
+    lines = ["# Variables", "",
+             f"_{len(globals_)} global variable(s), {len(variables) - len(globals_)} local variable(s)_", ""]
+    if globals_:
+        lines += ["## Global Variables", "", "| Variable | Set In | Read In | Note |", "|---|---:|---:|---|"]
+        for v in sorted(globals_, key=lambda v: v.name.lower()):
+            note = "Never set in this file" if not v.sets else ("Never read in this file" if not v.reads else "")
+            lines.append(f"| {links.md_link(index, v.doc_id)} | {len(v.sets)} | {len(v.reads)} | {note} |")
+        lines.append("")
+    locals_by_script: dict[str, list] = {}
+    for v in variables:
+        if v.scope == "local" and v.script_doc_id:
+            locals_by_script.setdefault(v.script_doc_id, []).append(v)
+    if locals_by_script:
+        lines += ["## Local Variables", "",
+                  ("Each script's `$variables`. _Never set_ lists those read without ever being set in "
+                   "that script: they are always empty, which usually means a typo."), "",
+                  "| Script | Variables | Never Set |", "|---|---|---|"]
+        for script_doc_id, vs in sorted(locals_by_script.items(), key=lambda kv: links.title_for(kv[0]).lower()):
+            names = ", ".join(f"`{v.name}`" for v in sorted(vs, key=lambda v: v.name.lower()))
+            unset = ", ".join(f"`{v.name}`" for v in vs if v.reads and not v.sets)
+            lines.append(f"| {links.md_link(index, script_doc_id)} | {_md_cell(names)} | {_md_cell(unset)} |")
+    write_text(output_dir / index, "\n".join(lines) + "\n")
 
 
 # ---------------------------------------------------------------------------
@@ -721,4 +790,5 @@ def _counts(model: DocumentModel) -> _Counts:
         custom_menu_sets=len(model.entities.custom_menu_sets),
         themes=len(model.entities.themes),
         file_references=len(model.entities.file_references),
+        variables=len(model.entities.variables),
     )

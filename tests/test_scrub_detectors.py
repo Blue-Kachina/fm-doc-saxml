@@ -14,11 +14,14 @@ from .fake_keys import (
 )
 
 
+# Most cases cover host and personal-data detectors, so default to `standard` here.
 def calc(text, **policy):
+    policy.setdefault("level", ScrubLevel.STANDARD)
     return Scrubber(ScrubPolicy(**policy)).scrub_calc(text)
 
 
 def text(value, **policy):
+    policy.setdefault("level", ScrubLevel.STANDARD)
     return Scrubber(ScrubPolicy(**policy)).scrub_text(value)
 
 
@@ -54,6 +57,10 @@ CALC_CASES = [
     pytest.param('"\\\\\\\\SERVER01\\\\backups\\\\x"', ["SERVER01"], ["backups"], id="unc-path"),
     pytest.param('"/Users/jsmith/Desktop/out.csv"', ["jsmith"], ["/Users/", "/Desktop/out.csv"], id="mac-home"),
     pytest.param('"C:\\\\Users\\\\jsmith\\\\x"', ["jsmith"], ["Users"], id="windows-home"),
+    pytest.param('"file:/Users/Direct Impact/Marketing/x.csv"', ["Direct Impact", "Direct"], ["/Marketing/x.csv"],
+                 id="mac-home-with-space"),
+    pytest.param('"C:\\\\Users\\\\Jane Doe\\\\x"', ["Jane Doe", "Jane"], ["Users"], id="windows-home-with-space"),
+    pytest.param('"see /Users/jsmith now"', ["jsmith"], [" now"], id="bare-home-then-prose"),
     pytest.param('"http://10.0.0.5:8080/x"', ["10.0.0.5"], [":8080/x"], id="private-ip"),
     pytest.param('"user:" & $pw & "@fms.corp.local/api"', ["fms.corp.local"], ["/api"], id="bare-internal-host"),
     pytest.param('"jane@intranet.corp"', ["jane@intranet.corp", "jane"], [], id="email-at-internal-host"),
@@ -113,6 +120,14 @@ def test_plain_json_form_in_free_text():
 def test_secrets_level_keeps_hosts_and_emails():
     source = f'"https://intranet.corp/x" & "jane@example.org" & "{OPENAI}"'
     out = calc(source, level=ScrubLevel.SECRETS)
+    assert "intranet.corp" in out and "jane@example.org" in out
+    assert OPENAI not in out
+
+
+def test_default_level_is_secrets():
+    assert ScrubPolicy().level is ScrubLevel.SECRETS
+    source = f'"https://intranet.corp/x" & "jane@example.org" & "{OPENAI}"'
+    out = Scrubber().scrub_calc(source)
     assert "intranet.corp" in out and "jane@example.org" in out
     assert OPENAI not in out
 

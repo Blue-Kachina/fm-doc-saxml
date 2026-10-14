@@ -60,6 +60,7 @@ from .ids import (
     file_scope,
 )
 from .names import normalize_name, qualified_name
+from .variables import build_variables
 from .field_resolver import build_field_resolver, resolve_field_or_fallback
 from .external import ExternalTargets
 from .calc_refs import CalcRefResolver, chunk_ref_models
@@ -119,6 +120,7 @@ def normalize(
     _normalize_custom_menu_sets(raw, model)
     _normalize_themes(raw, model)
     _normalize_file_references(raw, model)
+    build_variables(model)  # needs scripts and every entity's calculations
 
     return model
 
@@ -709,6 +711,7 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
                 enabled=raw_step.get("enabled", True),
                 rawText=raw_step.get("raw_text"),
                 parameters={"variable": raw_step["variable"]} if raw_step.get("variable") else {},
+                params=raw_step.get("params") or [],
                 calculations=[
                     StepCalculation(position=c.get("position"), parameter=c.get("parameter"),
                                     slot=c.get("slot"), text=c["text"])

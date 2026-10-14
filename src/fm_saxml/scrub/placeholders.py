@@ -61,6 +61,10 @@ def substitutable(value: str, category: str) -> bool:
         return len(v) >= 12 if v.isalpha() else len(v) >= 6
     if category == "host":
         return len(v) >= 4 and any(c == "." or c.isdigit() for c in v)
+    if category == "user" and any(c.isspace() for c in v):
+        # A home folder named "Direct Impact" is a display or company name, not a login:
+        # redact it in the path, but replacing it in every comment hides the company name.
+        return False
     if category in ("user", "person"):
         return len(v) >= 3 and v.lower() not in _COMMON_NAMES
     return len(v) >= 4

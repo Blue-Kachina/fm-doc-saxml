@@ -12,6 +12,9 @@ from .fake_keys import OPENAI, OPENAI_OTHER
 
 from .test_scrub_detectors import CALC_CASES, SURVIVES
 
+# These tests cover host and personal-data handling too, which needs `standard`.
+STANDARD = ScrubPolicy(level=ScrubLevel.STANDARD)
+
 SOURCES = [p.values[0] for p in CALC_CASES] + [p.values[0] for p in SURVIVES]
 
 
@@ -29,19 +32,19 @@ def _mixed_calcs(n=200, seed=7):
 
 @pytest.mark.parametrize("source", SOURCES + list(_mixed_calcs()))
 def test_only_string_and_comment_contents_change(source):
-    out = Scrubber().scrub_calc(source)
+    out = Scrubber(STANDARD).scrub_calc(source)
     assert _skeleton(out) == _skeleton(source)
 
 
 @pytest.mark.parametrize("source", SOURCES + list(_mixed_calcs(50, seed=3)))
 def test_scrubbing_is_idempotent(source):
-    s = Scrubber()
+    s = Scrubber(STANDARD)
     once = s.scrub_calc(source)
     assert s.scrub_calc(once) == once
 
 
 def test_same_value_same_placeholder_everywhere():
-    s = Scrubber()
+    s = Scrubber(STANDARD)
     a = s.scrub_calc(f'$apikey = "{OPENAI}"')
     b = s.scrub_calc(f'"Bearer {OPENAI}"')
     c = s.scrub_calc(f'"{OPENAI_OTHER}"')
@@ -85,7 +88,7 @@ def _raw() -> RawModel:
 
 def test_raw_model_scrub_reaches_every_copy():
     raw = _raw()
-    summary = Scrubber().scrub_raw(raw)
+    summary = Scrubber(STANDARD).scrub_raw(raw)
     step = raw.scripts[0]["steps"][0]
     assert "Hunter2Secret!" not in step["calculation"]
     assert "Hunter2Secret!" not in step["calculations"][0]["text"]
@@ -105,7 +108,7 @@ def test_raw_model_scrub_reaches_every_copy():
 
 def test_findings_never_contain_values():
     raw = _raw()
-    summary = Scrubber().scrub_raw(raw)
+    summary = Scrubber(STANDARD).scrub_raw(raw)
     blob = summary.model_dump_json()
     for secret in ("Hunter2Secret", "jane.doe@example.com", "fms.corp.local"):
         assert secret not in blob
@@ -131,7 +134,7 @@ def test_model_json_scrub():
             "calculation": '$token = "abc123token"', "calculations": [{"text": '$token = "abc123token"'}],
         }}},
     }
-    summary = Scrubber().scrub_model_data(data)
+    summary = Scrubber(STANDARD).scrub_model_data(data)
     step = data["entities"]["scriptSteps"]["s1"]
     assert "abc123token" not in str(step)
     assert data["source"]["fileName"] == "C:\\Users\\[USER#1]\\exports\\App.xml"
@@ -140,7 +143,7 @@ def test_model_json_scrub():
 
 
 def test_guard_values_exclude_ordinary_words():
-    s = Scrubber()
+    s = Scrubber(STANDARD)
     s.scrub_calc('$password = "password" ; $pwd = "Xy7#kL9!m"')
     values = s.guard_values()
     assert "password" not in values  # too ordinary to hunt for everywhere
@@ -153,4 +156,45 @@ def test_guard_values_exclude_ordinary_words():
     ("/Users/jsmithy/Exports/jsmithy-backups/App.xml", "jsmithy"),
 ])
 def test_every_occurrence_of_a_username_in_one_string(path, user):
-    assert user not in Scrubber().scrub_text(path)
+    assert user not in Scrubber(STANDARD).scrub_text(path)
+
+
+def test_home_folder_with_a_space_is_redacted_only_in_the_path():
+    # A Mac account folder named after the company: the path is redacted, the
+    # company name in prose is not, and the guard doesn't hunt for it.
+    s = Scrubber(STANDARD)
+    path = s.scrub_text('Export Records [ "file:/Users/Direct Impact/Marketing/x.csv" ]')
+    assert "Direct" not in path and "/Marketing/x.csv" in path
+    assert s.scrub_text("Direct Impact Solutions inc.") == "Direct Impact Solutions inc."
+    assert "Direct Impact" not in s.guard_values() and "Direct" not in s.guard_values()
+
+
+def test_theme_display_name_is_scrubbed():
+    s = Scrubber(STANDARD)
+    s.scrub_text("/Users/jsmithy/x")
+    data = {"entities": {"themes": {"theme:t": {"name": "com.filemaker.theme.custom.1", "displayName": "jsmithy theme"}}}}
+    s.scrub_model_data(data)
+    theme = data["entities"]["themes"]["theme:t"]
+    assert theme["displayName"].endswith(" theme") and "jsmithy" not in theme["displayName"]
+    assert theme["name"] == "com.filemaker.theme.custom.1"
+
+
+def test_refresh_applies_values_learned_later_to_earlier_findings():
+    s = Scrubber(STANDARD)
+    first = s.scrub_model_data({"entities": {"fields": {"f": {
+        "name": "Owner", "comment": "jsmithy <jane.doe@example.com>"}}}})
+    assert any("jsmithy" in f.preview for f in first.findings)
+    s.scrub_text("/Users/jsmithy/x")
+    assert not any("jsmithy" in f.preview for f in s.refresh(first.findings))
+
+
+def test_modified_by_email_is_redacted_whole_at_standard_level():
+    # "jeanx" is known as a username; the address it starts must not be half-replaced.
+    s = Scrubber(STANDARD)
+    s.scrub_text("/Users/jeanx/x")
+    data = {"entities": {"valueLists": {"vl": {"name": "Trimestres", "modified": {
+        "accountName": "jeanx.doe@example.com", "userName": "Jean Doe"}}}}}
+    s.scrub_model_data(data)
+    modified = data["entities"]["valueLists"]["vl"]["modified"]
+    assert PLACEHOLDER_RE.fullmatch(modified["accountName"]) and modified["accountName"].startswith("[EMAIL#")
+    assert modified["userName"] == "Jean Doe"  # names themselves are only redacted at strict

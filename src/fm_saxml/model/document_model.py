@@ -24,11 +24,12 @@ from .entities import (
     CustomMenuSetEntity,
     ThemeEntity,
     FileReferenceEntity,
+    VariableEntity,
 )
 from .references import ReferenceRecord
 
 
-SCHEMA_VERSION = "0.2.0"
+SCHEMA_VERSION = "0.3.0"  # 0.3.0: script step params, variables
 
 
 class SourceInfo(BaseModel):
@@ -88,6 +89,7 @@ class EntityMaps(BaseModel):
     custom_menu_sets: dict[str, CustomMenuSetEntity] = Field({}, alias="customMenuSets")
     themes: dict[str, ThemeEntity] = {}
     file_references: dict[str, FileReferenceEntity] = Field({}, alias="fileReferences")
+    variables: dict[str, VariableEntity] = {}
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -179,6 +181,7 @@ class DocumentModel(BaseModel):
             "customMenuSet": self.entities.custom_menu_sets,
             "theme": self.entities.themes,
             "fileRef": self.entities.file_references,
+            "variable": self.entities.variables,
         }
         entity_map = maps.get(prefix)
         if entity_map is not None:

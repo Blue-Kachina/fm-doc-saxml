@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -53,6 +54,31 @@ def combined_scrubbing(files: list[BatchFile]) -> ScrubSummary | None:
     )
 
 
+# Credentials first, then infrastructure, then personal data
+_KIND_ORDER = ["Secret", "Infrastructure", "Personal data"]
+
+
+def category_kind(category: str) -> str:
+    from ..scrub.policy import CREDENTIAL_CATEGORIES
+
+    if category in CREDENTIAL_CATEGORIES:
+        return "Secret"
+    if "host" in category or category.endswith("_ip"):
+        return "Infrastructure"
+    return "Personal data"
+
+
+def heading_anchor(text: str) -> str:
+    """The id GitHub-style renderers (and the --html viewer) give a heading with this text."""
+    return re.sub(r"\s", "-", re.sub(r"[^\w\s-]", "", text.strip().lower()))
+
+
+def _natural(placeholder: str) -> tuple:
+    """[EMAIL#9] before [EMAIL#10]."""
+    m = re.search(r"#(\d+)\]$", placeholder)
+    return (placeholder[: m.start()], int(m.group(1))) if m else (placeholder, 0)
+
+
 def _redaction_context(files: list[BatchFile]) -> dict:
     combined = combined_scrubbing(files)
     if combined is None:
@@ -66,10 +92,21 @@ def _redaction_context(files: list[BatchFile]) -> dict:
             })
             row["places"] += 1
             row["files"].setdefault(f.folder, f.name)
-    placeholders = sorted(by_placeholder.values(), key=lambda r: (-len(r["files"]), r["category"], r["placeholder"]))
+    placeholders = sorted(by_placeholder.values(), key=lambda r: (-len(r["files"]), _natural(r["placeholder"])))
+    groups: dict[str, dict] = {}
+    for row in placeholders:
+        g = groups.setdefault(row["category"], {
+            "category": row["category"], "anchor": heading_anchor(row["category"]),
+            "kind": category_kind(row["category"]), "rows": [], "places": 0, "files": set(), "shared": 0,
+        })
+        g["rows"].append(row)
+        g["places"] += row["places"]
+        g["files"].update(row["files"])
+        g["shared"] += len(row["files"]) > 1
+    categories = sorted(groups.values(), key=lambda g: (_KIND_ORDER.index(g["kind"]), g["category"]))
     return {
         "scrubbing": combined,
-        "placeholders": placeholders,
+        "categories": categories,
         "shared_count": sum(1 for r in placeholders if len(r["files"]) > 1),
         "flagged": [(f, finding) for f in files for finding in f.model.scrubbing.flagged],
         "allowed": [(f, finding) for f in files for finding in f.model.scrubbing.allowed],

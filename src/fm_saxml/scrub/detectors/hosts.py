@@ -34,8 +34,14 @@ _BARE_HOST_RE = re.compile(
     r"(?<![\w./\-\[])((?:[A-Za-z0-9-]+\.)+(?:local|internal|lan|intranet|corp|localdomain))(?![\w.\-])", re.I
 )
 _IP_RE = re.compile(r"(?<![\d.])(\d{1,3}(?:\.\d{1,3}){3})(?![\d.])")
-_POSIX_HOME_RE = re.compile(r"/(?:Users|home)/([A-Za-z0-9._-]+)")
-_WIN_HOME_RE = re.compile(r"[A-Za-z]:\\{1,2}Users\\{1,2}([^\\/\"'\r\n\t]+?)(?=\\|/|$|[\"'\s])", re.I)
+# A folder name may hold spaces (/Users/Jane Doe/...), but only when a separator
+# follows it; otherwise the name ends at the first space, so prose after a bare
+# home path isn't swallowed. Reading "Jane Doe" as "Jane" would leave half the name
+# behind and turn a common word into a value replaced everywhere.
+_POSIX_HOME_RE = re.compile(r"/(?:Users|home)/((?:[A-Za-z0-9._-]+ ){1,3}[A-Za-z0-9._-]+(?=/)|[A-Za-z0-9._-]+)")
+_WIN_HOME_RE = re.compile(
+    r"[A-Za-z]:\\{1,2}Users\\{1,2}((?:[^\\/\"'\s:]+ ){1,3}[^\\/\"'\s:]+(?=\\|/)|[^\\/\"'\s]+)", re.I
+)
 
 _KEEP_USERS = {"shared", "public", "default", "default user", "all users"}
 

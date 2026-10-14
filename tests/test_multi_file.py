@@ -335,7 +335,7 @@ def test_value_found_in_a_later_file_is_redacted_in_earlier_ones(tmp_path):
     (folder / "FileB.xml").write_text(b, encoding="utf-8")
 
     out = tmp_path / "docs"
-    result = runner.invoke(app, ["build", str(folder), "--out", str(out)])
+    result = runner.invoke(app, ["build", str(folder), "--out", str(out), "--scrub-level", "standard"])
     assert result.exit_code == 0, result.output
     leaks = [p for p in out.rglob("*") if p.is_file() and "jane.doe@example.com" in p.read_text(encoding="utf-8")]
     assert leaks == []
@@ -344,11 +344,38 @@ def test_value_found_in_a_later_file_is_redacted_in_earlier_ones(tmp_path):
 
     # The master list shows one placeholder used by both files
     master = (out / "Reports" / "redactions.md").read_text(encoding="utf-8")
-    assert "appear in more than one file; they're listed first." in master
+    assert "appear in more than one file; in each category they're listed first." in master
     row = next(line for line in master.splitlines() if line.startswith("| `[EMAIL#"))
     assert "[FileA](../FileA/Reports/redactions.md)" in row and "[FileB](../FileB/Reports/redactions.md)" in row
     assert "[Redactions](Reports/redactions.md)" in (out / "index.md").read_text(encoding="utf-8")
+    assert "| [email](#email) | Personal data |" in master and "### email" in master.splitlines()
     assert "See Reports/redactions.md" in " ".join(result.output.split())
+
+
+def test_master_redactions_group_secrets_before_personal_data():
+    from fm_saxml.batch.report import _redaction_context, heading_anchor
+    from fm_saxml.model.document_model import ScrubFinding, ScrubSummary
+
+    def file(name, *found):
+        model = DocumentModel(source=SourceInfo(fileName=f"{name}.xml"))
+        model.scrubbing = ScrubSummary(applied=True, findings=[
+            ScrubFinding(category=cat, detector="test", placeholder=ph) for cat, ph in found
+        ])
+        return BatchFile(name, name, model)
+
+    ctx = _redaction_context([
+        file("A", ("email", "[EMAIL#10]"), ("email", "[EMAIL#9]"), ("host", "[HOST#1]"), ("password", "[REDACTED:password#1]")),
+        file("B", ("email", "[EMAIL#10]"), ("api_key", "[REDACTED:api_key#1]"), ("user", "[USER#1]")),
+    ])
+    cats = ctx["categories"]
+    assert [(c["category"], c["kind"]) for c in cats] == [
+        ("api_key", "Secret"), ("password", "Secret"), ("host", "Infrastructure"),
+        ("email", "Personal data"), ("user", "Personal data"),
+    ]
+    email = cats[3]
+    assert [r["placeholder"] for r in email["rows"]] == ["[EMAIL#10]", "[EMAIL#9]"]  # shared first
+    assert (email["places"], len(email["files"]), email["shared"], email["anchor"]) == (3, 2, 1, "email")
+    assert heading_anchor("API key (v2)") == "api-key-v2"
 
 
 def test_master_redactions_report_when_scrubbing_is_disabled(tmp_path):

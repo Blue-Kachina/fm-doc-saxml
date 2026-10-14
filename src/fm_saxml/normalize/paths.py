@@ -82,6 +82,11 @@ def theme_path(name: str) -> str:
     return f"Themes/{safe_slug(name)}.md"
 
 
+def variable_path(name: str) -> str:
+    """Global variables only: locals are listed on their script's page."""
+    return f"Variables/{safe_slug(name)}.md"
+
+
 def file_reference_path(doc_id: str) -> str:
     slug = safe_slug(doc_id.replace("fileRef:", "").replace(":", "_"))
     return f"FileAccess/{slug}.md"

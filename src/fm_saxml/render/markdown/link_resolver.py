@@ -25,6 +25,7 @@ from ...normalize.paths import (
     custom_menu_set_path,
     theme_path,
     file_reference_path,
+    variable_path,
 )
 
 
@@ -122,6 +123,11 @@ class LinkResolver:
         for e in em.file_references.values():
             p = file_reference_path(e.doc_id)
             self._path_by_doc_id[e.doc_id] = p
+            self._title_by_doc_id[e.doc_id] = e.name
+
+        for e in em.variables.values():
+            if e.scope == "global":
+                self._path_by_doc_id[e.doc_id] = variable_path(e.name)
             self._title_by_doc_id[e.doc_id] = e.name
 
         # Make top-level pages unique even on case-insensitive file systems.

@@ -1,0 +1,39 @@
+---
+docId: {{ entity.doc_id }}
+entityType: variable
+name: {{ entity.name }}
+---
+
+# Variable: {{ entity.name }}
+
+## Metadata
+
+| Name | Value |
+|---|---|
+| Scope | Global (file-wide, lasts until the file is closed) |
+| Set In | {{ entity.sets | length }} place(s) |
+| Read In | {{ entity.reads | length }} place(s) |
+{% if not entity.sets %}
+
+> Never set in this file. It may be set by another file's scripts, or never be set at all.
+{% endif %}
+
+{% if entity.sets %}
+## Set By
+
+| Source | Step | Via |
+|---|---:|---|
+{% for u in entity.sets %}
+| {{ link(u.script_doc_id or u.source_doc_id) }} | {{ u.step or "" }} | {{ u.via | cell }} |
+{% endfor %}
+{% endif %}
+
+{% if entity.reads %}
+## Read By
+
+| Source | Step | Via |
+|---|---:|---|
+{% for u in entity.reads %}
+| {{ link(u.script_doc_id or u.source_doc_id) }} | {{ u.step or "" }} | {{ u.via | cell }} |
+{% endfor %}
+{% endif %}
