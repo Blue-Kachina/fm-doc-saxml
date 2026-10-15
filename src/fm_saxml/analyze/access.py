@@ -12,6 +12,8 @@ reason it was reached:
 - ``customRow``: the object's own row in a custom list
 - ``newFallback``: no row of its own, so the "[Any new ...]" row applies
 - ``notListed``: a custom list with neither (treated as no access)
+- ``fieldRow`` / ``newFieldFallback``: a field's own entry, or the "[Any new field]" entry, under a
+  table row whose field access is "Custom" (``fieldNotListed``: neither)
 
 Accounts are attached to their set. External accounts are groups in an identity
 provider, not people, and disabled accounts can't sign in; both are flagged, not dropped.
@@ -37,6 +39,8 @@ def build_access(model: DocumentModel) -> dict[str, Any]:
 
     ``objects[kind][docId]`` is a list of rows, one per privilege set:
     ``script``/``valueList``: ``[setDocId, level, reason]``;
+    ``field``: ``[setDocId, level, reason]`` (``modifiable``, ``view`` or ``none``: the set's field
+    access setting; the table's record privileges still apply on top of it);
     ``layout``: ``[setDocId, level, recordsLevel, reason]`` (recordsLevel ``None`` = the
     record privileges decide); ``table``: ``[setDocId, {view, edit, create, delete}, reason,
     {action: calc}]`` where each action is ``yes``, ``no`` or ``limited`` (by the calc).
@@ -75,6 +79,8 @@ def build_access(model: DocumentModel) -> dict[str, Any]:
             "valueList": {d: [[ps.doc_id, *_leveled(ps, ps.value_lists, d, _LAYOUT_LEVELS, "view")]
                               for ps in sets] for d in em.value_lists},
             "table": {d: [[ps.doc_id, *_records(ps, d)] for ps in sets] for d in em.tables},
+            "field": {d: [[ps.doc_id, *_field(ps, f.base_table_doc_id, d)] for ps in sets]
+                      for d, f in em.fields.items()},
         },
     }
 
@@ -166,3 +172,26 @@ def _records(ps: PrivilegeSetEntity, doc_id: str) -> list[Any]:
         out[action.lower()] = ("limited" if value == "Calculation" else
                                "yes" if value in ("ReadWrite", "ReadOnly") else "no")
     return [out, reason, {k: v for k, v in calcs.items() if out.get(k) == "limited"}]
+
+
+def _field(ps: PrivilegeSetEntity, table_doc_id: str, doc_id: str) -> list[Any]:
+    if _is_full_access(ps):
+        return ["modifiable", "fullAccess"]
+    category = ps.records
+    if category is None:
+        return ["none", "blanket"]
+    if category.custom is None:
+        return [_blanket_level(category.settings, "view"), "blanket"]
+    row, reason = _row(category, table_doc_id)
+    if row is None:
+        return ["none", reason]
+    fields = row.access.get("Fields")
+    if fields != "Custom":
+        return [_LAYOUT_LEVELS.get(fields or "", "none"), reason]
+    own = next((f for f in row.field_access if f.target_doc_id == doc_id), None)
+    if own is not None:
+        return [_LAYOUT_LEVELS.get(own.access, "none"), "fieldRow"]
+    new = next((f for f in row.field_access if f.target_doc_id is None), None)
+    if new is not None:
+        return [_LAYOUT_LEVELS.get(new.access, "none"), "newFieldFallback"]
+    return ["none", "fieldNotListed"]

@@ -107,6 +107,15 @@ def _llms_txt(title: str, files: list[dict], tool_names: list[str]) -> str:
   `index.html#/results?q=<URL-encoded {example}>&format=json`
   shows the result as JSON text in <pre id="fm-result-json">.
 
+## Reading the results
+
+- Who can run, view or change something: use who_can_access / what_can_access (scripts, layouts,
+  value lists, fields, tables). Each answer gives the reason, so don't work it out from the lists.
+- No callers doesn't mean unused: other files, server schedules, fmp:// URLs and Perform Script
+  by name don't appear.
+- Reports/coverage.md (a --coverage build) says which areas of the XML fully reached the docs.
+- [REDACTED:...] marks a value that scrubbing replaced. That code isn't the file's real code.
+
 ## Reference
 
 - [Tool guide with argument schemas and runnable examples](index.html#/agents)

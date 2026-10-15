@@ -38,6 +38,9 @@ _REFERENCE_RE = re.compile(r"\$|::")
 ALLOW_MARKER = "fm-saxml:allow"
 _ALLOW_RE = re.compile(re.escape(ALLOW_MARKER), re.I)
 _NAME_BASED = {"keyword_assignment", "json_credential"}
+# Rules that call a value secret because of the name beside it (not its position in a
+# function that takes a password): a credential's name used as a value fools only these.
+_NAME_INFERRED = _NAME_BASED | {"json_set_element", "comment_credential", "credential_variable", "credential_field"}
 _VALUE_LIKE_RE = re.compile(r"(?=.*[A-Za-z0-9]).{4,}", re.S)
 _UUID_RE = re.compile(r"[0-9A-Fa-f]{8}-(?:[0-9A-Fa-f]{4}-){3}[0-9A-Fa-f]{12}")
 
@@ -283,6 +286,9 @@ class Scrubber:
                 continue
             # A reference ($token, Users::Password) is where the secret is used, not the secret.
             if h.category in CREDENTIAL_CATEGORIES and h.detector != "known_value" and _REFERENCE_RE.match(value.strip()):
+                continue
+            # "refresh_token=" names the parameter the secret goes in; the secret is concatenated after it.
+            if h.detector in _NAME_INFERRED and self.policy.is_parameter_name(value):
                 continue
             # Name-based rules: $searchToken = "¶" is a delimiter, not a credential.
             if h.detector in _NAME_BASED and not _VALUE_LIKE_RE.search(value):

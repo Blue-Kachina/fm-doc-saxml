@@ -20,6 +20,14 @@ def extract_external_data_sources(container: etree._Element) -> list[dict[str, A
             "id": attr(ds, "id", "ID"),
             "uuid": text_of(uuid_elem) or None,
             "type": attr(ds, "type", "Type") or "FileMaker",
-            "paths": [text_of(p) for p in find_all_descendants(ds, "UniversalPathList") if text_of(p)],
+            "paths": [path for pl in find_all_descendants(ds, "UniversalPathList") for path in _paths(pl)],
         })
     return results
+
+
+def _paths(path_list: etree._Element) -> list[str]:
+    """One entry per path. FileMaker tries them in order; they come either as lines of the
+    element's text (``file:afile:b``) or as ``<ObjectList><Location>`` children."""
+    locations = find_all_descendants(path_list, "Location")
+    lines = [text_of(loc) for loc in locations] if locations else (path_list.text or "").splitlines()
+    return [line.strip() for line in lines if line.strip()]

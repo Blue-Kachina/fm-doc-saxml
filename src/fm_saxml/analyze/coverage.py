@@ -129,9 +129,18 @@ def _calcs_shown(m: DocumentModel) -> int:
     return shown
 
 
-def _privilege_rows(m: DocumentModel, category: str) -> int:
-    return sum(len(getattr(ps, category).custom or []) for ps in m.entities.privilege_sets.values()
-               if getattr(ps, category) is not None)
+def _privilege_items(m: DocumentModel, category: str):
+    for ps in m.entities.privilege_sets.values():
+        cat = getattr(ps, category)
+        if cat is not None:
+            yield from cat.custom or []
+
+
+def _privilege_rows(m: DocumentModel, category: str, attribute: str = "access") -> int:
+    """Custom rows that carry a level (the page shows it), not just rows that exist."""
+    if category == "records":
+        return sum(1 for it in _privilege_items(m, category) if it.access.get("View"))
+    return sum(1 for it in _privilege_items(m, category) if it.attributes.get(attribute))
 
 
 def _list_type(m: DocumentModel, kind: str) -> int:
@@ -158,6 +167,8 @@ MEASURES: list[Measure] = [
     Measure("themes", "Catalogs", "Themes", lambda m: len(m.entities.themes)),
     Measure("file_access", "Catalogs", "File Access authorizations", lambda m: len(m.entities.file_references)),
     Measure("external_data_sources", "Catalogs", "External data sources", lambda m: len(m.external_data_sources)),
+    Measure("external_data_source_paths", "Catalogs", "External data source paths (one per path)",
+            lambda m: sum(len(ds.paths) for ds in m.external_data_sources)),
     Measure("graph_notes", "Catalogs", "Relationship graph notes", lambda m: len(m.graph_notes)),
     # Scripts
     Measure("steps_with_filemaker_text", "Scripts", "Steps shown as FileMaker prints them",
@@ -255,14 +266,18 @@ MEASURES: list[Measure] = [
     Measure("custom_value_lines", "Value lists", "Custom value lines",
             lambda m: sum(len(vl.values) for vl in m.entities.value_lists.values() if vl.list_type == "customValues")),
     # Privileges
-    Measure("privilege_rows_records", "Privileges", "Custom record privileges (rows)",
+    Measure("privilege_rows_records", "Privileges", "Custom record privileges (rows with access levels)",
             lambda m: _privilege_rows(m, "records")),
-    Measure("privilege_rows_layouts", "Privileges", "Custom layout privileges (rows)",
+    Measure("privilege_rows_layouts", "Privileges", "Custom layout privileges (rows with access level)",
             lambda m: _privilege_rows(m, "layouts")),
-    Measure("privilege_rows_value_lists", "Privileges", "Custom value list privileges (rows)",
+    Measure("privilege_rows_layout_records", "Privileges", "Custom layout privileges (records access level)",
+            lambda m: _privilege_rows(m, "layouts", "records")),
+    Measure("privilege_rows_value_lists", "Privileges", "Custom value list privileges (rows with access level)",
             lambda m: _privilege_rows(m, "value_lists")),
-    Measure("privilege_rows_scripts", "Privileges", "Custom script privileges (rows)",
+    Measure("privilege_rows_scripts", "Privileges", "Custom script privileges (rows with access level)",
             lambda m: _privilege_rows(m, "scripts")),
+    Measure("privilege_field_entries", "Privileges", "Field-level privileges (fields with access level)",
+            lambda m: sum(1 for it in _privilege_items(m, "records") for f in it.field_access if f.access)),
     Measure("privilege_limited_calcs", "Privileges", "Limited-access calculations",
             lambda m: sum(len(item.calculations) for ps in m.entities.privilege_sets.values()
                           for cat in (ps.records, ps.layouts, ps.value_lists, ps.scripts)

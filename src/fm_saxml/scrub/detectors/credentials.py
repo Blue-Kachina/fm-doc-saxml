@@ -17,8 +17,9 @@ from . import Hit, regex_hits
 # or \r\n inside a FileMaker string) or a separator.
 _VAL = r"[^\s\"'\\;,&]+"
 
+# Any scheme: Bearer, Basic, ... and vendor ones (DeepL-Auth-Key, SSWS, Klaviyo-API-Key).
 _AUTH_HEADER_RE = re.compile(
-    r"(?:Proxy-)?Authorization\s*[:=]\s*\\?[\"']?\s*(?:Bearer|Basic|Token|Digest|OAuth)\s+(" + _VAL + ")",
+    r"(?:Proxy-)?Authorization\s*[:=]\s*\\?[\"']?\s*(?:Bearer|Basic|Token|Digest|OAuth|[A-Za-z][A-Za-z-]*)\s+(" + _VAL + ")",
     re.I,
 )
 _KEY_HEADER_RE = re.compile(

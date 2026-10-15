@@ -25,21 +25,34 @@ name: {{ entity.name }}
 |---|---|
 {% for label, item_label, cat in categories %}{% if cat %}| {{ label }} | {{ cat.summary or "—" }} |
 {% endif %}{% endfor %}
-{% for label, item_label, cat in categories %}{% if cat and cat.custom is not none %}
+{% for t in privilege_tables %}
 
-### {{ label }}: custom privileges
+### {{ t.heading }}: custom privileges
 
-{% set columns = [] %}{% for item in cat.custom %}{% for col in item.access %}{% if col not in columns %}{% set _ = columns.append(col) %}{% endif %}{% endfor %}{% endfor %}
-{% set has_calcs = cat.custom | selectattr("calculations") | list %}
-| {{ item_label }} |{% for col in columns %} {{ col }} |{% endfor %}{% if has_calcs %} Limited by |{% endif %}
+{% if t.allow_create %}
+{{ t.allow_create }}
 
-|---|{% for col in columns %}---|{% endfor %}{% if has_calcs %}---|{% endif %}
+{% endif %}
+| {{ t.item_label }} |{% for col in t.columns %} {{ col }} |{% endfor %}{% if t.has_limited %} Limited by |{% endif %}
 
-{% for item in cat.custom %}
-| {% if item.target_doc_id %}{{ link(item.target_doc_id, item.label) }}{% else %}{{ item.label or item.kind }}{% endif %} |{% for col in columns %} {{ access_label(item.access.get(col, "")) }} |{% endfor %}{% if has_calcs %} {% for c in item.calculations %}{{ c.role }}: `{{ c.text | cell }}`{% if not loop.last %}<br>{% endif %}{% endfor %} |{% endif %}
+|---|{% for col in t.columns %}---|{% endfor %}{% if t.has_limited %}---|{% endif %}
+
+{% for r in t.rows %}
+| {% if r.item.target_doc_id %}{{ link(r.item.target_doc_id, r.item.label) }}{% else %}{{ r.item.label or r.item.kind }}{% endif %} |{% for c in r.cells %} {{ c | cell }} |{% endfor %}{% if t.has_limited %} {% for c in r.limited %}{{ c.role }}: `{{ c.text | cell }}`{% if not loop.last %}<br>{% endif %}{% endfor %} |{% endif %}
 
 {% endfor %}
-{% endif %}{% endfor %}
+{% for ft in t.field_tables %}
+
+#### Field access: {% if ft.item.target_doc_id %}{{ link(ft.item.target_doc_id, ft.item.label) }}{% else %}{{ ft.item.label }}{% endif %}
+
+
+| Field | Access |
+|---|---|
+{% for f in ft.fields %}
+| {% if f.field.target_doc_id and has_page(f.field.target_doc_id) %}{{ link(f.field.target_doc_id, f.field.label) }}{% else %}{{ f.field.label | cell }}{% endif %} | {{ f.label }} |
+{% endfor %}
+{% endfor %}
+{% endfor %}
 {% endif %}
 
 {% if entity.other %}

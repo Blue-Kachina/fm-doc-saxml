@@ -23,6 +23,7 @@ from ..model.entities import (
     EntityCalculation,
     ScriptTriggerInfo,
     ScriptEntity,
+    PrivilegeFieldAccess,
     PrivilegeItem,
     PrivilegeCategory,
     PortalOptions,
@@ -1104,17 +1105,40 @@ def _privilege_category(raw_cat: Optional[dict]) -> Optional[PrivilegeCategory]:
             make_id = _PRIVILEGE_TARGETS.get(it.get("reference_kind") or "")
             name = normalize_name(it.get("name") or "")
             target = make_id(name) if make_id and name else None
-            label = it.get("name") or (f"[Any new {it.get('kind', '').lower()}]" if it.get("type") == "New" else "")
+            kind = it.get("kind") or ""
+            label = it.get("name") or (_new_row_label(kind) if it.get("type") == "New" else "")
             items.append(PrivilegeItem(
-                kind=it.get("kind") or "",
+                kind=kind,
                 targetDocId=target,
                 label=label,
                 access=it.get("access") or {},
                 calculations=[EntityCalculation(role=c["column"], text=c["calculation"])
                               for c in it.get("calculations") or []],
                 attributes=it.get("attributes") or {},
+                fieldAccess=[_privilege_field(f, normalize_name(it.get("name") or ""))
+                             for f in it.get("field_access") or []],
             ))
-    return PrivilegeCategory(summary=_privilege_summary(settings, custom is not None), settings=settings, custom=items)
+    return PrivilegeCategory(summary=_privilege_summary(settings, custom is not None), settings=settings,
+                             custom=items, allowCreate=raw_cat.get("allow_create"))
+
+
+# FileMaker's element name -> the words its dialog uses for the "objects created later" row
+_NEW_ROW_WORDS = {"Table": "table", "Layout": "layout", "ValueList": "value list", "Script": "script",
+                  "Field": "field"}
+
+
+def _new_row_label(kind: str) -> str:
+    return f"[Any new {_NEW_ROW_WORDS.get(kind, kind.lower())}]"
+
+
+def _privilege_field(raw: dict, row_table: str) -> PrivilegeFieldAccess:
+    name = normalize_name(raw.get("name") or "")
+    table = normalize_name(raw.get("table") or "") or row_table
+    return PrivilegeFieldAccess(
+        label=name or (_new_row_label("Field") if raw.get("type") == "New" else ""),
+        targetDocId=field_doc_id(table, name) if name and table else None,
+        access=raw.get("access") or "",
+    )
 
 
 def _normalize_privilege_sets(raw: RawModel, model: DocumentModel) -> None:

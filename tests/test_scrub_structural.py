@@ -104,6 +104,14 @@ def test_credential_named_variable():
     assert steps[1]["calculations"][0]["text"] == '"https://x.io"'
 
 
+def test_credential_named_variable_holding_a_parameter_name():
+    # qbo_getOauth_refreshToken: the literal names the form field; the token comes from a field
+    source = '"refresh_token=" & qboSettings::refreshToken'
+    raw, summary = run(("S", [set_var(0, "$refreshToken", source)]))
+    assert raw.scripts[0]["steps"][0]["calculations"][0]["text"] == source
+    assert not [f for f in summary.findings if f.action == "redacted"]
+
+
 def test_variable_built_by_a_function_keeps_its_key_names():
     raw, summary = run(("S", [set_var(0, "$password", 'JSONGetElement ( $parameter ; "password" )')]))
     assert raw.scripts[0]["steps"][0]["calculations"][0]["text"] == 'JSONGetElement ( $parameter ; "password" )'

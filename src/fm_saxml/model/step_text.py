@@ -118,9 +118,24 @@ def step_text(step: Any) -> str:
         text = _NEWLINES.sub("\n", fm_text)
         if not _get(step, "enabled", True):
             text = _DISABLED_PREFIX.sub("", text)
+        text = _with_missing_switch(step, text)
         omitted = _omitted_params(step, text)
         return f"{text} {{ also: {'; '.join(omitted)} }}" if omitted else text
     return built_step_text(step)
+
+
+def _with_missing_switch(step: Any, text: str) -> str:
+    """``Allow User Abort`` -> ``Allow User Abort [ Off ]``.
+
+    FileMaker's text for an on/off step (Allow User Abort, Set Error Capture, Freeze Window ...)
+    normally ends in ``[ On ]`` or ``[ Off ]``, but some exports leave it out. Without it the
+    step reads as either state, so the switch is added back from the step's own parameter.
+    """
+    if "[" in text or "\n" in text or _get(step, "name") == COMMENT_STEP:
+        return text
+    switches = [p.get("value") for p in _get(step, "params") or []
+                if p.get("kind") == "option" and not p.get("label") and p.get("value") in ("On", "Off")]
+    return f"{text} [ {switches[0]} ]" if len(switches) == 1 else text
 
 
 def _omitted_params(step: Any, text: str) -> list[str]:

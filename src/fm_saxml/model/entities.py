@@ -485,15 +485,29 @@ class ValueListEntity(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+class PrivilegeFieldAccess(BaseModel):
+    """One field of a table row whose field access is "Custom"."""
+
+    label: str = ""
+    target_doc_id: Optional[str] = Field(None, alias="targetDocId")  # None for the "[Any new field]" row
+    access: str = ""  # ReadWrite | ReadOnly | NoAccess
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
 class PrivilegeItem(BaseModel):
     """One row of a custom privilege list: a table, layout, value list or script and its access."""
 
     kind: str  # Table | Layout | ValueList | Script (FileMaker's element name)
     target_doc_id: Optional[str] = Field(None, alias="targetDocId")  # None for the "[New ...]" row
     label: str = ""
-    access: dict[str, str] = {}  # column -> value, e.g. {"View": "ReadWrite", "Delete": "NoAccess"}
+    # Table rows: column -> value, e.g. {"View": "ReadWrite", "Delete": "NoAccess", "Fields": "Custom"}
+    access: dict[str, str] = {}
     calculations: list[EntityCalculation] = []  # "limited" access calcs; role = the column
+    # The row element's own attributes. Layouts, value lists and scripts keep their level here:
+    # {"access": "ReadOnly"}, and layouts also {"records": "ReadWrite"}.
     attributes: dict[str, str] = {}
+    field_access: list[PrivilegeFieldAccess] = Field([], alias="fieldAccess")  # Table rows, Fields: Custom
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -504,6 +518,8 @@ class PrivilegeCategory(BaseModel):
     summary: str = ""  # e.g. "Create, edit and delete in all", "View only", "No access", "Custom"
     settings: dict[str, str] = {}  # the raw attributes
     custom: Optional[list[PrivilegeItem]] = None
+    # Custom lists only: "Allow creation of new layouts / value lists / scripts" (None = not stated)
+    allow_create: Optional[bool] = Field(None, alias="allowCreate")
 
     model_config = ConfigDict(populate_by_name=True)
 

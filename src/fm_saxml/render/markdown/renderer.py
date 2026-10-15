@@ -10,17 +10,20 @@ from jinja2 import Environment, PackageLoader, select_autoescape, Undefined
 
 from ...model.document_model import DocumentModel
 from ...model.step_text import code_fence, render_script_block
+from ...analyze.access import build_access
 from ...analyze.coverage import build_coverage
 from ...parser.coverage import CONTEXTS as COVERAGE_CONTEXTS
 from ...normalize.paths import relative_md_link
 from ...utils.file_writer import write_text
-from .link_resolver import LinkResolver, _esc as _esc_link_label
+from .link_resolver import LinkResolver, _encode_href, _esc as _esc_link_label
 
 
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 # fm-saxml's own version line for page footers, looked up once by render_markdown
 _updated_at: str | None = None
+# Effective access per privilege set (analyze.access), built once by render_markdown
+_access: dict[str, Any] | None = None
 
 
 def render_markdown(
@@ -30,11 +33,12 @@ def render_markdown(
 
     ``cross_file`` adds pages in sibling folders of a multi-file build (see ``LinkResolver``).
     """
-    global _updated_at
+    global _updated_at, _access
     from ...version import get_self_updated_at_display
 
     # Reads git metadata (two subprocesses): once per build, not once per page
     _updated_at = get_self_updated_at_display()
+    _access = build_access(model) if model.entities.privilege_sets else None
     env = _make_jinja_env()
     links = LinkResolver(model, cross_file)
 
@@ -101,6 +105,9 @@ def _make_ctx(
     def has_page(doc_id: str) -> bool:
         return links.href(current_path, doc_id) is not None
 
+    def privilege_access(kind: str, doc_id: str) -> list[dict[str, Any]]:
+        return _privilege_access_rows(model, _access, kind, doc_id)
+
     xml_modified_at = (
         model.source.source_modified_at.strftime("%Y-%m-%d %H:%M UTC")
         if model.source.source_modified_at
@@ -124,6 +131,7 @@ def _make_ctx(
         "get_entity": get_entity,
         "backlinks": backlinks,
         "has_page": has_page,
+        "privilege_access": privilege_access,
     }
 
 
@@ -139,8 +147,25 @@ def _render_root_index(model: DocumentModel, output_dir: Path, env: Environment,
     ctx["external_data_sources"] = model.external_data_sources
     ctx["graph_note_count"] = len(model.graph_notes)
     ctx["coverage"] = build_coverage(model)
+    ctx["scrub_notice"] = _scrub_notice(model)
     content = tmpl.render(**ctx)
     write_text(output_dir / "index.md", content)
+
+
+def _scrub_notice(model: DocumentModel) -> dict[str, Any] | None:
+    """What a reader (or agent) needs to know about scrubbing before trusting code in these docs."""
+    sc = model.scrubbing
+    if sc is None:
+        return None
+    if not sc.applied:
+        return {"applied": False}
+    redacted = [f for f in sc.findings if f.action == "redacted"]
+    steps = {f.location for f in redacted if f.location.startswith("Script ") and " › Step " in f.location}
+    return {
+        "applied": True, "level": sc.level,
+        "values": sum(sc.counts.values()), "places": len(redacted), "steps": len(steps),
+        "scripts": len({loc.split(" › ", 1)[0] for loc in steps}),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -527,7 +552,116 @@ _PRIVILEGE_OTHER_LABELS = {
 
 
 def _privilege_access_label(value: str) -> str:
-    return {"ReadWrite": "Yes", "ReadOnly": "View only", "NoAccess": "No", "Limited": "Limited…"}.get(value, value)
+    return {"ReadWrite": "Yes", "ReadOnly": "View only", "NoAccess": "No", "Limited": "Limited…",
+            "Calculation": "Limited"}.get(value, value)
+
+
+# The wording of FileMaker's Edit Privilege Set dialog, per kind of object
+_LEVEL_LABELS = {"ReadWrite": "Modifiable", "ReadOnly": "View only", "NoAccess": "No access"}
+_SCRIPT_LEVEL_LABELS = {**_LEVEL_LABELS, "ReadOnly": "Executable only"}
+_FIELDS_LABELS = {"ReadWrite": "All modifiable", "ReadOnly": "All view only", "NoAccess": "All no access",
+                  "Custom": "Custom (below)"}
+_RECORD_COLUMNS = ("View", "Edit", "Create", "Delete", "Fields")
+# category key -> (heading, first column, "Allow creation of new ...", [(column, attribute, labels)])
+_PRIVILEGE_CATEGORIES = (
+    ("records", "Records", "Table", None, []),
+    ("layouts", "Layouts", "Layout", "layouts",
+     [("Layout", "access", _LEVEL_LABELS), ("Records", "records", _LEVEL_LABELS)]),
+    ("value_lists", "Value Lists", "Value List", "value lists", [("Access", "access", _LEVEL_LABELS)]),
+    ("scripts", "Scripts", "Script", "scripts", [("Access", "access", _SCRIPT_LEVEL_LABELS)]),
+)
+
+
+def _privilege_tables(entity: Any) -> list[dict[str, Any]]:
+    """Each custom category of a privilege set, as table rows in FileMaker's own wording.
+
+    Tables have one column per record action (View, Edit, Create, Delete, Fields), read from
+    child elements; layouts, value lists and scripts keep their level as attributes of the
+    row itself (``<Layout access="ReadOnly" records="ReadWrite">``). Any column not known
+    here is still shown, under its XML name, so nothing is silently dropped.
+    """
+    out = []
+    for key, heading, item_label, create_words, attr_columns in _PRIVILEGE_CATEGORIES:
+        cat = getattr(entity, key)
+        if cat is None or cat.custom is None:
+            continue
+        child_cols: list[str] = [c for c in _RECORD_COLUMNS if any(c in it.access for it in cat.custom)]
+        for it in cat.custom:
+            child_cols += [c for c in it.access if c not in child_cols]
+        known_attrs = {a for _, a, _ in attr_columns}
+        extra_attrs: list[str] = []
+        for it in cat.custom:
+            extra_attrs += [a for a in it.attributes if a not in known_attrs and a not in extra_attrs]
+        columns = ([c for c, a, _ in attr_columns if any(a in it.attributes for it in cat.custom)]
+                   + ["Field access" if c == "Fields" else c for c in child_cols] + extra_attrs)
+        rows = []
+        for it in cat.custom:
+            cells = [labels.get(it.attributes.get(a, ""), it.attributes.get(a, ""))
+                     for c, a, labels in attr_columns if c in columns]
+            cells += [_FIELDS_LABELS.get(it.access.get(c, ""), it.access.get(c, "")) if c == "Fields"
+                      else _privilege_access_label(it.access.get(c, "")) for c in child_cols]
+            cells += [it.attributes.get(a, "") for a in extra_attrs]
+            rows.append({"item": it, "cells": cells,
+                         "limited": [{"role": c.role, "text": c.text} for c in it.calculations]})
+        allow_create = None
+        if create_words and cat.allow_create is not None:
+            allow_create = f"Allow creation of new {create_words}: {'Yes' if cat.allow_create else 'No'}"
+        out.append({
+            "heading": heading, "item_label": item_label, "columns": columns, "rows": rows,
+            "has_limited": any(r["limited"] for r in rows), "allow_create": allow_create,
+            "field_tables": [{"item": it, "fields": [{"field": f, "label": _LEVEL_LABELS.get(f.access, f.access)}
+                                                     for f in it.field_access]}
+                             for it in cat.custom if it.field_access],
+        })
+    return out
+
+
+# ---------------------------------------------------------------------------
+# "Access by privilege set" on script, layout, value list and field pages
+# ---------------------------------------------------------------------------
+
+_ACCESS_LEVEL_WORDS = {"modifiable": "Modifiable", "executable": "Executable only", "view": "View only",
+                       "none": "No access"}
+_ACCESS_REASONS = {
+    "fullAccess": "Full Access", "blanket": "Same for all", "customRow": "Own row",
+    "newFallback": '"Any new" row', "notListed": "Not listed", "fieldRow": "Own entry",
+    "newFieldFallback": '"Any new field" entry', "fieldNotListed": "Not listed",
+}
+# Which privilege-set category decides each kind of object
+_ACCESS_CATEGORY = {"script": "scripts", "layout": "layouts", "valueList": "value_lists", "field": "records"}
+
+
+def _privilege_access_rows(model: DocumentModel, access: dict[str, Any] | None, kind: str,
+                           doc_id: str) -> list[dict[str, Any]]:
+    """One row per privilege set for one object, or [] when no set has a custom list for it.
+
+    Files that only use blanket settings ("all executable only", ...) would get the same
+    table on every page, which tells a reader nothing the privilege set pages don't.
+    """
+    if not access:
+        return []
+    rows = access["objects"].get(kind, {}).get(doc_id)
+    if not rows:
+        return []
+    category = _ACCESS_CATEGORY[kind]
+    sets = model.entities.privilege_sets
+
+    def custom(ps_doc_id: str) -> bool:
+        cat = getattr(sets[ps_doc_id], category, None) if ps_doc_id in sets else None
+        if cat is None or cat.custom is None:
+            return False
+        return kind != "field" or any(it.field_access or it.access.get("Fields") for it in cat.custom)
+
+    if not any(custom(r[0]) for r in rows):
+        return []
+    out = []
+    for row in rows:
+        level, reason = row[1], row[-1]
+        text = _ACCESS_LEVEL_WORDS.get(level, level)
+        if kind == "layout" and row[2]:
+            text += f" (records: {_ACCESS_LEVEL_WORDS.get(row[2], row[2]).lower()})"
+        out.append({"set_doc_id": row[0], "access": text, "reason": _ACCESS_REASONS.get(reason, reason)})
+    return out
 
 
 def _privilege_other_value(key: str, value: str) -> str:
@@ -547,6 +681,7 @@ def _render_privilege_sets(model: DocumentModel, output_dir: Path, env: Environm
         rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
         ctx["access_label"] = _privilege_access_label
+        ctx["privilege_tables"] = _privilege_tables(entity)
         ctx["other_label"] = lambda key: _PRIVILEGE_OTHER_LABELS.get(key, key)
         ctx["other_value"] = _privilege_other_value
         write_text(output_dir / rel_path, tmpl.render(**ctx))
@@ -809,7 +944,7 @@ def _render_section_index(
         doc_path = links.path_for(e.doc_id)
         if doc_path:
             href = _relative_from_index(index_path, doc_path)
-            name_cell = f"[{_esc_link_label(display_name)}]({href})"
+            name_cell = f"[{_esc_link_label(display_name)}]({_encode_href(href)})"
         else:
             name_cell = display_name
         extra_cell = _md_cell(extra_col_fn(e))

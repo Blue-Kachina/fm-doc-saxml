@@ -619,6 +619,7 @@
         script: { run: (l) => l === 'executable' || l === 'modifiable', modify: (l) => l === 'modifiable' },
         layout: { view: (l) => l === 'view' || l === 'modifiable', modify: (l) => l === 'modifiable' },
         valueList: { view: (l) => l === 'view' || l === 'modifiable', modify: (l) => l === 'modifiable' },
+        field: { view: (l) => l === 'view' || l === 'modifiable', modify: (l) => l === 'modifiable' },
         table: { view: 1, edit: 1, create: 1, delete: 1 },
     };
     function accessRows(acc, type, docId) {
@@ -638,15 +639,15 @@
     }
 
     tool('who_can_access',
-        'Which privilege sets, and so which accounts, can run a script, view or modify a layout or value list, or view, '
-        + 'edit, create or delete records in a table. Each answer says why (full access, a setting for the whole category, '
+        'Which privilege sets, and so which accounts, can run a script, view or modify a layout, value list or field, or view, '
+        + 'edit, create or delete records in a table (for a field, its field access; record access to its table still applies). Each answer says why (full access, a setting for the whole category, '
         + 'the object\'s own row, or the "[Any new ...]" row). Disabled accounts and external (group) accounts are flagged.',
-        { docId: S.str('script:X, layout:X, valueList:X or table:X.'),
+        { docId: S.str('script:X, layout:X, valueList:X, field:T::F or table:X.'),
             action: { type: 'string', enum: ['run', 'view', 'modify', 'edit', 'create', 'delete'], description: 'Default: run for scripts, view otherwise.' },
             includeDenied: S.bool('Also list the sets that are denied (default false).'), file: S.file, limit: S.limit },
         async (args) => {
             const type = typeOf(args.docId);
-            if (!ACTIONS[type]) throw new ToolError(`Access is known for scripts, layouts, value lists and tables, not '${type || args.docId}'.`);
+            if (!ACTIONS[type]) throw new ToolError(`Access is known for scripts, layouts, value lists, fields and tables, not '${type || args.docId}'.`);
             const action = args.action || (type === 'script' ? 'run' : 'view');
             if (!ACTIONS[type][action]) throw new ToolError(`'${action}' doesn't apply to a ${type}.`, { validActions: Object.keys(ACTIONS[type]) });
             const items = [];
@@ -682,15 +683,15 @@
         }, { query: true, required: ['docId'] });
 
     tool('what_can_access',
-        'The reverse of who_can_access: every script, layout, value list or table an account or privilege set can use, '
+        'The reverse of who_can_access: every script, layout, value list, field or table an account or privilege set can use, '
         + 'and why.',
         { account: S.str('Account name or docId.'), privilegeSet: S.str('Privilege set name or docId.'),
-            type: { type: 'string', enum: ['script', 'layout', 'valueList', 'table'], description: 'Kind of object.' },
+            type: { type: 'string', enum: ['script', 'layout', 'valueList', 'field', 'table'], description: 'Kind of object.' },
             action: { type: 'string', enum: ['run', 'view', 'modify', 'edit', 'create', 'delete'], description: 'Default: run for scripts, view otherwise.' },
             includeDenied: S.bool('Also list the objects it is denied (default false).'), file: S.file, limit: S.limit },
         async (args) => {
             const type = args.type;
-            if (!ACTIONS[type]) throw new ToolError('type must be script, layout, valueList or table.');
+            if (!ACTIONS[type]) throw new ToolError('type must be script, layout, valueList, field or table.');
             const action = args.action || (type === 'script' ? 'run' : 'view');
             if (!ACTIONS[type][action]) throw new ToolError(`'${action}' doesn't apply to a ${type}.`, { validActions: Object.keys(ACTIONS[type]) });
             if (!args.account && !args.privilegeSet) throw new ToolError('Give account or privilegeSet.');
@@ -728,7 +729,7 @@
         + '{where: [conditions]} filters (same conditions as query_entities; joined rows are reached as as.field); '
         + '{join: {on: field, as: name}} attaches the entity a docId field points at (scriptDocId, layoutDocId, privilegeSetDocId, fieldDocId...); '
         + '{joinRefs: {direction: incoming|outgoing, relationshipType?, as: name}} adds one row per reference; '
-        + '{joinAccess: {action, as: name}} adds one row per privilege set with that access (rows must be scripts, layouts, value lists or tables, or join one first and pass on: field); '
+        + '{joinAccess: {action, as: name}} adds one row per privilege set with that access (rows must be scripts, layouts, value lists, fields or tables, or join one first and pass on: field); '
         + '{select: [fields]}; {groupBy: field, agg: count|list}; {sort: field, desc?: bool}; {limit: n}. '
         + 'Example: privilege sets that can run a script containing Delete Record: '
         + '[{from:"scriptStep"},{where:[{field:"name",op:"eq",value:"Delete Record/Request"}]},{join:{on:"scriptDocId",as:"script"}},'
@@ -800,7 +801,7 @@
                 for (const r of rows) {
                     const id = j.on ? getPath(r, j.on) : r.docId;
                     const type = typeOf(id);
-                    if (!ACTIONS[type]) throw new ToolError(`joinAccess needs scripts, layouts, value lists or tables; got '${id}'. Use on: to point at one.`);
+                    if (!ACTIONS[type]) throw new ToolError(`joinAccess needs scripts, layouts, value lists, fields or tables; got '${id}'. Use on: to point at one.`);
                     const action = j.action || (type === 'script' ? 'run' : 'view');
                     const acc = (await access(r._file))[0].access;
                     for (const row of accessRows(acc, type, id) || []) {

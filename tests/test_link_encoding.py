@@ -10,6 +10,7 @@ percent-encoding, not just edge cases.
 from fm_saxml.parser.saxml_reader import RawModel
 from fm_saxml.normalize.normalize import normalize
 from fm_saxml.render.markdown.link_resolver import LinkResolver
+from fm_saxml.render.markdown.renderer import render_markdown
 
 
 def _raw() -> RawModel:
@@ -49,6 +50,15 @@ def test_md_link_produces_a_commonmark_safe_destination():
     # matching ')' — with encoding applied, that must contain no raw space.
     dest = md[md.index("(") + 1: md.rindex(")")]
     assert " " not in dest
+
+
+def test_section_index_links_are_percent_encoded(tmp_path):
+    # Section index tables (Scripts/index.md etc.) build their links outside
+    # LinkResolver.md_link, so they need the same encoding.
+    render_markdown(_model(), tmp_path)
+    index = (tmp_path / "Scripts" / "index.md").read_text(encoding="utf-8")
+    assert "[UI - Halt If Not in Browse Mode](UI%20-%20Halt%20If%20Not%20in%20Browse%20Mode.md)" in index
+    assert "(Loadi18n%20%28%20idLanguage%20%29.md)" in index
 
 
 def test_md_link_label_is_left_readable():

@@ -33,6 +33,17 @@ name: {{ entity.name }}
 {{ values_fence }}
 {% endif %}
 
+{% set pa = privilege_access("valueList", entity.doc_id) %}
+{% if pa %}
+## Access by Privilege Set
+
+| Privilege Set | Access | Why |
+|---|---|---|
+{% for r in pa %}
+| {{ link(r.set_doc_id) }} | {{ r.access }} | {{ r.reason }} |
+{% endfor %}
+{% endif %}
+
 {% set bl = backlinks(entity.doc_id) %}
 {% if bl %}
 ## Referenced By

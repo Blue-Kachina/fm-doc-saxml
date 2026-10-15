@@ -32,6 +32,7 @@ _COMMON_WORDS = {
 }
 _TRAILING_PUNCT = ".,;:)]}!?'\""
 _AUTH_SCHEMES = {"bearer", "basic", "token", "digest", "oauth", "negotiate", "apikey"}
+_SCHEME_RE = re.compile(r"[A-Za-z][A-Za-z-]*")
 
 
 @lru_cache(maxsize=8)
@@ -66,6 +67,11 @@ def detect(text: str, policy: ScrubPolicy) -> Iterable[Hit]:
         if not value or value.startswith(("$", "[")) or "::" in value or "(" in value:
             continue
         if value.lower() in _AUTH_SCHEMES:
+            continue
+        # "Authorization: DeepL-Auth-Key " & $key: a vendor's scheme name, followed by the
+        # (separately concatenated) key. A word of letters and hyphens then a space is a scheme.
+        if (m.group(1).lower().endswith("authorization") and _SCHEME_RE.fullmatch(value)
+                and text[end:end + 1] in (" ", "\t")):
             continue
         if not policy.is_credential_name(m.group(1)):
             continue

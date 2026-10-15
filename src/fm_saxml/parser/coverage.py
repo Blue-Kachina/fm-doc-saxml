@@ -121,10 +121,13 @@ MEASURE_XPATHS: dict[str, str] = {
     "value_lists_related_only": f"{_VL_DETAILS}/Field/ShowRelated[@value='True']",
     "value_lists_second_field": f"{_VL_DETAILS}/Field/SecondaryField[FieldReference]",
     # Privileges
-    "privilege_rows_records": f"{_PRIV_ACCESS}/Records/Custom/ObjectList/*",
-    "privilege_rows_layouts": f"{_PRIV_ACCESS}/Layouts/Custom/ObjectList/*",
-    "privilege_rows_value_lists": f"{_PRIV_ACCESS}/ValueLists/Custom/ObjectList/*",
-    "privilege_rows_scripts": f"{_PRIV_ACCESS}/Scripts/Custom/ObjectList/*",
+    # Each row counts once it carries its access level, not merely because it exists.
+    "privilege_rows_records": f"{_PRIV_ACCESS}/Records/Custom/ObjectList/*[View/@access]",
+    "privilege_rows_layouts": f"{_PRIV_ACCESS}/Layouts/Custom/ObjectList/*[@access]",
+    "privilege_rows_layout_records": f"{_PRIV_ACCESS}/Layouts/Custom/ObjectList/*[@records]",
+    "privilege_rows_value_lists": f"{_PRIV_ACCESS}/ValueLists/Custom/ObjectList/*[@access]",
+    "privilege_rows_scripts": f"{_PRIV_ACCESS}/Scripts/Custom/ObjectList/*[@access]",
+    "privilege_field_entries": f"{_PRIV_ACCESS}/Records/Custom/ObjectList/*/Fields/Field[@access]",
     "privilege_limited_calcs": f"{_PRIV_ACCESS}/*/Custom/ObjectList/*/*[.//Calculation]",
     # File
     "file_default_layout": f"{_META}/Defaults/LayoutReference[@name!='']",
@@ -139,6 +142,16 @@ def _custom_value_lines(root: etree._Element) -> int:
         while lines and lines[-1] == "":
             lines.pop()
         total += len(lines)
+    return total
+
+
+def _data_source_paths(root: etree._Element) -> int:
+    """Paths of all external data sources: one per ``<Location>``, or one per line of the text."""
+    total = 0
+    for pl in root.xpath(f"{AA}/ExternalDataSourceCatalog//ExternalDataSource//UniversalPathList"):
+        locations = pl.xpath(".//Location")
+        lines = [loc.text or "" for loc in locations] if locations else (pl.text or "").splitlines()
+        total += sum(1 for line in lines if line.strip())
     return total
 
 
@@ -175,6 +188,7 @@ _FUNCS: dict[str, Callable[[etree._Element], int]] = {
     "steps_with_filemaker_text": _step_texts,
     "step_calculations": _step_calcs,
     "custom_value_lines": _custom_value_lines,
+    "external_data_source_paths": _data_source_paths,
 }
 
 

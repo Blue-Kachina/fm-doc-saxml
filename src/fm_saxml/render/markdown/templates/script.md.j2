@@ -73,6 +73,17 @@ name: {{ entity.name }}
 _No steps._
 {% endif %}
 
+{% set pa = privilege_access("script", entity.doc_id) %}
+{% if pa %}
+## Access by Privilege Set
+
+| Privilege Set | Access | Why |
+|---|---|---|
+{% for r in pa %}
+| {{ link(r.set_doc_id) }} | {{ r.access }} | {{ r.reason }} |
+{% endfor %}
+{% endif %}
+
 {% set bl = backlinks(entity.doc_id) %}
 {% if bl %}
 ## Called By
@@ -82,4 +93,8 @@ _No steps._
 {% for b in bl %}
 | {{ link(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.role or '' }} |
 {% endfor %}
+{% else %}
+## Called By
+
+No callers found in this export. That doesn't make the script unused: it can also be run from another file, a server schedule, an `fmp://` URL, Perform Script by name (a calculated script name), or the Scripts menu.
 {% endif %}

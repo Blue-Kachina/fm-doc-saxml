@@ -31,6 +31,8 @@ NON_SECRET_SUFFIXES = (
     "file", "folder", "date", "time", "timeout", "interval", "flag", "enabled", "required",
     "message", "error", "title", "description", "note", "version",
 )
+# snake_case, kebab-case, dotted or camelCase identifier of letters only: refresh_token, apiKey
+_PARAM_NAME_RE = re.compile(r"[A-Za-z]+(?:[_.-][A-Za-z]+)+|[a-z]+(?:[A-Z][a-z]+)+")
 # FileMaker naming conventions tack short type/scope tags onto names: tokenUri_g, apiKey_t.
 _FM_TAG_RE = re.compile(r"_[a-z]{1,3}$")
 
@@ -92,3 +94,15 @@ class ScrubPolicy:
 
     def is_allowed(self, value: str) -> bool:
         return any(r.fullmatch(value) for r in self.allow_res)
+
+    def is_parameter_name(self, value: str) -> bool:
+        """True for a credential's *name* used as a value: ``refresh_token=``, ``client_secret``,
+        ``apiKey``, ``&access-token=``. OAuth bodies and query strings are built from these
+        (``"refresh_token=" & $token``), and redacting them hides how the request is made.
+
+        A single bare word (``password``) is not a name here: it may be a (poor) real password.
+        """
+        bare = value.strip().lstrip("?&").rstrip("=:")
+        if not bare or not self.keyword_re.search(bare):
+            return False
+        return bool(_PARAM_NAME_RE.fullmatch(bare)) or (bare != value.strip() and bare.isalpha())

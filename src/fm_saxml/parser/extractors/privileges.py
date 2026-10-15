@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, find_child, find_all_descendants, text_of, xml_path, modification_info
+from ._helpers import attr, find_child, find_all_children, find_all_descendants, text_of, xml_path, modification_info
 
 # The <access> categories, in the order FileMaker's Edit Privilege Set dialog shows them.
 _CATEGORIES = (("Records", "records"), ("Layouts", "layouts"), ("ValueLists", "value_lists"),
@@ -77,7 +77,10 @@ def _parse_category(elem: etree._Element) -> dict[str, Any]:
     for item in (obj_list if obj_list is not None else custom if custom is not None else []):
         if isinstance(item.tag, str):
             items.append(_parse_custom_item(item))
-    return {"settings": settings, "custom": items}
+    # <Custom Create="True">: "Allow creation of new layouts / value lists / scripts"
+    create = attr(custom, "Create") if custom is not None else ""
+    return {"settings": settings, "custom": items,
+            "allow_create": create.lower() == "true" if create else None}
 
 
 def _parse_custom_item(item: etree._Element) -> dict[str, Any]:
@@ -85,6 +88,7 @@ def _parse_custom_item(item: etree._Element) -> dict[str, Any]:
     ref_tag = ref.tag.split("}")[-1] if ref is not None else None
     access: dict[str, str] = {}
     calcs: dict[str, str] = {}
+    field_access: list[dict[str, Any]] = []
     for child in item:
         if not isinstance(child.tag, str):
             continue
@@ -94,6 +98,9 @@ def _parse_custom_item(item: etree._Element) -> dict[str, Any]:
         value = attr(child, "access", "value")
         if value:
             access[column] = value
+        if column == "Fields":
+            field_access = [_parse_field_access(f) for f in find_all_children(child, "Field")]
+            continue  # a field's own calc (if any) is not the table's "limited" calc
         calc = find_descendant_text(child, "Calculation")
         if calc:
             calcs[column] = calc
@@ -106,6 +113,20 @@ def _parse_custom_item(item: etree._Element) -> dict[str, Any]:
         "attributes": {k: v for k, v in item.attrib.items() if k != "type"},
         "access": access,
         "calculations": [{"column": col, "calculation": text} for col, text in calcs.items()],
+        "field_access": field_access,
+    }
+
+
+def _parse_field_access(field: etree._Element) -> dict[str, Any]:
+    """``<Fields access="Custom"><Field access="ReadOnly"><FieldReference name=…><BaseTableReference/>``."""
+    ref = find_child(field, "FieldReference")
+    table = find_child(ref, "BaseTableReference") if ref is not None else None
+    return {
+        "type": attr(field, "type") or None,
+        "name": attr(ref, "name", "Name") if ref is not None else "",
+        "id": attr(ref, "id", "ID") if ref is not None else "",
+        "table": attr(table, "name", "Name") if table is not None else "",
+        "access": attr(field, "access", "value"),
     }
 
 

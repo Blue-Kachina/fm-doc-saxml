@@ -113,6 +113,17 @@ Custom message (calculation):
 _None._
 {% endif %}
 
+{% set pa = privilege_access("field", entity.doc_id) %}
+{% if pa %}
+## Access by Privilege Set
+
+| Privilege Set | Field access | Why |
+|---|---|---|
+{% for r in pa %}
+| {{ link(r.set_doc_id) }} | {{ r.access }} | {{ r.reason }} |
+{% endfor %}
+{% endif %}
+
 {% set bl = backlinks(entity.doc_id) %}
 {% if bl %}
 ## Used By
