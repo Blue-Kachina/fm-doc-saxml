@@ -61,12 +61,15 @@ class RawModel:
     parse_warnings: list[str] = field(default_factory=list)
 
 
-def parse_savexml(xml_path: Path, fragments: list[Path] | None = None) -> RawModel:
+def parse_savexml(xml_path: Path, fragments: list[Path] | None = None, *, coverage: bool = False) -> RawModel:
     """Parse a FileMaker SaveAsXML file and return a RawModel.
 
     ``xml_path`` may also be the folder of a "separate catalogs" export, holding one
     XML per catalog; pass ``fragments`` to name those XMLs explicitly (otherwise every
     ``*.xml`` in the folder is used). They are merged back into one document first.
+
+    ``coverage`` also takes the inventory of what the XML contains, for the coverage
+    report. It runs dozens of whole-document queries, so it is off unless asked for.
     """
     raw = RawModel(file_name=xml_path.name)
 
@@ -85,7 +88,7 @@ def parse_savexml(xml_path: Path, fragments: list[Path] | None = None) -> RawMod
 
     root_tag = root.tag.split("}")[-1] if "}" in root.tag else root.tag
     if root_tag == "FMSaveAsXML" and _is_v2_format(root):
-        return _parse_v2(xml_path, root, raw)
+        return _parse_v2(xml_path, root, raw, coverage)
     return _parse_v1(xml_path, root, raw)
 
 
@@ -146,7 +149,7 @@ def _is_v2_format(root) -> bool:
     return version.startswith("2.")
 
 
-def _parse_v2(xml_path: Path, root, raw: RawModel) -> RawModel:
+def _parse_v2(xml_path: Path, root, raw: RawModel, coverage: bool = False) -> RawModel:
     """Handle FileMaker SaveAsXML v2.x format."""
     fm_source = root.get("Source", "")
     xml_version = root.get("version", "unknown")
@@ -194,7 +197,8 @@ def _parse_v2(xml_path: Path, root, raw: RawModel) -> RawModel:
     raw.file_references = extract_file_references(container)
     raw.external_data_sources = extract_external_data_sources(container)
     raw.file_options = extract_file_options(root)
-    raw.coverage = xml_inventory(root)
+    if coverage:
+        raw.coverage = xml_inventory(root)
     if raw.file_options is not None:
         raw.file_options["default_menu_set"] = default_menu_set(container)
 

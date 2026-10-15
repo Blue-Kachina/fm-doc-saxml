@@ -157,12 +157,17 @@ def _step_texts(root: etree._Element) -> int:
 
 def _step_calcs(root: etree._Element) -> int:
     """Calculations inside steps, without default repetition ``1``s (FileMaker doesn't print those)."""
+    # Walked per step rather than with one ``ParameterValues//Calculation`` XPath: merging
+    # thousands of descendant node-sets made that query take 38 s on a 33 MB export.
     total = 0
-    for calc in root.xpath(f"{_STEPS}/ParameterValues//Calculation[Text]"):
-        text = (calc.findtext("Text") or "").strip()
-        in_repetition = any(a.tag == "repetition" for a in calc.iterancestors())
-        if text and not (in_repetition and text == "1"):
-            total += 1
+    for params in root.xpath(f"{_STEPS}/ParameterValues"):
+        for calc in params.iter("Calculation"):
+            if calc.find("Text") is None:
+                continue
+            text = (calc.findtext("Text") or "").strip()
+            in_repetition = any(a.tag == "repetition" for a in calc.iterancestors())
+            if text and not (in_repetition and text == "1"):
+                total += 1
     return total
 
 

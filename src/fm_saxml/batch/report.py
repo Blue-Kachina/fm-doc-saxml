@@ -73,12 +73,12 @@ def heading_anchor(text: str) -> str:
     return re.sub(r"\s", "-", re.sub(r"[^\w\s-]", "", text.strip().lower()))
 
 
-def _coverage_cell(model) -> str:
+def _coverage_cell(model) -> str | None:
     from ..analyze.coverage import build_coverage
 
     report = build_coverage(model)
     if not report.available:
-        return "n/a"
+        return None  # built without --coverage, or a v1 export
     if report.ok:
         return "complete"
     parts = []
@@ -180,6 +180,7 @@ def _context(result: BatchResult) -> dict:
         "manifest_created": result.scan.manifest.created if result.scan.manifest else "",
         "manifest_hosts": result.manifest_hosts,
         "files": rows,
+        "show_coverage": any(r["coverage"] is not None for r in rows),
         "split_count": sum(1 for s in result.scan.solutions if s.is_split),
         "pairings": [
             {"source": names.get(p.source, p.source), "data_source": p.data_source,

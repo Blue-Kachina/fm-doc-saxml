@@ -20,10 +20,13 @@ generatedAt: {{ generated_at }}
 
 Redaction counts link to each file's report; [Redactions](redactions.md) combines them.
 
-| File | Source | Unresolved References (in file) | Redactions | Coverage |
-|---|---|---:|---:|---|
+| File | Source | Unresolved References (in file) | Redactions |{% if show_coverage %} Coverage |{% endif %}
+
+|---|---|---:|---:|{% if show_coverage %}---|{% endif %}
+
 {% for f in files %}
-| [{{ f.name | cell }}](../{{ f.href }}) | `{{ f.source }}` | {{ f.unresolved }} | {% if f.redactions is none %}_scrubbing off_{% else %}[{{ f.redactions }}](../{{ f.folder | urlencode }}/Reports/redactions.md){% endif %} | [{{ f.coverage }}](../{{ f.folder | urlencode }}/Reports/coverage.md) |
+| [{{ f.name | cell }}](../{{ f.href }}) | `{{ f.source }}` | {{ f.unresolved }} | {% if f.redactions is none %}_scrubbing off_{% else %}[{{ f.redactions }}](../{{ f.folder | urlencode }}/Reports/redactions.md){% endif %} |{% if show_coverage %} {% if f.coverage is none %}n/a{% else %}[{{ f.coverage }}](../{{ f.folder | urlencode }}/Reports/coverage.md){% endif %} |{% endif %}
+
 {% endfor %}
 
 ## Data Source Pairings

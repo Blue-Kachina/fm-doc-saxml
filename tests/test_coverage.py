@@ -42,7 +42,7 @@ def test_every_measure_is_counted_on_both_sides():
 def test_sample_exports_have_complete_coverage(path):
     if not path.exists():
         pytest.skip(f"{path.name} not present")
-    report = build_coverage(_run_pipeline(path))
+    report = build_coverage(_run_pipeline(path, coverage=True))
     assert report.available
     assert [(r.label, r.in_xml, r.in_docs) for r in report.problems] == []
     assert report.unrecognised == {}
@@ -65,12 +65,44 @@ def test_coverage_report_page_and_ci_flag(tmp_path):
     src = tmp_path / "Export.xml"
     src.write_text(xml, encoding="utf-8")
     out = tmp_path / "docs"
-    assert runner.invoke(app, ["build", str(src), "-o", str(out), "-f"]).exit_code == 0
+    assert runner.invoke(app, ["build", str(src), "-o", str(out), "-f", "--coverage"]).exit_code == 0
     page = (out / "Reports" / "coverage.md").read_text(encoding="utf-8")
     assert "## Unrecognised XML" in page and "`FutureThing`" in page
     assert "See [Coverage](Reports/coverage.md)" in (out / "index.md").read_text(encoding="utf-8")
     result = runner.invoke(app, ["build", str(src), "-o", str(out), "-f", "--fail-on-coverage-gap"])
     assert result.exit_code == 1
+
+
+def test_coverage_is_off_by_default(tmp_path):
+    out = tmp_path / "docs"
+    model_json = tmp_path / "model.json"
+    result = runner.invoke(app, ["build", str(FIXTURES / "v2_sample.xml"), "-o", str(out), "-f",
+                                 "--model-out", str(model_json)])
+    assert result.exit_code == 0, result.output
+    assert not (out / "Reports" / "coverage.md").exists()
+    assert "coverage.md" not in (out / "index.md").read_text(encoding="utf-8")
+    assert "## Coverage" not in (out / "Reports" / "summary.md").read_text(encoding="utf-8")
+    assert '"coverageInventory": null' in model_json.read_text(encoding="utf-8").replace('":null', '": null')
+
+
+def test_fail_on_gap_turns_coverage_on(tmp_path):
+    out = tmp_path / "docs"
+    result = runner.invoke(app, ["build", str(FIXTURES / "v2_sample.xml"), "-o", str(out), "-f",
+                                 "--fail-on-coverage-gap"])
+    assert (out / "Reports" / "coverage.md").exists(), result.output
+    assert "## Coverage" in (out / "Reports" / "summary.md").read_text(encoding="utf-8")
+
+
+def test_render_writes_coverage_only_when_asked(tmp_path):
+    model_json = tmp_path / "model.json"
+    assert runner.invoke(app, ["parse", str(FIXTURES / "v2_sample.xml"), "-o", str(model_json),
+                               "--coverage"]).exit_code == 0
+    plain, covered = tmp_path / "plain", tmp_path / "covered"
+    assert runner.invoke(app, ["render", "-m", str(model_json), "-o", str(plain), "-f"]).exit_code == 0
+    assert runner.invoke(app, ["render", "-m", str(model_json), "-o", str(covered), "-f",
+                               "--coverage"]).exit_code == 0
+    assert not (plain / "Reports" / "coverage.md").exists()
+    assert (covered / "Reports" / "coverage.md").exists()
 
 
 # ---------------------------------------------------------------------------
@@ -106,7 +138,7 @@ def _two_scripts_one_name(tmp_path: Path) -> Path:
 
 
 def test_two_scripts_with_one_name_are_both_kept(tmp_path):
-    model = _run_pipeline(_two_scripts_one_name(tmp_path))
+    model = _run_pipeline(_two_scripts_one_name(tmp_path), coverage=True)
     same = [s for s in model.entities.scripts.values() if s.name == "Same"]
     assert len(same) == 2 and len({s.doc_id for s in same}) == 2
     assert all(len(s.steps) == 2 for s in same)

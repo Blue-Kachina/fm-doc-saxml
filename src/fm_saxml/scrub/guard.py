@@ -1,8 +1,9 @@
 """Output guard: prove no redacted value made it into a written file.
 
 The engine knows exactly which values it replaced, so after rendering every
-output file is searched for them (raw, JSON-escaped and HTML-escaped). A hit
-means some code path copied a string the walker never saw, and the run fails.
+output file is searched for them (raw, JSON-escaped, HTML-escaped, and as the HTML viewer
+embeds JSON in its .js files). A hit means some code path copied a string the walker
+never saw, and the run fails.
 """
 
 from __future__ import annotations
@@ -15,7 +16,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
-_TEXT_SUFFIXES = {".md", ".json", ".txt", ".html", ".csv", ".xml", ".yaml", ".yml"}
+# .js: the --html viewer copies every page, and --webmcp the model data, into scripts under _viewer/.
+_TEXT_SUFFIXES = {".md", ".json", ".txt", ".html", ".js", ".csv", ".xml", ".yaml", ".yml"}
 
 
 @dataclass(frozen=True)
@@ -25,8 +27,16 @@ class Leak:
     placeholder: str
 
 
+def _script_escaped(text: str) -> str:
+    """JSON as the HTML viewer embeds it in a script (render/html/viewer.py ``_js_literal``)."""
+    return text.replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
+
+
 def _variants(value: str) -> set[str]:
-    return {value, json.dumps(value, ensure_ascii=False)[1:-1], json.dumps(value)[1:-1], html.escape(value, quote=True)}
+    as_json = json.dumps(value, ensure_ascii=False)[1:-1]
+    ascii_json = json.dumps(value)[1:-1]
+    return {value, as_json, ascii_json, html.escape(value, quote=True),
+            _script_escaped(as_json), _script_escaped(ascii_json)}
 
 
 def _pattern(values: dict[str, str]) -> tuple[re.Pattern, dict[str, str]]:

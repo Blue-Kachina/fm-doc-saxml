@@ -756,9 +756,10 @@ def _render_reports(model: DocumentModel, output_dir: Path, env: Environment, li
     )
     write_text(reports_dir / "summary.md", content)
 
-    # Coverage
-    tmpl = env.get_template("reports/coverage.md.j2")
-    write_text(reports_dir / "coverage.md", tmpl.render(report=coverage, areas=areas, context_count=len(COVERAGE_CONTEXTS)))
+    # Coverage: only when the build asked for it (--coverage)
+    if coverage.available:
+        tmpl = env.get_template("reports/coverage.md.j2")
+        write_text(reports_dir / "coverage.md", tmpl.render(report=coverage, areas=areas, context_count=len(COVERAGE_CONTEXTS)))
 
     # Redactions
     if model.scrubbing is not None:

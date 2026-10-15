@@ -111,16 +111,66 @@ HtmlOpt = Annotated[bool, typer.Option(
          "(adds one small .js file per page under _viewer/; the page needs internet access to load its renderer)",
 )]
 
+WebMcpOpt = Annotated[bool, typer.Option(
+    "--webmcp",
+    help="Make the HTML viewer agent-ready: add WebMCP tools (search, queries, references, who can access what) "
+         "backed by the model, and a results view. Turns on --html. Adds the model's data under _viewer/data/.",
+)]
+
+ServeOpt = Annotated[bool, typer.Option(
+    "--serve",
+    help="With --webmcp: when done, serve the docs at http://127.0.0.1 and open them, so the browser gives the "
+         "viewer WebMCP (it doesn't on pages opened from disk). Ctrl+C stops it.",
+)]
+PortOpt = Annotated[int, typer.Option("--port", help="Port for --serve / serve (a free one is used if it's taken)")]
+
+
+def _check_serve(serve: bool, webmcp: bool) -> None:
+    if serve and not webmcp:
+        _fail("--serve only applies to a viewer with WebMCP tools.", "Add --webmcp.")
+
+
+def _serve(docs_dir: Path, port: int, open_browser: bool = True) -> None:
+    """Serve ``docs_dir`` on 127.0.0.1 until Ctrl+C."""
+    from .serve import make_server, url_for
+
+    try:
+        server = make_server(docs_dir, port)
+    except OSError as exc:
+        _fail(f"Could not start the server: {exc}")
+    url = url_for(server)
+    if server.server_address[1] != port and port:
+        console.print(f"[yellow]Port {port} is in use; using {server.server_address[1]}.[/yellow]")
+    console.print(f"[green]Serving {docs_dir} at {url}[/green]")
+    console.print("[dim]WebMCP works here (localhost is a secure origin). Only this computer can connect. "
+                  "Press Ctrl+C to stop.[/dim]")
+    if open_browser:
+        import webbrowser
+        webbrowser.open(url)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        console.print("[dim]Stopped.[/dim]")
+    finally:
+        server.server_close()
+
+
 FailOnSecretsOpt = Annotated[bool, typer.Option(
     "--fail-on-secrets",
     help="Exit with status 1 if the export contains hardcoded credentials (redacted or flagged). For CI.",
 )]
 
 
+CoverageOpt = Annotated[bool, typer.Option(
+    "--coverage",
+    help="Also check that everything in the export reached the docs, and write Reports/coverage.md. "
+         "Off by default: it reads the whole export a second time, which is slow on large files.",
+)]
+
 FailOnCoverageOpt = Annotated[bool, typer.Option(
     "--fail-on-coverage-gap",
     help="Exit with status 1 if anything in the export didn't reach the docs, or the export has XML the "
-         "converter doesn't recognise (see Reports/coverage.md). For CI.",
+         "converter doesn't recognise (see Reports/coverage.md). For CI. Turns on --coverage.",
 )]
 
 
@@ -252,11 +302,15 @@ def build(
     yes: Annotated[bool, typer.Option("--yes", "-y", help="Assume yes to all interactive prompts")] = False,
     open_when_done: Annotated[bool, typer.Option("--open", help="Open the output folder when finished")] = False,
     html: HtmlOpt = False,
+    webmcp: WebMcpOpt = False,
+    serve: ServeOpt = False,
+    port: PortOpt = 8765,
     disable_scrubbing: DisableScrubbingOpt = False,
     scrub_level: ScrubLevelOpt = ScrubLevel.SECRETS,
     scrub_keyword: ScrubKeywordOpt = None,
     scrub_allow: ScrubAllowOpt = None,
     fail_on_secrets: FailOnSecretsOpt = False,
+    coverage: CoverageOpt = False,
     fail_on_coverage_gap: FailOnCoverageOpt = False,
 ) -> None:
     """Parse a FileMaker XML export and render Markdown documentation.
@@ -269,6 +323,9 @@ def build(
     _validate_input(input_xml, allow_dir=True)
     out = _normalize_path(out) if out else _default_out_dir(input_xml)
     scan, source = _resolve_input(input_xml)
+    coverage = coverage or fail_on_coverage_gap
+    html = html or webmcp
+    _check_serve(serve, webmcp)
 
     if scan is not None and scan.is_batch:
         if model_out:
@@ -276,8 +333,10 @@ def build(
                   "Each file's data is in entities.json and references.json inside its own folder.")
         scrubber = _make_scrubber(disable_scrubbing, scrub_level, scrub_keyword, scrub_allow)
         _build_batch(scan, out, scrubber, include_json=include_json, strict=strict, force=force or yes,
-                     html=html, fail_on_secrets=fail_on_secrets, open_when_done=open_when_done,
-                     fail_on_coverage_gap=fail_on_coverage_gap)
+                     html=html, webmcp=webmcp, fail_on_secrets=fail_on_secrets, open_when_done=open_when_done,
+                     coverage=coverage, fail_on_coverage_gap=fail_on_coverage_gap)
+        if serve:
+            _serve(out, port)
         return
 
     scrubber = _make_scrubber(disable_scrubbing, scrub_level, scrub_keyword, scrub_allow)
@@ -285,7 +344,7 @@ def build(
     if scan is not None:
         _print_manifest_check(scan)
 
-    model = _run_pipeline(source.path, scrubber, source.fragments or None)
+    model = _run_pipeline(source.path, scrubber, source.fragments or None, coverage=coverage)
 
     if model_out:
         model_out = _normalize_path(model_out)
@@ -302,7 +361,7 @@ def build(
         console.print(f"[dim]JSON data files written to {out}[/dim]")
 
     if html:
-        _render_html_viewer(out)
+        _render_html_viewer(out, _write_webmcp_data([(model, "", None)], out) if webmcp else None)
 
     (out / OUTPUT_MARKER).write_text("Generated by fm-saxml. Safe to overwrite.\n", encoding="utf-8")
 
@@ -322,6 +381,8 @@ def build(
 
     if open_when_done:
         _open_folder(out)
+    if serve:
+        _serve(out, port)
 
 
 # Folder names a file can't render into: the batch's own report folder and viewer files.
@@ -329,15 +390,15 @@ _RESERVED_BATCH_FOLDERS = {"reports", "_viewer"}
 
 
 def _build_batch(scan, out: Path, scrubber, *, include_json: bool, strict: bool, force: bool,
-                 html: bool, fail_on_secrets: bool, open_when_done: bool,
-                 fail_on_coverage_gap: bool = False) -> None:
+                 html: bool, fail_on_secrets: bool, open_when_done: bool, webmcp: bool = False,
+                 coverage: bool = False, fail_on_coverage_gap: bool = False) -> None:
     """Convert every export in a folder into its own subfolder of ``out``, with cross-file links."""
     from .batch.links import link_batch
     from .batch.report import BatchResult, combined_scrubbing, write_batch_reports
 
     folders = _batch_folders(scan)
     _confirm_output_directory(out, force=force)
-    files, failed, missing, extra = _analyze_batch(scan, scrubber, folders)
+    files, failed, missing, extra = _analyze_batch(scan, scrubber, folders, coverage=coverage)
 
     links = link_batch(files)
     _render_batch_with_progress(files, links, out)
@@ -354,7 +415,8 @@ def _build_batch(scan, out: Path, scrubber, *, include_json: bool, strict: bool,
     console.print(f"[green]Markdown documentation for {len(files)} files written to {out}[/green]")
 
     if html:
-        _render_html_viewer(out)
+        data = [(f.model, f.folder, f.name) for f in files]
+        _render_html_viewer(out, _write_webmcp_data(data, out, links.cross_file) if webmcp else None)
     (out / OUTPUT_MARKER).write_text("Generated by fm-saxml. Safe to overwrite.\n", encoding="utf-8")
 
     _guard_output(scrubber, out)
@@ -408,7 +470,7 @@ def _batch_folders(scan) -> dict[str, str]:
     return folders
 
 
-def _analyze_batch(scan, scrubber, folders: dict[str, str]):
+def _analyze_batch(scan, scrubber, folders: dict[str, str], coverage: bool = False):
     """Analyze each export on its own. Returns (files, failed, manifest missing, manifest extra)."""
     from .batch.links import BatchFile
 
@@ -426,7 +488,8 @@ def _analyze_batch(scan, scrubber, folders: dict[str, str]):
         for s in scan.solutions:
             progress.update(task, description=f"Reading {s.name}")
             try:
-                parsed = _parse_and_scrub(s.path, scrubber, s.fragments or None, step=lambda _desc: None)
+                parsed = _parse_and_scrub(s.path, scrubber, s.fragments or None, step=lambda _desc: None,
+                                          coverage=coverage)
             except _InputProblem as exc:
                 failed.append((s, str(exc)))
             else:
@@ -521,6 +584,9 @@ def parse(
     scrub_keyword: ScrubKeywordOpt = None,
     scrub_allow: ScrubAllowOpt = None,
     fail_on_secrets: FailOnSecretsOpt = False,
+    coverage: Annotated[bool, typer.Option(
+        "--coverage", help="Also save the counts the coverage report needs (render it with render --coverage)",
+    )] = False,
 ) -> None:
     """Parse a FileMaker XML export and save the normalized model as JSON."""
     input_xml = _normalize_path(input_xml)
@@ -528,7 +594,7 @@ def parse(
 
     _validate_input(input_xml)
     scrubber = _make_scrubber(disable_scrubbing, scrub_level, scrub_keyword, scrub_allow)
-    model = _run_pipeline(input_xml, scrubber)
+    model = _run_pipeline(input_xml, scrubber, coverage=coverage)
 
     from .render.json.writer import write_model_json
     write_model_json(model, out)
@@ -550,15 +616,22 @@ def render(
     force: Annotated[bool, typer.Option("--force", "-f", help="Overwrite the output directory without prompting")] = False,
     yes: Annotated[bool, typer.Option("--yes", "-y", help="Assume yes to all interactive prompts")] = False,
     html: HtmlOpt = False,
+    webmcp: WebMcpOpt = False,
+    serve: ServeOpt = False,
+    port: PortOpt = 8765,
     disable_scrubbing: DisableScrubbingOpt = False,
     scrub_level: ScrubLevelOpt = ScrubLevel.SECRETS,
     scrub_keyword: ScrubKeywordOpt = None,
     scrub_allow: ScrubAllowOpt = None,
     fail_on_secrets: FailOnSecretsOpt = False,
+    coverage: Annotated[bool, typer.Option(
+        "--coverage", help="Write Reports/coverage.md (needs a model.json saved with parse --coverage)",
+    )] = False,
 ) -> None:
     """Render an existing model.json into documentation."""
     model_json = _normalize_path(model_json)
     out = _normalize_path(out)
+    _check_serve(serve, webmcp)
 
     if not model_json.exists():
         err_console.print(f"[red]Model file not found: {model_json}[/red]")
@@ -571,12 +644,45 @@ def render(
     _confirm_output_directory(out, force=force or yes)
 
     model = _load_model_json(model_json, scrubber)
+    if not coverage:
+        model.coverage_inventory = None
+    elif model.coverage_inventory is None:
+        console.print(f"[yellow]--coverage: {model_json.name} has no coverage counts; "
+                      "save it with 'fm-saxml parse --coverage'.[/yellow]")
     _render_markdown_with_progress(model, out)
     console.print(f"[green]Markdown documentation written to {out}[/green]")
-    if html:
-        _render_html_viewer(out)
+    if html or webmcp:
+        _render_html_viewer(out, _write_webmcp_data([(model, "", None)], out) if webmcp else None)
     _guard_output(scrubber, out)
     _check_fail_on_secrets(fail_on_secrets, model.scrubbing)
+    _report_coverage([model], fail=False)
+    if serve:
+        _serve(out, port)
+
+
+# ---------------------------------------------------------------------------
+# serve: the --webmcp viewer over localhost
+# ---------------------------------------------------------------------------
+
+@app.command("serve")
+def serve_command(
+    docs_dir: Annotated[Path, typer.Argument(help="A docs folder built with --webmcp")],
+    port: PortOpt = 8765,
+    no_open: Annotated[bool, typer.Option("--no-open", help="Don't open the browser")] = False,
+) -> None:
+    """Serve a --webmcp docs folder at http://127.0.0.1, where browsers give the viewer WebMCP.
+
+    Pages opened straight from disk (file://) don't get WebMCP; localhost does.
+    """
+    from .serve import has_webmcp
+
+    docs_dir = _normalize_path(docs_dir)
+    if not docs_dir.is_dir():
+        _fail(f"Not a folder: {docs_dir}")
+    if not has_webmcp(docs_dir):
+        _fail(f"{docs_dir} has no viewer with WebMCP tools.",
+              "Build it with --webmcp first, e.g. fm-saxml build MySolution.xml --webmcp --serve")
+    _serve(docs_dir, port, open_browser=not no_open)
 
 
 # ---------------------------------------------------------------------------
@@ -954,7 +1060,8 @@ class _InputProblem(Exception):
     """An input that isn't a usable export. Ends a single-file run; skips the file in a batch."""
 
 
-def _run_pipeline(input_xml: Path, scrubber=None, fragments: Optional[list[Path]] = None):
+def _run_pipeline(input_xml: Path, scrubber=None, fragments: Optional[list[Path]] = None, *,
+                  coverage: bool = False):
     """Parse → scrub → normalize → resolve → analyze. ``scrubber=None`` means scrubbing is disabled."""
     with _progress() as progress:
         task = progress.add_task(f"Parsing {input_xml.name}", total=7)
@@ -962,25 +1069,26 @@ def _run_pipeline(input_xml: Path, scrubber=None, fragments: Optional[list[Path]
             return _analyze(
                 input_xml, scrubber, fragments,
                 step=lambda desc: progress.update(task, advance=1, description=desc),
+                coverage=coverage,
             )
         except _InputProblem as exc:
             _fail(str(exc), EXPORT_HINT)
 
 
-def _analyze(input_xml: Path, scrubber, fragments: Optional[list[Path]], step):
+def _analyze(input_xml: Path, scrubber, fragments: Optional[list[Path]], step, coverage: bool = False):
     """The pipeline itself. ``step(description)`` is called as each of its 7 stages finishes.
 
     ``input_xml`` may be a separate-catalogs folder; ``fragments`` then lists its catalog XMLs.
     """
-    return _normalize_scrubbed(*_parse_and_scrub(input_xml, scrubber, fragments, step), step)
+    return _normalize_scrubbed(*_parse_and_scrub(input_xml, scrubber, fragments, step, coverage=coverage), step)
 
 
-def _parse_and_scrub(input_xml: Path, scrubber, fragments: Optional[list[Path]], step):
+def _parse_and_scrub(input_xml: Path, scrubber, fragments: Optional[list[Path]], step, coverage: bool = False):
     """Stages 1-2. Returns what ``_normalize_scrubbed`` needs: (raw, scrub summary, source file, path)."""
     from .parser.saxml_reader import parse_savexml
     from .model.document_model import ScrubSummary
 
-    raw = parse_savexml(input_xml, fragments)
+    raw = parse_savexml(input_xml, fragments, coverage=coverage)
 
     xml_errors = [w for w in raw.parse_warnings if w.startswith("XML parse error")]
     if xml_errors:
@@ -1063,11 +1171,25 @@ def _render_markdown_with_progress(model, out: Path) -> None:
         progress.update(task, completed=written, total=written, description=f"Wrote {written} pages")
 
 
-def _render_html_viewer(out: Path) -> None:
+def _render_html_viewer(out: Path, webmcp_files: Optional[list[dict]] = None) -> None:
     from .render.html import render_html_viewer
 
-    pages = render_html_viewer(out)
+    pages = render_html_viewer(out, webmcp_files)
     console.print(f"[green]HTML viewer written to {out / 'index.html'}[/green] [dim]({pages} pages)[/dim]")
+    if webmcp_files is not None:
+        console.print("[dim]WebMCP tools added: agents can query the solution from the viewer "
+                      "(also on window.FMDocs.tools).[/dim]")
+
+
+def _write_webmcp_data(models, out: Path, cross_file: Optional[dict] = None) -> list[dict]:
+    """``models``: ``(model, folder, label)`` per file; folder "" for a single-file build."""
+    from .render.html.webmcp import write_webmcp_data
+
+    return [
+        write_webmcp_data(model, out, file_key=folder, prefix=f"{folder}/" if folder else "", label=label or "",
+                          cross_file=(cross_file or {}).get(folder))
+        for model, folder, label in models
+    ]
 
 
 def _print_summary(model, verbose: bool = False) -> None:

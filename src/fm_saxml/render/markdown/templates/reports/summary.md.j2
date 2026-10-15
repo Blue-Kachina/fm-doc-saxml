@@ -30,16 +30,14 @@ title: Summary Report
 | Value Lists | {{ counts.value_lists }} |
 | Privilege Sets | {{ counts.privilege_sets }} |
 
+{% if coverage.available %}
 ## Coverage
 
-{% if coverage.available %}
 {{ coverage.rows | length - coverage.problems | length }} of {{ coverage.rows | length }} checks complete, {{ coverage.unrecognised_count }} unrecognised XML name(s).{% if coverage.problems %} Needs a look: {% for r in coverage.problems %}{{ r.label }} ({{ r.in_docs }} of {{ r.in_xml }}){% if not loop.last %}, {% endif %}{% endfor %}.{% endif %}
 
 _See [coverage.md](coverage.md) for every check._
-{% else %}
-_Not available for this export (see [coverage.md](coverage.md))._
-{% endif %}
 
+{% endif %}
 ## References
 
 | Category | Count |

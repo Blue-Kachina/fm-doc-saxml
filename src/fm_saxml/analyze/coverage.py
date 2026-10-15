@@ -274,13 +274,22 @@ MEASURES: list[Measure] = [
 
 
 def build_coverage(model: DocumentModel) -> CoverageReport:
+    """The coverage report, or ``available=False`` when the build didn't ask for coverage.
+
+    Built once per model and inventory, then reused by every page and report that shows it.
+    """
     inventory = model.coverage_inventory
     if inventory is None:
         return CoverageReport(available=False)
+    cached = model._coverage_report
+    if cached is not None and cached[0] is inventory:
+        return cached[1]
     rows = [
         CoverageRow(area=ms.area, key=ms.key, label=ms.label, in_xml=inventory.measures.get(ms.key, 0),
                     in_docs=ms.count(model), note=ms.note)
         for ms in MEASURES
     ]
-    return CoverageReport(available=True, rows=rows, unrecognised=inventory.unrecognised,
-                          skipped=inventory.skipped)
+    report = CoverageReport(available=True, rows=rows, unrecognised=inventory.unrecognised,
+                            skipped=inventory.skipped)
+    model._coverage_report = (inventory, report)
+    return report

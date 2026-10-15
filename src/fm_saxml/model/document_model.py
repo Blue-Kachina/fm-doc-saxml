@@ -216,6 +216,9 @@ class DocumentModel(BaseModel):
     # FileMaker allows two scripts with one name; the later ones get a docId with their id.
     _script_doc_ids: dict[str, str] = PrivateAttr(default_factory=dict)
     _layout_doc_ids: dict[str, str] = PrivateAttr(default_factory=dict)  # same, for layouts
+    # analyze/coverage.py's report, built once: the index, the reports, the batch summary and the
+    # console line all read it, and it walks every entity dozens of times.
+    _coverage_report: Optional[object] = PrivateAttr(None)
 
     def local_layout_doc_id(self, name: str, fmp_id: Optional[str] = None) -> str:
         """docId of a layout in this file: by FileMaker id when known, else by name."""
