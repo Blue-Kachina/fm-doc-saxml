@@ -156,16 +156,23 @@ def _steps_xml() -> str:
     return "".join(out)
 
 
-TRIGGER_PARAM = 'JSONSetElement ( "{}" ; [ "targetField" ; GetFieldName ( INV::note ) ; JSONString ] )'
+def _custom_functions_xml() -> str:
+    # Kept out of the XML f-string: Python 3.11 can't nest f-strings that reuse a quote.
+    out = []
+    for i, (name, params, _body) in CUSTOM_FUNCTIONS.items():
+        plist = "".join(f'<Parameter name="{p}"/>' for p in params)
+        out.append(f'<CustomFunction id="{i}" name="{name}"><ObjectList>{plist}</ObjectList></CustomFunction>')
+    return "".join(out)
+
+
+TRIGGER_PARAM ='JSONSetElement ( "{}" ; [ "targetField" ; GetFieldName ( INV::note ) ; JSONString ] )'
 
 XML = f"""<?xml version="1.0" encoding="UTF-8"?>
 <FMSaveAsXML version="2.2.3.0" Source="22.0.6" File="Ind.fmp12" UUID="F">
 <Structure><AddAction>
   <BaseTableCatalog><BaseTable id="1" name="Invoice"/><BaseTable id="2" name="Contact"/></BaseTableCatalog>
   <TableOccurrenceCatalog>{_to(100, "INV", 1, "Invoice")}{_to(200, "Contact", 2, "Contact")}</TableOccurrenceCatalog>
-  <CustomFunctionsCatalog><ObjectList>{"".join(
-      f'<CustomFunction id="{i}" name="{n}"><ObjectList>{"".join(f'<Parameter name="{p}"/>' for p in ps)}</ObjectList></CustomFunction>'
-      for i, (n, ps, _b) in CUSTOM_FUNCTIONS.items())}</ObjectList></CustomFunctionsCatalog>
+  <CustomFunctionsCatalog><ObjectList>{_custom_functions_xml()}</ObjectList></CustomFunctionsCatalog>
   <ValueListCatalog><ValueList id="1" name="Statuses"><Source value="Custom"/></ValueList></ValueListCatalog>
   <FieldsForTables>
     <FieldCatalog><BaseTableReference id="1" name="Invoice"/><ObjectList>
