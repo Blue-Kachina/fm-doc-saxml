@@ -31,6 +31,8 @@ name: {{ entity.name }}
 _No relationships found._
 {% endif %}
 
+{% include "_by_name.md.j2" %}
+
 {% set bl = backlinks(entity.doc_id) %}
 {% if bl %}
 ## Referenced By

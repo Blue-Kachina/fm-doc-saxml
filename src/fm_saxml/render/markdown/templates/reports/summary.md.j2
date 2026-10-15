@@ -48,6 +48,18 @@ _See [coverage.md](coverage.md) for every check._
 | Unresolved References | {{ unresolved_references }} |
 | External References (other files) | {{ external_references }} |
 
+## Names Written in Text
+
+{{ by_name_total }} place(s) name a field, script, layout or object in text, which FileMaker doesn't update on rename.
+
+| Class | | Count |
+|---|---|---:|
+{% for c in by_name %}
+| {{ c.klass }} | {{ c.label }} | {{ c.count }} |
+{% endfor %}
+
+_See [indirection.md](indirection.md) before renaming anything._
+
 ## Warnings
 
 | Code | Count |

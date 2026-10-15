@@ -120,6 +120,7 @@ Each file gets its own subfolder, and references from one file into another beco
 | `inspect <file or folder>` | Print entity counts and warnings without writing anything |
 | `validate <file or folder>` | Exit non-zero if the model has critical issues |
 | `diff <old> <new>` | Compare two exports and report what changed — see [Comparing exports](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/diff.md) |
+| `rename-check <file> <name>...` | What would break if you renamed a field, script, layout, object ...: every place that names it in text — see [Names written in text](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/indirection.md#rename-check) |
 | `scrub <file>` | Write a copy of the XML with secrets redacted — see [Scrubbing](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/scrubbing.md#scrubbing-the-xml-itself-scrub) |
 | `serve <docs folder>` | Serve a `--webmcp` build at `http://127.0.0.1:8765` so browser agents get its tools |
 | `doctor` | Print environment details for bug reports |
@@ -148,6 +149,7 @@ Run `fm-saxml <command> --help` for every option. The [technical README](https:/
 | [Secret and personal-data scrubbing](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/scrubbing.md) | What is redacted, scrub levels, and the `scrub` command |
 | [Multi-file solutions](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/multi-file.md) | Building a folder of exports from FileMaker 26 |
 | [Comparing exports](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/diff.md) | The `diff` command |
+| [Names written in text](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/indirection.md) | `GetField`, `Set Field By Name`, `Perform Script` by name, `ExecuteSQL` ...: what breaks on rename, `Reports/indirection.md` and `rename-check` |
 | [Technical README](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/README_technical.md) | Pipeline, output layout, coverage report, development, FileMaker XML notes, known limitations |
 
 ## License

@@ -749,6 +749,95 @@ def validate(
 
 
 # ---------------------------------------------------------------------------
+# rename-check: what breaks if an entity is renamed (names written in text)
+# ---------------------------------------------------------------------------
+
+@app.command("rename-check")
+def rename_check(
+    input_xml: Annotated[Path, typer.Argument(help="FileMaker SaveAsXML file, or a model.json from 'fm-saxml parse'")],
+    names: Annotated[Optional[list[str]], typer.Argument(
+        help="What you want to rename: 'Table::Field', a script, layout, table occurrence, value list or object name")] = None,
+    plan: Annotated[Optional[Path], typer.Option(
+        "--plan", help="CSV of renames, one per line: old,new[,kind]. Also checks each new name")] = None,
+    kind: Annotated[Optional[str], typer.Option(
+        "--kind", help="Only match this kind of entity: field, script, layout, to, valuelist, object")] = None,
+    out: Annotated[Optional[Path], typer.Option("--out", "-o", help="Write a Markdown report to this path")] = None,
+    strict: Annotated[bool, typer.Option(
+        "--strict", help="Exit with status 1 if anything names a checked entity in text (for CI)")] = False,
+    disable_scrubbing: DisableScrubbingOpt = False,
+    scrub_level: ScrubLevelOpt = ScrubLevel.SECRETS,
+) -> None:
+    """Show what refers to an entity by name (GetField, Perform Script by name, SQL ...) and would break on rename."""
+    from .analyze.rename import find_entities, impact_markdown, normalize_kind, read_plan, rename_impact, where_label
+    from rich.markup import escape
+
+    input_xml = _normalize_path(input_xml)
+    _validate_input(input_xml)
+    try:
+        kind = normalize_kind(kind)
+        wanted = [(n, None, kind) for n in names or []] + (read_plan(_normalize_path(plan)) if plan else [])
+    except (OSError, ValueError) as exc:
+        raise _fail(str(exc))
+    if not wanted:
+        raise _fail("Give one or more names to check, or --plan with a CSV of renames.",
+                    "Example: fm-saxml rename-check Export.xml \"Invoices::Total\" \"Post Invoice\"")
+
+    scrubber = _make_scrubber(disable_scrubbing, scrub_level, None, None)
+    model = _load_model_for_diff(input_xml, label="the", scrubber=scrubber)
+    if not model.indirection and model.schema_version < "0.5.0":
+        # A model.json saved before by-name analysis existed: everything it needs is in the model
+        from .analyze.indirection import analyze_indirection
+        from .analyze.backlinks import generate_backlinks
+        generate_backlinks(analyze_indirection(model))
+
+    impacts, unknown = [], []
+    for old, new, k in wanted:
+        hits = find_entities(model, old, k)
+        if not hits:
+            unknown.append(old)
+        for doc_id in hits:
+            impacts.append(rename_impact(model, doc_id, new))
+
+    def plain(text: str) -> str:  # Windows consoles often can't print · ← →
+        return escape(text.replace(" · ", " - ").replace("←", "<-").replace("→", "->"))
+
+    for name in unknown:
+        err_console.print(f"[yellow]Not found: {escape(name)}[/yellow]")
+    for imp in impacts:
+        header = f"[bold]{plain(imp.name)}[/bold] [dim]({imp.entity_type})[/dim]" + (f" -> {plain(imp.new_name)}" if imp.new_name else "")
+        console.print(header)
+        colour = "red" if imp.breaks else "green"
+        console.print(f"  [{colour}]{len(imp.breaks)} place(s) name it in text and would break[/{colour}]; "
+                      f"{len(imp.safe)} capture the name safely; {imp.direct} direct reference(s) update by themselves")
+        for site, cand in imp.breaks[:15]:
+            trace = f"  [dim]<- {plain(cand.evidence[0])}[/dim]" if cand.evidence else ""
+            console.print(f"    {plain(where_label(model, site.source_doc_id))}: {plain(site.sink)} "
+                          f"[cyan]{plain(cand.name)}[/cyan]{trace}")
+        if len(imp.breaks) > 15:
+            console.print(f"    … and {len(imp.breaks) - 15} more (see --out)")
+        if imp.opaque:
+            console.print(f"  [yellow]{len(imp.opaque)} place(s) take a {imp.entity_type} name from data: check them by hand[/yellow]")
+        if imp.clashes:
+            console.print(f"  [red]The new name is already used by {len(imp.clashes)} {imp.entity_type}(s)[/red]")
+        if imp.captured_by_new_name:
+            console.print(f"  [yellow]{len(imp.captured_by_new_name)} place(s) already use the new name in text "
+                          "and would start pointing at it[/yellow]")
+
+    if out:
+        out = _normalize_path(out)
+        from .utils.file_writer import write_text
+        write_text(out, impact_markdown(model, impacts, unknown))
+        console.print(f"[green]Report written to {out}[/green]")
+        _guard_output(scrubber, out)
+
+    if strict and any(imp.breaks for imp in impacts):
+        err_console.print("[red]--strict: some of these are named in text[/red]")
+        raise typer.Exit(1)
+    if unknown and not impacts:
+        raise typer.Exit(1)
+
+
+# ---------------------------------------------------------------------------
 # diff: compare two exports (XML or model.json)
 # ---------------------------------------------------------------------------
 
@@ -916,6 +1005,11 @@ def _print_diff_summary(result) -> None:
 
     if result.script_step_diffs:
         console.print(f"[dim]Scripts with step changes: {len(result.script_step_diffs)}[/dim]")
+    if result.renames:
+        console.print(f"[dim]Renamed: {len(result.renames)}[/dim]")
+    if result.stale_names:
+        console.print(f"[yellow]{len(result.stale_names)} place(s) still use an old name in text "
+                      "(see the report's 'Names Still Using an Old Name')[/yellow]")
 
     if not result.has_changes:
         console.print("[green]No differences detected.[/green]")

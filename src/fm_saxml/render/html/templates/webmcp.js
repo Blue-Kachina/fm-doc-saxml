@@ -30,8 +30,18 @@
         customFunction: 'Custom functions', valueList: 'Value lists', privilegeSet: 'Privilege sets',
         account: 'Accounts', extPriv: 'Extended privileges', customMenu: 'Custom menus',
         customMenuSet: 'Custom menu sets', theme: 'Themes', fileRef: 'File references', variable: 'Variables',
+        indirectionSite: 'Names in text (indirection)',
     };
     const TYPES = Object.keys(TYPE_LABELS);
+    // Indirection classes (analyze/indirection.py): which ones break when the named entity is renamed
+    const CLASS_LABELS = { A: 'Safe capture', "A'": 'ID-based', B: 'Hardcoded name', C: 'Dynamic (traced)',
+        D: 'Opaque (from data)', E: 'Broken' };
+    // Kinds of name a site can hold, per entity type (an opaque site of these kinds might name the entity)
+    const NAME_KINDS = {
+        field: ['field', 'sql', 'expression'], script: ['script'], layout: ['layout', 'layoutOrTableOccurrence'],
+        tableOccurrence: ['tableOccurrence', 'sql', 'layoutOrTableOccurrence'], valueList: ['valueList'],
+        layoutObject: ['layoutObject'],
+    };
     // A child entity and its parent's docId field: steps sit in a script, fields in a table, ...
     const PARENT_FIELD = { scriptStep: 'scriptDocId', field: 'baseTableDocId', layoutObject: 'layoutDocId' };
     const PARENT_TYPE = { scriptStep: 'script', field: 'table', layoutObject: 'layout' };
@@ -240,6 +250,8 @@
             case 'account': return [r.accountType, r.privilegeSetName, r.enabled === false ? 'disabled' : null].filter(Boolean).join(' · ');
             case 'customFunction': return r.parameters ? `(${r.parameters.join('; ')})` : '';
             case 'valueList': return r.listType || '';
+            case 'indirectionSite': return [`${r.class} ${CLASS_LABELS[r.class] || ''}`, r.where,
+                r.names && r.names.length ? 'names ' + r.names.slice(0, 3).join(', ') : null, r.note].filter(Boolean).join(' · ');
             default: return '';
         }
     }
@@ -459,6 +471,7 @@
         base.via = direction === 'incoming' ? e.target : e.source;
         if (e.externalFile) base.externalFile = e.externalFile;
         if (e.confidence !== 'exact') base.confidence = e.confidence;
+        if (e.via) { base.byName = true; base.site = e.site; }
         return base;
     }
     async function preload(fileKeys, types) {
@@ -488,6 +501,8 @@
             relationshipType: S.str('Only this kind of reference, e.g. usesField, usesScript, usesLayout, triggersScript.'),
             sourceType: S.str('Only references from this entity type (e.g. scriptStep, layoutObject, field).'),
             includeStructural: S.bool('Also include "contains" edges (a table containing its fields). Default false.'),
+            includeByName: S.bool('Include places that name the entity in text (GetField, Perform Script by name, '
+                + 'ExecuteSQL ...); they are marked byName and break on rename. Default true.'),
             groupBy: { type: 'string', enum: ['target', 'source'], description: 'In the viewer, group by what is referenced (default) or what references it.' },
             file: S.file, limit: S.limit },
         async (args) => {
@@ -500,6 +515,7 @@
             else if (!(args.targetType && args.parentDocId)) throw new ToolError('Give docId, docIds, or targetType + parentDocId.');
             for (const { file, refs: rf } of rfs) {
                 const keep = (e) => (args.includeStructural || !STRUCTURAL.has(e.relationshipType))
+                    && (args.includeByName !== false || !e.via)
                     && (!args.relationshipType || lower(e.relationshipType) === lower(args.relationshipType));
                 const edges = [];
                 for (const dir of direction === 'both' ? ['incoming', 'outgoing'] : [direction]) {
@@ -542,8 +558,80 @@
                 }
             }
             const hits = recs.filter((r) => !used.has(r._file + '|' + r.docId)).map((r) => itemOf(r));
-            return page(hits, args, { caveat: 'Run-time references by name, other files that were not in this build, and server schedules are not visible here.' });
+            return page(hits, args, { caveat: 'Names written in text that could be traced count as uses. Names that come from '
+                + 'data (find_indirection with class "D"), other files that were not in this build, and server schedules are not visible here.' });
         }, { query: true, required: ['type'] });
+
+    tool('find_indirection',
+        'Places that name a field, script, layout, table occurrence, value list or layout object in text instead of '
+        + 'referring to it: GetField, Evaluate, ExecuteSQL, Set Field By Name, Perform Script by name, Go to Layout by name, '
+        + 'Go to Object, Get ( LayoutName ) comparisons. FileMaker does not update these on rename. Classes: B hardcoded '
+        + '(breaks), C traced through variables or parameters (breaks if it started as text), D opaque (name from data), '
+        + 'E broken (names nothing), A safe capture (GetFieldName, Get ( ScriptName )), A\' ID-based.',
+        { class: { type: 'array', items: { type: 'string', enum: Object.keys(CLASS_LABELS) }, description: 'Only these classes.' },
+            sink: S.str('Only this kind of use, e.g. GetField, ExecuteSQL, "Set Field By Name", "Perform Script" (prefix match).'),
+            nameKind: { type: 'string', enum: ['field', 'script', 'layout', 'tableOccurrence', 'valueList', 'layoutObject', 'sql', 'expression'],
+                description: 'Only sites that hold this kind of name.' },
+            targetDocId: S.str('Only sites that may name this entity.'),
+            scriptDocId: S.str('Only sites in this script.'),
+            breaksOnRename: S.bool('Only sites with a candidate that breaks on rename (true) or none that do (false).'),
+            file: S.file, limit: S.limit },
+        async (args) => {
+            const want = args.class && args.class.length ? new Set(args.class) : null;
+            const sink = args.sink ? lower(args.sink) : null;
+            const recs = (await records('indirectionSite', args.file)).filter((r) => (!want || want.has(r.class))
+                && (!sink || lower(r.sink).startsWith(sink)) && (!args.nameKind || r.nameKind === args.nameKind)
+                && (!args.targetDocId || (r.targets || []).includes(args.targetDocId))
+                && (!args.scriptDocId || r.scriptDocId === args.scriptDocId)
+                && (args.breaksOnRename === undefined || !!r.breaksOnRename === args.breaksOnRename));
+            const order = { E: 0, B: 1, C: 2, D: 3, A: 4, "A'": 5 };
+            recs.sort((a, b) => order[a.class] - order[b.class]);
+            const items = recs.map((r) => itemOf(r, { class: r.class, how: r.sink, expression: r.expression,
+                targets: r.targets, groupLabel: `${r.class} · ${CLASS_LABELS[r.class]}` }));
+            return page(items, args);
+        }, { query: true });
+
+    tool('rename_impact',
+        'What to check before renaming an entity: places that name it in text and would break (hardcoded or traced), '
+        + 'places that capture its name safely (GetFieldName, Get ( ScriptName )), places whose name comes from data and '
+        + 'might be it, and the direct references FileMaker updates by itself.',
+        { docId: S.str('The entity to rename (field:Table::Field, script:Name, layout:Name, to:Name, valueList:Name, layoutObject:...).'),
+            file: S.file, limit: S.limit },
+        async (args) => {
+            const docId = args.docId;
+            const type = typeOf(docId);
+            const breaks = [], safe = [], opaque = [], direct = [];
+            const kinds = new Set(NAME_KINDS[type] || []);
+            for (const { file, catalog } of await catalogs(args.file)) {
+                if (catalog.counts.indirectionSite) {
+                    await load(file.key, 'indirectionSite');
+                    for (const r of store.shards[`${file.key}|indirectionSite`]) {
+                        const hit = (r.candidates || []).find((c) => c.targetDocId === docId);
+                        if (hit) {
+                            const breaksIt = hit.origin === 'literal' || hit.origin === 'pattern';
+                            (breaksIt ? breaks : safe).push(itemOf(r, { class: r.class, how: r.sink, nameUsed: hit.name,
+                                origin: hit.origin, confidence: hit.confidence, trace: (hit.evidence || []).join(' ← ') || 'written here',
+                                groupLabel: breaksIt ? 'Breaks on rename: edit these' : 'Name captured safely' }));
+                        } else if (r.class === 'D' && kinds.has(r.nameKind)) {
+                            opaque.push(itemOf(r, { class: r.class, how: r.sink, note: r.note,
+                                groupLabel: "Name comes from data: can't tell, check by hand" }));
+                        }
+                    }
+                }
+                const rf = (await refs(file.key))[0].refs;
+                const incoming = (rf.byTarget.get(docId) || []).filter((e) => !e.via && !STRUCTURAL.has(e.relationshipType));
+                await preload([file.key], [...new Set(incoming.map((e) => e.sourceType))]);
+                for (const e of incoming) direct.push(Object.assign(refItem(file.key, e, 'incoming', rf),
+                    { groupLabel: 'Direct references: FileMaker updates these' }));
+            }
+            const summary = breaks.length
+                ? `${breaks.length} place(s) name it in text and would break; ${direct.length} direct reference(s) update automatically.`
+                : `Nothing names it in text that we could trace; ${direct.length} direct reference(s) update automatically.`
+                    + (opaque.length ? ` ${opaque.length} place(s) take a ${type} name from data: check them.` : '');
+            return page([...breaks, ...opaque, ...safe, ...direct], args, { docId, summary,
+                counts: { breaks: breaks.length, opaque: opaque.length, safe: safe.length, direct: direct.length },
+                caveat: 'Names used from outside the file (Data API, ODBC, plug-ins, other files, server schedules) are not visible here.' });
+        }, { query: true, required: ['docId'] });
 
     tool('traverse',
         'Follows references more than one step: everything that eventually calls a script (incoming usesScript), everything '
@@ -1185,6 +1273,8 @@
             get_entity: { docId: sc },
             find_references: { targetType: 'field', parentDocId: t },
             find_unreferenced: { type: 'script' },
+            find_indirection: { class: ['B', 'E'] },
+            rename_impact: { docId: first.field || 'field:Invoices::Total' },
             traverse: { from: sc, direction: 'incoming', relationshipTypes: ['usesScript', 'triggersScript'] },
             who_can_access: { docId: sc, action: 'run' },
             what_can_access: { privilegeSet: '[Full Access]', type: 'layout' },

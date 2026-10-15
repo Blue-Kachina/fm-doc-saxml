@@ -46,6 +46,26 @@ def _prose_re(keyword_alt: str) -> re.Pattern:
     )
 
 
+# An attribute name and its "=", as markup in a string writes it: type=  type=\  (before \"…\")
+_ATTRIBUTE_RE = re.compile(r"[A-Za-z_][\w.-]*=\\?")
+
+
+def _is_markup(text: str, m: re.Match, value: str) -> bool:
+    """XML or HTML after a credential word, not a credential: ``<token xsi:type=\\"xsd:string\\">``.
+
+    The ":" there is a namespace prefix glued to the words on both sides, and it belongs to
+    another word than the credential one (``apikey:Zx81`` is still a credential). A value
+    that is only an attribute name and its "=" is markup too.
+    """
+    if _ATTRIBUTE_RE.fullmatch(value):
+        return True
+    sep = m.start(2) - 1
+    while sep > m.end(1) and text[sep] in "\"'“":
+        sep -= 1
+    return (text[sep] == ":" and sep > m.end(1) and text[sep - 1].isalnum()
+            and text[sep + 1:sep + 2].isalnum() and text[m.end(1):sep].strip() != "")
+
+
 def _looks_secret(value: str) -> bool:
     has_digit = any(c.isdigit() for c in value)
     has_symbol = any(not c.isalnum() for c in value)
@@ -67,6 +87,8 @@ def detect(text: str, policy: ScrubPolicy) -> Iterable[Hit]:
         if not value or value.startswith(("$", "[")) or "::" in value or "(" in value:
             continue
         if value.lower() in _AUTH_SCHEMES:
+            continue
+        if _is_markup(text, m, value):
             continue
         # "Authorization: DeepL-Auth-Key " & $key: a vendor's scheme name, followed by the
         # (separately concatenated) key. A word of letters and hyphens then a space is a scheme.

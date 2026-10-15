@@ -34,12 +34,20 @@ def resolve_references(model: DocumentModel) -> DocumentModel:
     _link_calculations(model)
     _link_accounts_to_privilege_sets(model)
     _link_extended_privileges_to_privilege_sets(model)
+    _link_by_name(model)  # last: needs every direct reference and the variables index
     return model
 
 
 # ---------------------------------------------------------------------------
 # Field → Table
 # ---------------------------------------------------------------------------
+
+def _link_by_name(model: DocumentModel) -> None:
+    """GetField, Set Field By Name, Perform Script by name, ... -> what the name may be."""
+    from ..analyze.indirection import analyze_indirection
+
+    analyze_indirection(model)
+
 
 def _link_fields_to_tables(model: DocumentModel) -> None:
     for field in model.entities.fields.values():

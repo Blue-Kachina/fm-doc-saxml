@@ -909,7 +909,7 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
                 fmText=raw_step.get("fm_text"),
                 calculations=[
                     StepCalculation(position=c.get("position"), parameter=c.get("parameter"),
-                                    slot=c.get("slot"), text=c["text"])
+                                    slot=c.get("slot"), text=c["text"], mode=c.get("mode"))
                     for c in calcs
                 ],
                 references=step_refs,

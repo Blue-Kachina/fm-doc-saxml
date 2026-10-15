@@ -360,6 +360,7 @@ class StepCalculation(BaseModel):
     parameter: Optional[str] = None   # <Parameter type>: Variable, Calculation, Message, WindowReference...
     slot: Optional[str] = None        # element holding the calc in that parameter: value, repetition, top...
     text: str
+    mode: Optional[str] = None        # byName | byNumber: the calc chooses the step's layout / script
 
 
 class ScriptStepEntity(BaseModel):
@@ -452,6 +453,9 @@ class CustomFunctionEntity(BaseModel):
     calculation: Optional[str] = None
     calculations: list[EntityCalculation] = []
     references: list[str] = []
+    # What it does with names, when it matters for renames (analyze/indirection.py), e.g.
+    # "Passes `name` to GetField: every call names a field in text."
+    name_role: Optional[str] = Field(None, alias="nameRole")
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
     model_config = ConfigDict(populate_by_name=True)

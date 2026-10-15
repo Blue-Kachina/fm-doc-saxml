@@ -21,3 +21,4 @@ _*.txt
 _ddr_*.py
 NEXUS_saxml.xml
 disRenewalUniverse.xml
+samples/has_indirection/

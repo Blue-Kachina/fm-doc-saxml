@@ -11,6 +11,11 @@ wasn't renamed. That's what makes a docId-keyed set diff meaningful here.
 script would otherwise show as a wall of unrelated added/removed steps.
 Script step changes are instead summarized per-script with a content-based
 (position-tolerant) comparison — see ``_diff_script_steps``.
+
+A rename therefore shows as one entity removed and one added. ``_detect_renames`` pairs
+them again by FileMaker's own ID (and UUID), and ``_stale_names`` lists places in the new
+export that still name the entity by its old name in text (GetField, Perform Script by
+name, ...; see analyze/indirection.py): FileMaker didn't update those.
 """
 
 from __future__ import annotations
@@ -97,11 +102,33 @@ class TypeDiff:
 
 
 @dataclass
+class Rename:
+    entity_type: str
+    old_name: str
+    new_name: str
+    old_doc_id: str
+    new_doc_id: str
+
+
+@dataclass
+class StaleName:
+    """A place in the new export that still names a renamed entity by its old name."""
+    rename: Rename
+    site_doc_id: str
+    where: str
+    sink: str
+    expression: str
+    name: str
+
+
+@dataclass
 class DiffResult:
     old_source: str
     new_source: str
     types: list[TypeDiff]
     script_step_diffs: list[StepDiff]
+    renames: list[Rename] = dc_field(default_factory=list)
+    stale_names: list[StaleName] = dc_field(default_factory=list)
 
     @property
     def total_added(self) -> int:
@@ -135,12 +162,88 @@ def compute_diff(old: DocumentModel, new: DocumentModel) -> DiffResult:
         )
         for field_name, entity_type, label in _ENTITY_TYPES
     ]
+    renames = _detect_renames(old, new)
     return DiffResult(
         old_source=old.source.file_name,
         new_source=new.source.file_name,
         types=types,
         script_step_diffs=_diff_script_steps(old, new),
+        renames=renames,
+        stale_names=_stale_names(new, renames),
     )
+
+
+# Entity maps whose renames matter for names written in text
+_RENAMEABLE = [("fields", "field"), ("scripts", "script"), ("layouts", "layout"),
+               ("table_occurrences", "tableOccurrence"), ("value_lists", "valueList"),
+               ("layout_objects", "layoutObject")]
+
+
+def _identity(model: DocumentModel, entity: Any) -> Optional[tuple]:
+    """What stays the same across a rename: the UUID, else FileMaker's id within its parent."""
+    if getattr(entity, "uuid", None):
+        return ("uuid", entity.uuid)
+    if entity.entity_type == "field":
+        table = model.entities.tables.get(entity.base_table_doc_id)
+        return ("id", table.fmp_id if table else entity.base_table_doc_id, entity.fmp_id)
+    if entity.entity_type == "layoutObject":
+        return None  # its docId is layout + object id: a rename shows as a changed name
+    fmp_id = getattr(entity, "fmp_id", None)
+    return ("id", fmp_id) if fmp_id else None
+
+
+def _detect_renames(old: DocumentModel, new: DocumentModel) -> list[Rename]:
+    renames: list[Rename] = []
+    for field_name, entity_type in _RENAMEABLE:
+        old_map, new_map = getattr(old.entities, field_name), getattr(new.entities, field_name)
+        if entity_type == "layoutObject":
+            for doc_id in set(old_map) & set(new_map):
+                o, n = old_map[doc_id], new_map[doc_id]
+                if o.name and n.name and o.name != n.name:
+                    renames.append(Rename(entity_type, o.name, n.name, doc_id, doc_id))
+            continue
+        added = {_identity(new, new_map[k]): k for k in set(new_map) - set(old_map)}
+        added.pop(None, None)
+        for k in set(old_map) - set(new_map):
+            ident = _identity(old, old_map[k])
+            if ident is None or ident not in added:
+                continue
+            o, n = old_map[k], new_map[added[ident]]
+            renames.append(Rename(entity_type, o.name, n.name, k, n.doc_id))
+    renames.sort(key=lambda r: (r.entity_type, r.old_name.casefold()))
+    return renames
+
+
+def _stale_names(new: DocumentModel, renames: list[Rename]) -> list[StaleName]:
+    from .rename import NAME_KINDS, where_label
+
+    out: list[StaleName] = []
+    to_base = {to.name.casefold(): to.base_table_doc_id for to in new.entities.table_occurrences.values()}
+    tables = {t.name.casefold(): t.doc_id for t in new.entities.tables.values()}
+    for rn in renames:
+        kinds = NAME_KINDS.get(rn.entity_type, set())
+        old = rn.old_name.casefold()
+        field_table = None
+        if rn.entity_type == "field":
+            ent = new.entities.fields.get(rn.new_doc_id)
+            field_table = ent.base_table_doc_id if ent is not None else None
+        for site in new.indirection:
+            if site.name_kind not in kinds:
+                continue
+            for name in site.names:
+                n = name.casefold().strip()
+                if rn.entity_type == "field":
+                    sep = "::" if "::" in n else ("." if site.name_kind == "sql" and "." in n else None)
+                    table, fld = n.rsplit(sep, 1) if sep else (None, n)
+                    same_table = table is None or field_table in (to_base.get(table), tables.get(table))
+                    hit = fld == old and same_table
+                else:
+                    hit = n == old
+                if hit:
+                    out.append(StaleName(rn, site.doc_id, where_label(new, site.source_doc_id), site.sink,
+                                         site.expression, name))
+                    break
+    return out
 
 
 def _diff_entity_map(entity_type: str, label: str, old_map: dict[str, Any], new_map: dict[str, Any]) -> TypeDiff:

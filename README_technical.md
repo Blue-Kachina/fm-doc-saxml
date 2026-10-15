@@ -119,6 +119,7 @@ saxml2doc/
 │  ├─ summary.md
 │  ├─ coverage.md     (--coverage only)
 │  ├─ redactions.md
+│  ├─ indirection.md  (names written in text: see docs/indirection.md)
 │  ├─ warnings.md
 │  └─ unresolved-references.md
 ├─ index.html          (--html only)
@@ -126,7 +127,7 @@ saxml2doc/
    ├─ manifest.js
    ├─ pages/
    ├─ webmcp.js        (--webmcp only; llms.txt at the top level too)
-   └─ data/<file>/     (--webmcp only: catalog, one script per entity type, refs, access)
+   └─ data/<file>/     (--webmcp only: catalog, one script per entity type, refs, access, indirectionSite)
 ```
 
 **Script pages** list every step as FileMaker's Script Workspace shows it: comments, `Set Variable [ $name ; Value: … ]`, `Set Field [ Table::field ; … ]`, Perform Script parameters and step options, with nothing truncated. If/Loop blocks are indented and disabled steps are prefixed with `//`. Step numbers match FileMaker's. A **Variables** table on each script page shows where each variable is set and read. `Variables/index.md` lists every `$$global` (with a page showing where it is set and read across scripts, fields, layouts and custom functions) and each script's `$locals`. Locals that are read but never set are flagged: they are always empty, which usually means a typo.
@@ -189,7 +190,7 @@ A few quirks worth knowing about:
 
 ## Known limitations
 
-- **A missing "Called By" is not proof that a script is unused.** Buttons, button groups, layout and object triggers, File Options triggers and Perform Script steps are all traced, but a script can also be run from a custom menu item in another file, by name from a calculation (`Perform Script by name`), or by FileMaker Server schedules, none of which the export links to a script page.
+- **A missing "Called By" is not proof that a script is unused.** Buttons, button groups, layout and object triggers, File Options triggers and Perform Script steps are all traced, and so are names written in text that can be resolved (`Perform Script [ By name ]`, see [Names written in text](./docs/indirection.md)). A script can still be run from a custom menu item in another file, by a name that comes from data, or by FileMaker Server schedules, none of which the export links to a script page.
 - **Custom privilege lists for layouts, value lists and scripts** are read generically (each row's object and its access columns), because the sample exports used for testing only have custom *record* privileges. Unusual shapes still come through, but their column names are FileMaker's raw element names.
 - **`UNUSED_FIELD_CANDIDATE` only sees references this tool already extracts** — relationships, layouts, layout objects, script steps, and custom-function calculations. It does **not** yet parse the calculation text of a field's own `Calculation` (e.g. a `FullName` calc field referencing `FirstName`/`LastName`) — fields referenced only from inside another field's formula will currently show up as false-positive unused candidates. Treat it as a lead to investigate, not a guarantee.
 - **`diff`'s script-step comparison is content-based, not line-by-line.** It tells you how many steps were added/removed per script, not exactly which ones or where — open the two `Scripts/<name>.md` pages side by side for that level of detail.

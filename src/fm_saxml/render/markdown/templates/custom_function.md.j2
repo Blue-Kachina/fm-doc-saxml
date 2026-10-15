@@ -14,6 +14,8 @@ name: {{ entity.name }}
 {% if entity.modified %}| Last Modified By | {{ entity.modified.account_name or entity.modified.user_name }}{% if entity.modified.user_name and entity.modified.user_name != entity.modified.account_name %} (user: {{ entity.modified.user_name }}){% endif %} |
 | Last Modified | {{ entity.modified.timestamp }} |
 {% endif %}| Parameters | {{ entity.parameters | join(", ") if entity.parameters else "_None_" }} |
+{% if entity.name_role %}| Names | {{ entity.name_role | cell }} |
+{% endif %}
 
 ## Calculation
 
@@ -24,6 +26,8 @@ name: {{ entity.name }}
 {% else %}
 _None._
 {% endif %}
+
+{% include "_by_name_sites.md.j2" %}
 
 {% set bl = backlinks(entity.doc_id) %}
 {% if bl %}

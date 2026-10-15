@@ -9,7 +9,10 @@ viewer loads on demand (file:// pages can't fetch()):
 ``_viewer/data/<file>/<entityType>.js``
     every entity of one type as a flat, queryable record (no ``sourceXml``)
 ``_viewer/data/<file>/refs.js``
-    the reference graph, one row per edge, with the parent of each end
+    the reference graph, one row per edge, with the parent of each end (``via`` = "byName"
+    for a name written in text, with the ``site`` behind it)
+``_viewer/data/<file>/indirectionSite.js``
+    every place that names an entity in text (analyze/indirection.py), as a shard
 ``_viewer/data/<file>/access.js``
     effective access per privilege set (analyze/access.py)
 
@@ -72,6 +75,12 @@ def write_webmcp_data(model: DocumentModel, output_dir: str | Any, *, file_key: 
         for r in records:
             if entity_type != "scriptStep" and (r.get("name") or entity_type == "layoutObject" and r.get("label")):
                 catalog.append([r["docId"], entity_type, r.get("label") or r["name"], r.get("path")])
+
+    sites = builder.indirection_records()
+    if sites:
+        counts["indirectionSite"] = len(sites)
+        _write(data_dir / "indirectionSite.js", f"FMDocs.shard({_js_literal(key)},{_js_literal('indirectionSite')},"
+                                                f"{_js_literal(sites, compact=True)});\n")
 
     refs = builder.references()
     _write(data_dir / "refs.js", f"FMDocs.refs({_js_literal(key)},{_js_literal(refs, compact=True)});\n")
@@ -141,9 +150,12 @@ class _Builder:
                 out.setdefault(entity.entity_type, []).append(record)
         return out
 
+    def indirection_records(self) -> list[dict[str, Any]]:
+        return _site_records(self)
+
     def references(self) -> dict[str, Any]:
         cols = ["source", "sourceType", "sourceParent", "target", "targetType", "targetParent",
-                "relationshipType", "role", "confidence", "externalFile"]
+                "relationshipType", "role", "confidence", "externalFile", "via", "site"]
         rows = []
         for r in self.model.references:
             ext = r.external_target
@@ -152,6 +164,7 @@ class _Builder:
                 r.source_doc_id, r.source_entity_type, self.parent_of.get(r.source_doc_id),
                 target, r.target_entity_type, self.parent_of.get(target) or _field_table(target),
                 r.relationship_type, r.role, r.confidence, ext.data_source if ext is not None else None,
+                r.via, r.site_doc_id,
             ])
         # Names and pages of the ends that aren't entities of this file (other files' targets).
         names = {}
@@ -162,6 +175,26 @@ class _Builder:
                 elif d not in names and r.external_target is not None and d == r.target_doc_id:
                     names[d] = [self.name(d), None]
         return {"cols": cols, "rows": rows, "external": names}
+
+
+def _site_records(b: "_Builder") -> list[dict[str, Any]]:
+    out = []
+    steps = b.model.entities.script_steps
+    for site in b.model.indirection:
+        r = _clean(site.model_dump(by_alias=True, exclude_none=True, mode="json"))
+        r["entityType"] = "indirectionSite"
+        step = steps.get(site.source_doc_id)
+        where = (f"{b.name(step.script_doc_id)} · step {step.index + 1}" if step is not None
+                 else b.name(site.source_doc_id))
+        r["name"] = f"{site.sink}: {site.expression[:80]}"
+        r["where"] = where
+        r["path"] = b.path(site.source_doc_id)
+        r["targets"] = [c.target_doc_id for c in site.candidates]
+        r["breaksOnRename"] = any(c.breaks_on_rename for c in site.candidates)
+        if site.script_doc_id:
+            r["scriptName"] = b.name(site.script_doc_id)
+        out.append(r)
+    return out
 
 
 def _join(prefix: str, rel: str) -> str:

@@ -28,11 +28,13 @@ from .entities import (
     ScriptTriggerInfo,
     GraphRect,
 )
+from .indirection import IndirectionSite
 from .references import ReferenceRecord
 
 
-SCHEMA_VERSION = "0.4.0"  # 0.3.0: script step params, variables. 0.4.0: file options, per-side relationship
+SCHEMA_VERSION = "0.5.0"  # 0.3.0: script step params, variables. 0.4.0: file options, per-side relationship
 #   options, value list sources, privilege set access, field and script options (all additive)
+#   0.5.0: indirectionSites, reference via / siteDocId, step calc mode (additive)
 
 
 class SourceInfo(BaseModel):
@@ -206,6 +208,8 @@ class DocumentModel(BaseModel):
     graph_notes: list[GraphNote] = Field([], alias="graphNotes")
     coverage_inventory: Optional[XmlInventory] = Field(None, alias="coverageInventory")
     references: list[ReferenceRecord] = []
+    # Places that name an entity in a string (GetField, Perform Script by name, ...)
+    indirection: list[IndirectionSite] = Field([], alias="indirectionSites")
     backlinks: dict[str, list[dict]] = {}
     warnings: list[Warning] = []
     scrubbing: Optional[ScrubSummary] = None

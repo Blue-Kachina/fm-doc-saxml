@@ -15,7 +15,8 @@ from ...analyze.coverage import build_coverage
 from ...parser.coverage import CONTEXTS as COVERAGE_CONTEXTS
 from ...normalize.paths import relative_md_link
 from ...utils.file_writer import write_text
-from .link_resolver import LinkResolver, _encode_href, _esc as _esc_link_label
+from .by_name import ByNameIndex
+from .link_resolver import LinkResolver, _encode_href, _esc as _esc_link_label, _relative
 
 
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
@@ -24,6 +25,10 @@ _TEMPLATES_DIR = Path(__file__).parent / "templates"
 _updated_at: str | None = None
 # Effective access per privilege set (analyze.access), built once by render_markdown
 _access: dict[str, Any] | None = None
+# By-name references (analyze/indirection.py) indexed for the pages, built once by render_markdown
+_by_name: ByNameIndex | None = None
+
+INDIRECTION_REPORT = "Reports/indirection.md"
 
 
 def render_markdown(
@@ -33,12 +38,13 @@ def render_markdown(
 
     ``cross_file`` adds pages in sibling folders of a multi-file build (see ``LinkResolver``).
     """
-    global _updated_at, _access
+    global _updated_at, _access, _by_name
     from ...version import get_self_updated_at_display
 
     # Reads git metadata (two subprocesses): once per build, not once per page
     _updated_at = get_self_updated_at_display()
     _access = build_access(model) if model.entities.privilege_sets else None
+    _by_name = ByNameIndex(model)
     env = _make_jinja_env()
     links = LinkResolver(model, cross_file)
 
@@ -76,6 +82,7 @@ def _make_jinja_env() -> Environment:
         lstrip_blocks=True,
     )
     env.filters["cell"] = _md_cell
+    env.filters["code"] = _md_code
     return env
 
 
@@ -84,6 +91,14 @@ def _md_cell(value: object) -> str:
     text = "" if value is None else str(value)
     text = " ".join(text.split("\n")).replace("\r", "")
     return text.replace("|", "\\|")
+
+
+def _md_code(value: object) -> str:
+    """Inline code for a table cell, safe when the text itself has backticks."""
+    text = _md_cell(value)
+    if "`" not in text:
+        return f"`{text}`"
+    return f"`` {text} ``"
 
 
 def _make_ctx(
@@ -100,7 +115,25 @@ def _make_ctx(
         return model.get_entity(doc_id)
 
     def backlinks(doc_id: str) -> list[dict]:
-        return model.backlinks.get(doc_id, [])
+        # Direct references only: by-name ones have their own section (by_name)
+        return [b for b in model.backlinks.get(doc_id, []) if not b.get("via")]
+
+    def where(doc_id: str) -> str:
+        """A link to ``doc_id``; for a script step, to its script, labelled with the step number."""
+        step = model.entities.script_steps.get(doc_id)
+        if step is not None:
+            return links.md_link(current_path, step.script_doc_id,
+                                 f"{links.title_for(step.script_doc_id)} · step {step.index + 1}")
+        return link(doc_id)
+
+    index = _by_name or ByNameIndex(model)
+
+    def by_name(doc_id: str) -> dict[str, list[dict[str, Any]]]:
+        return index.for_target(doc_id)
+
+    name_sites: list[dict[str, Any]] = []
+    if entity is not None and getattr(entity, "doc_id", None):
+        name_sites = index.sites_for(entity.doc_id, script=getattr(entity, "entity_type", "") == "script")
 
     def has_page(doc_id: str) -> bool:
         return links.href(current_path, doc_id) is not None
@@ -132,6 +165,10 @@ def _make_ctx(
         "backlinks": backlinks,
         "has_page": has_page,
         "privilege_access": privilege_access,
+        "by_name": by_name,
+        "where": where,
+        "name_sites": name_sites,
+        "report_href": _relative(current_path, INDIRECTION_REPORT),
     }
 
 
@@ -888,6 +925,8 @@ def _render_reports(model: DocumentModel, output_dir: Path, env: Environment, li
         warning_counts=dict(warning_counts),
         scrubbing=model.scrubbing,
         coverage=coverage,
+        by_name=(_by_name or ByNameIndex(model)).report()["classes"],
+        by_name_total=len(model.indirection),
     )
     write_text(reports_dir / "summary.md", content)
 
@@ -895,6 +934,12 @@ def _render_reports(model: DocumentModel, output_dir: Path, env: Environment, li
     if coverage.available:
         tmpl = env.get_template("reports/coverage.md.j2")
         write_text(reports_dir / "coverage.md", tmpl.render(report=coverage, areas=areas, context_count=len(COVERAGE_CONTEXTS)))
+
+    # Indirection (by-name references)
+    index = _by_name or ByNameIndex(model)
+    report = index.report()
+    ctx = _make_ctx(model, INDIRECTION_REPORT, links)
+    write_text(output_dir / INDIRECTION_REPORT, env.get_template("reports/indirection.md.j2").render(r=report, **ctx))
 
     # Redactions
     if model.scrubbing is not None:
@@ -944,7 +989,7 @@ def _render_section_index(
         doc_path = links.path_for(e.doc_id)
         if doc_path:
             href = _relative_from_index(index_path, doc_path)
-            name_cell = f"[{_esc_link_label(display_name)}]({_encode_href(href)})"
+            name_cell = f"[{_esc_link_label(name_fn(e))}]({_encode_href(href)})"
         else:
             name_cell = display_name
         extra_cell = _md_cell(extra_col_fn(e))

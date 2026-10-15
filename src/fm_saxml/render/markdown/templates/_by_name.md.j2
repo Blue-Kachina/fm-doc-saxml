@@ -1,0 +1,27 @@
+{# "Referenced by Name" for the entity on the page (field, TO, layout, script, value list, object) #}
+{% set bn = by_name(entity.doc_id) %}
+{% if bn.breaks or bn.safe %}
+## Referenced by Name
+
+FileMaker updates direct references when this is renamed, but not names written in text. {% if bn.breaks %}**{{ bn.breaks | length }} place(s) below would break.**{% else %}Every place below gets the name from a real reference, so a rename is safe.{% endif %} See the [indirection report]({{ report_href }}).
+
+{% if bn.breaks %}
+### Breaks on Rename
+
+| Where | How | Name used | Confidence | How the name gets there |
+|---|---|---|---|---|
+{% for r in bn.breaks %}
+| {{ where(r.where) }} | {{ r.how | cell }} | `{{ r.name | cell }}`{% if r.origin == "pattern" %} (pattern){% endif %} | {{ r.confidence }} | {{ (r.trace or "written here") | cell }} |
+{% endfor %}
+{% endif %}
+
+{% if bn.safe %}
+### Name Captured Safely
+
+| Where | How | Captured by |
+|---|---|---|
+{% for r in bn.safe %}
+| {{ where(r.where) }} | {{ r.how | cell }} | {{ (r.trace or r.name) | cell }} |
+{% endfor %}
+{% endif %}
+{% endif %}

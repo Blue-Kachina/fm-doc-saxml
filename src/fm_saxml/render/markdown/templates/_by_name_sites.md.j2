@@ -1,0 +1,12 @@
+{# Places on this page (a script's steps, a field's formula, an object's calcs) that use a name written in text #}
+{% if name_sites %}
+## Names Used in Text
+
+These steps or calculations name a field, script, layout or object in text instead of referring to it directly. See the [indirection report]({{ report_href }}) for what each class means.
+
+| {% if name_sites[0].step %}Step{% else %}Where{% endif %} | How | Expression | Class | Names | Note |
+|---|---|---|---|---|---|
+{% for r in name_sites %}
+| {% if r.step %}{{ r.step }}{% else %}{{ r.site.role or "" }}{% endif %} | {{ r.how | cell }} | `{{ r.expression | truncate(120, True, "…") | cell }}` | {{ r.klass }} ({{ r.label }}) | {% for t in r.targets[:6] %}{{ link(t) }}{% if not loop.last %}, {% endif %}{% endfor %}{% if r.targets | length > 6 %} and {{ r.targets | length - 6 }} more{% endif %}{% if not r.targets and r.names %}`{{ r.names[:3] | join("`, `") | cell }}`{% endif %} | {{ r.note | cell }} |
+{% endfor %}
+{% endif %}

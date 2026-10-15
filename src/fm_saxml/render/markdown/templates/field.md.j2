@@ -124,6 +124,9 @@ _None._
 {% endfor %}
 {% endif %}
 
+{% include "_by_name.md.j2" %}
+{% include "_by_name_sites.md.j2" %}
+
 {% set bl = backlinks(entity.doc_id) %}
 {% if bl %}
 ## Used By

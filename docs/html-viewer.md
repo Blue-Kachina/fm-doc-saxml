@@ -29,8 +29,10 @@ fm-saxml serve ./MySolution_docs                     # serve docs built earlier
 | `search_entities` | Find anything by name, or by comment, calculation or step text |
 | `query_entities` | Filter one type by its attributes ("unstored calcs that use related fields", "layout objects with a hide condition") |
 | `find_script_steps` | Steps by name, text, regex, script or folder, or by what they set ("every Set Field on `Invoices::Total`") |
-| `find_references` | What uses an entity, or every field of a table, and what it uses |
+| `find_references` | What uses an entity, or every field of a table, and what it uses (places that name it in text are marked `byName`; `includeByName: false` leaves them out) |
 | `find_unreferenced` | Dead-code candidates: scripts, layouts, value lists, custom functions or fields nothing references |
+| `find_indirection` | Places that name a field, script, layout or object in text (`GetField`, Perform Script by name, `ExecuteSQL` ...), by class: hardcoded, traced, opaque, broken, safe — see [Names written in text](./indirection.md) |
+| `rename_impact` | Before a rename: what names the entity in text and would break, what captures its name safely, and what takes a name from data |
 | `traverse` | References followed more than one step: everything that eventually calls a script, or the path between two table occurrences |
 | `who_can_access`, `what_can_access` | Which privilege sets and accounts can run a script, open a layout, or view, edit, create or delete records, and why |
 | `query` | A JSON pipeline (`from`, `where`, `join`, `joinRefs`, `joinAccess`, `select`, `groupBy`, `sort`, `limit`) for questions no other tool covers |

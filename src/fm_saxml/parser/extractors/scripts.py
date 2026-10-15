@@ -217,10 +217,34 @@ def _calc_entry(
     parameter: str | None = None,
     slot: str | None = None,
     references: list[dict] | None = None,
+    mode: str | None = None,
 ) -> dict[str, Any]:
-    """One calculated step parameter. ``references`` is None when it has no ChunkList."""
-    return {"position": position, "parameter": parameter, "slot": slot,
-            "text": text, "references": references}
+    """One calculated step parameter. ``references`` is None when it has no ChunkList.
+
+    ``mode`` says how a calculated target is chosen: ``byName`` (Perform Script / Go to
+    Layout "By name") or ``byNumber`` (Go to Layout "Layout Number by calculation").
+    """
+    entry = {"position": position, "parameter": parameter, "slot": slot,
+             "text": text, "references": references}
+    if mode:
+        entry["mode"] = mode
+    return entry
+
+
+# <LayoutReferenceContainer value="..."> for a calculated layout: 3 = by name, 4 = by number
+_LAYOUT_CALC_MODES = {"3": "byName", "4": "byNumber"}
+
+
+def _calc_mode(holder: etree._Element | None) -> str | None:
+    """``byName`` / ``byNumber`` when ``holder`` picks a step's target by calculation."""
+    if holder is None:
+        return None
+    tag = _local(holder.tag)
+    if tag == "LayoutReferenceContainer":
+        return _LAYOUT_CALC_MODES.get(attr(holder, "value"))
+    if tag == "List" and attr(holder, "name").casefold() == "by name":
+        return "byName"
+    return None
 
 
 def _extract_v2_step_refs(
@@ -500,6 +524,7 @@ def _v2_calc_entry(
         parameter=(attr(param, "type", "Type") or None) if param is not None else None,
         slot=None if slot == "Parameter" else slot,
         references=chunk_refs_for(calc, chunk_lists),
+        mode=_calc_mode(holder),
     )
 
 

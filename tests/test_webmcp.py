@@ -87,6 +87,8 @@ def test_every_entity_is_in_its_shard_with_a_page(tmp_path):
     expected = {doc_id: e["entityType"] for entity_map in em.values() for doc_id, e in entity_map.items()}
     found = {}
     for entity_type, count in catalog["counts"].items():
+        if entity_type == "indirectionSite":  # not an entity: places that name one (test_indirection.py)
+            continue
         _, shard_type, records = _shard(out, entity_type)
         assert shard_type == entity_type and len(records) == count
         for r in records:

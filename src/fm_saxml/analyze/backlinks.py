@@ -15,13 +15,17 @@ def generate_backlinks(model: DocumentModel) -> DocumentModel:
             continue
         if target not in backlinks:
             backlinks[target] = []
-        backlinks[target].append({
+        entry = {
             "sourceDocId": ref.source_doc_id,
             "sourceEntityType": ref.source_entity_type,
             "relationshipType": ref.relationship_type,
             "role": ref.role,
             "confidence": ref.confidence,
-        })
+        }
+        if ref.via:  # named in a string: see analyze/indirection.py
+            entry["via"] = ref.via
+            entry["siteDocId"] = ref.site_doc_id
+        backlinks[target].append(entry)
 
     model.backlinks = backlinks
     return model

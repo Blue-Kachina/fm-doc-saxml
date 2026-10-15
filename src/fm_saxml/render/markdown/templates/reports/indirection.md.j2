@@ -1,0 +1,101 @@
+---
+title: Indirection Report
+---
+
+# Indirection: Names Written in Text
+
+FileMaker stores a direct reference (a field in a calculation, the script of a Perform Script step) by its internal ID, and updates it when the target is renamed. A **name written in text** is not updated: `GetField ( "Invoice::Total" )`, `Set Field By Name [ $target ]`, `Perform Script [ By name: $callback ]`, `Go to Object [ "btnSave" ]`, the table and column names in an `ExecuteSQL` query.
+
+This report lists every such place found in **{{ source_file }}**: {{ r.total }} in all. Before you rename something, check its page: the **Referenced by Name** section lists what would break.
+
+## Classes
+
+| Class | | Count | Meaning |
+|---|---|---:|---|
+{% for c in r.classes %}
+| {{ c.klass }} | {{ c.label }} | {{ c.count }} | {{ c.meaning }} |
+{% endfor %}
+
+## By Kind of Use
+
+| How | Total |{% for k in r.class_order %} {{ k }} |{% endfor %}
+
+|---|---:|{% for k in r.class_order %}---:|{% endfor %}
+
+{% for s in r.sinks %}
+| {{ s.sink | cell }} | {{ s.total }} |{% for k in r.class_order %} {{ s[k] or "" }} |{% endfor %}
+
+{% endfor %}
+
+{% if r.risk %}
+## Rename Risk
+
+Entities named in text, most at risk first. **Hardcoded** names are written where they are used; **traced** names reach the place through variables or script parameters; **pattern** matches come from names built at run time (`$type & " tabs"`).
+
+| Entity | Type | Hardcoded | Traced | Pattern | Places |
+|---|---|---:|---:|---:|---:|
+{% for x in r.risk %}
+| {{ link(x.target) }} | {{ x.kind_label }} | {{ x.B or "" }} | {{ x.C or "" }} | {{ x.pattern or "" }} | {{ x.sites }} |
+{% endfor %}
+{% endif %}
+
+{% if r.broken %}
+## Broken (E)
+
+Names that match nothing in this file. Either the target was renamed or deleted, or it lives in another file.
+
+| Where | How | Expression | Note |
+|---|---|---|---|
+{% for x in r.broken %}
+| {{ where(x.where) }} | {{ x.how | cell }} | `{{ x.expression | truncate(120, True, "…") | cell }}` | {{ x.note | cell }} |
+{% endfor %}
+{% endif %}
+
+{% if r.hardcoded %}
+## Hardcoded (B)
+
+| Where | How | Expression | Names |
+|---|---|---|---|
+{% for x in r.hardcoded %}
+| {{ where(x.where) }} | {{ x.how | cell }} | `{{ x.expression | truncate(120, True, "…") | cell }}` | {% for t in x.targets[:6] %}{{ link(t) }}{% if not loop.last %}, {% endif %}{% endfor %}{% if x.targets | length > 6 %} and {{ x.targets | length - 6 }} more{% endif %}{% if x.note %} ({{ x.note | cell }}){% endif %} |
+{% endfor %}
+{% endif %}
+
+{% if r.traced %}
+## Traced (C)
+
+| Where | How | Expression | Candidates | How the name gets there |
+|---|---|---|---|---|
+{% for x in r.traced %}
+| {{ where(x.where) }} | {{ x.how | cell }} | `{{ x.expression | truncate(80, True, "…") | cell }}` | {% for t in x.targets[:6] %}{{ link(t) }}{% if not loop.last %}, {% endif %}{% endfor %}{% if x.targets | length > 6 %} and {{ x.targets | length - 6 }} more{% endif %}{% if not x.targets %}_none matched_{% endif %} | {{ (x.trace or x.note) | cell }} |
+{% endfor %}
+{% endif %}
+
+{% if r.opaque %}
+## Opaque (D)
+
+The name comes from data, a calculation we don't model, or a script parameter no caller in this file supplies. Check these by hand before a rename.
+
+| Where | How | Expression | Why it's unknown |
+|---|---|---|---|
+{% for x in r.opaque %}
+| {{ where(x.where) }} | {{ x.how | cell }} | `{{ x.expression | truncate(80, True, "…") | cell }}` | {{ x.note | cell }} |
+{% endfor %}
+{% endif %}
+
+{% if r.functions %}
+## Custom Functions That Handle Names
+
+| Custom Function | Role |
+|---|---|
+{% for cf in r.functions %}
+| {{ link(cf.doc_id) }} | {{ cf.name_role | cell }} |
+{% endfor %}
+{% endif %}
+
+## What This Can't See
+
+- Names used from outside the file: the Data API, OData, ODBC/JDBC, PHP, web viewers, plug-ins, `fmp://` URLs from other apps, server schedules that run scripts by name.
+- Names stored in records (configuration tables, mapping JSON from an integration). These sites are marked D.
+- Window names (Select Window, Close Window, New Window), and layouts chosen by number (`Go to Layout [ by number ]`), which break when layouts are reordered, not renamed.
+- Variables are traced without regard to step order: every value a variable is ever given counts.

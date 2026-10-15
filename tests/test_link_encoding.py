@@ -19,6 +19,7 @@ def _raw() -> RawModel:
         {"id": "1", "name": "UI - Halt If Not in Browse Mode", "steps": []},
         {"id": "2", "name": "Loadi18n ( idLanguage )", "steps": []},
         {"id": "3", "name": "Caller", "steps": []},
+        {"id": "4", "name": "A|B", "steps": []},
     ]
     return raw
 
@@ -65,3 +66,16 @@ def test_md_link_label_is_left_readable():
     links = LinkResolver(_model())
     md = links.md_link("Scripts/Caller.md", "script:UI - Halt If Not in Browse Mode")
     assert md.startswith("[UI - Halt If Not in Browse Mode]")
+
+
+def test_md_link_label_escapes_pipes():
+    # A bare `|` in the label would split the table row the link sits in.
+    links = LinkResolver(_model())
+    md = links.md_link("Scripts/Caller.md", "script:A|B")
+    assert md.startswith(r"[A\|B]")
+
+
+def test_section_index_pipes_are_escaped_once(tmp_path):
+    render_markdown(_model(), tmp_path)
+    index = (tmp_path / "Scripts" / "index.md").read_text(encoding="utf-8")
+    assert r"| [A\|B](" in index

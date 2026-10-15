@@ -24,7 +24,14 @@ RelationshipType = Literal[
     "deletesFrom",
     "opensWindowOn",
     "navigatesTo",
+    "usesTableOccurrence",  # by name only: SQL, Get ( LayoutTableName ) comparisons
+    "usesLayoutObject",     # by name only: Go to Object, GetLayoutObjectAttribute
 ]
+
+# How a reference names its target. "byName": the name is a string the calc or step
+# builds (GetField, Set Field By Name, Perform Script by name, ...), so FileMaker does
+# not update it when the target is renamed. See analyze/indirection.py.
+ReferenceVia = Literal["byName"]
 
 
 class ExternalTarget(BaseModel):
@@ -71,5 +78,7 @@ class ReferenceRecord(BaseModel):
     confidence: ReferenceConfidence = "exact"
     raw_text: Optional[str] = Field(None, alias="rawText")
     external_target: Optional[ExternalTarget] = Field(None, alias="externalTarget")  # set when confidence == "external"
+    via: Optional[ReferenceVia] = None
+    site_doc_id: Optional[str] = Field(None, alias="siteDocId")  # the IndirectionSite behind a byName reference
 
     model_config = ConfigDict(populate_by_name=True)

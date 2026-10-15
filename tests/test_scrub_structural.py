@@ -214,3 +214,24 @@ def test_credential_names(name, secret):
 
 def test_parser_captures_set_variable_name():
     assert _parse_step(etree.fromstring(SET_VARIABLE), 0)["variable"] == "$x"
+
+
+# ---------------------------------------------------------------------------
+# Markup after a credential word is not a credential (SOAP / HTML in strings)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("source", [
+    # A SOAP body: "login" then the xsi namespace prefix, then an attribute
+    '"<ns1:authenticate> <login xsi:type=\\"xsd:string\\">" & $user & "</login>"',
+    '"<token xsi:type=\\"xsd:string\\">" & $token & "</token>"',
+    '"<key xsi:type=\\"xsd:string\\">message</key>"',
+    # HTML attributes after a credential-looking word
+    '"<input name=\\"password\\" type=\\"password\\">"',
+])
+def test_markup_after_a_credential_word_is_left_alone(source):
+    assert calc(source) == source
+
+
+def test_credentials_in_prose_are_still_redacted():
+    assert "swordfish99" not in calc('/* password: swordfish99 */ 1')
+    assert "Zx81-q9" not in calc('/* apikey:Zx81-q9 for staging */ 1')  # glued to the keyword itself

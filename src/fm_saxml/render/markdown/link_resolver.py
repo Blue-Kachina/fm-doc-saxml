@@ -194,7 +194,7 @@ class LinkResolver:
         href = self.href(from_path, target_doc_id)
         title = label or self.title_for(target_doc_id)
         if href is None:
-            return title
+            return _esc(title)
         return f"[{_esc(title)}]({_encode_href(href)})"
 
 
@@ -220,7 +220,10 @@ def _relative(from_path: str, to_path: str) -> str:
 
 
 def _esc(text: str) -> str:
-    return text.replace("[", "\\[").replace("]", "\\]")
+    # `\|` is a valid escape anywhere, and keeps a name like `A|B` from
+    # splitting a table row when the link lands in a cell.
+    text = " ".join(text.split("\n")).replace("\r", "")
+    return text.replace("[", "\\[").replace("]", "\\]").replace("|", "\\|")
 
 
 def _encode_href(href: str) -> str:

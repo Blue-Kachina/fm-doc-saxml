@@ -20,6 +20,8 @@ def render_diff_markdown(result: DiffResult, out_path: Path) -> None:
         new_source=result.new_source,
         types=result.types,
         script_step_diffs=result.script_step_diffs,
+        renames=result.renames,
+        stale_names=result.stale_names,
         total_added=result.total_added,
         total_removed=result.total_removed,
         total_changed=result.total_changed,
