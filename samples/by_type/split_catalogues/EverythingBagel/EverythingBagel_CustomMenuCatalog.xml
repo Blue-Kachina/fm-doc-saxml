@@ -1,0 +1,653 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="EverythingBagel.fmp12" UUID="400FEDB4-F509-8F4D-AF05-472A0DE02EAC" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<CustomMenuCatalog membercount="25">
+				<PasteIndexList membercount="25">
+					<Object id="1"></Object>
+					<Object id="10"></Object>
+					<Object id="11"></Object>
+					<Object id="12"></Object>
+					<Object id="13"></Object>
+					<Object id="14"></Object>
+					<Object id="15"></Object>
+					<Object id="16"></Object>
+					<Object id="17"></Object>
+					<Object id="18"></Object>
+					<Object id="19"></Object>
+					<Object id="2"></Object>
+					<Object id="20"></Object>
+					<Object id="21"></Object>
+					<Object id="22"></Object>
+					<Object id="23"></Object>
+					<Object id="24"></Object>
+					<Object id="25"></Object>
+					<Object id="3"></Object>
+					<Object id="4"></Object>
+					<Object id="5"></Object>
+					<Object id="6"></Object>
+					<Object id="7"></Object>
+					<Object id="8"></Object>
+					<Object id="9"></Object>
+				</PasteIndexList>
+				<SortOrder>1</SortOrder>
+				<CustomOrderList>
+					<key>1</key>
+					<key>2</key>
+					<key>3</key>
+					<key>4</key>
+					<key>5</key>
+					<key>6</key>
+					<key>7</key>
+					<key>8</key>
+					<key>9</key>
+					<key>10</key>
+					<key>11</key>
+					<key>12</key>
+					<key>13</key>
+					<key>14</key>
+					<key>15</key>
+					<key>16</key>
+					<key>17</key>
+					<key>18</key>
+					<key>19</key>
+					<key>20</key>
+					<key>21</key>
+					<key>22</key>
+					<key>23</key>
+					<key>24</key>
+					<key>25</key>
+				</CustomOrderList>
+				<UUID modifications="3" userName="Admin" accountName="Admin" timestamp="2026-10-21T13:51:58">F0D02DB4-BAD4-304F-A1F5-BE97F56A225E</UUID>
+				<TagList></TagList>
+				<CustomMenu name="[Format]" id="1">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">9709C74F-A90F-3D48-8D84-9B8D1845A083</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_9709C74F-A90F-3D48-8D84-9B8D1845A083_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Format" value="6"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Scripts]" id="2">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">916DD255-6CE6-CD4A-9FD4-CBDBEFCDEBAE</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_916DD255-6CE6-CD4A-9FD4-CBDBEFCDEBAE_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Scripts" value="8"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Window]" id="3">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">50579C6C-DB27-DD46-87C4-5DE85B468C0E</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_50579C6C-DB27-DD46-87C4-5DE85B468C0E_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Window" value="9"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Recent]" id="4">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">A9DFA17E-840E-574A-915B-98775FD053D5</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_A9DFA17E-840E-574A-915B-98775FD053D5_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Recent" value="32"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Import Records]" id="5">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">BE4BDB6F-657C-5F41-99F8-BAE3300F0D1F</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_BE4BDB6F-657C-5F41-99F8-BAE3300F0D1F_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Import Records" value="155"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Save/Send Records As]" id="6">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">1A9EE465-4098-7546-A8F6-2DD914AB9613</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_1A9EE465-4098-7546-A8F6-2DD914AB9613_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Save/Send Records As" value="168"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Go to Layout]" id="7">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">A2C3F155-9604-D74A-825E-971F4C65CE6E</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_A2C3F155-9604-D74A-825E-971F4C65CE6E_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Go to Layout" value="161"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Align Text]" id="8">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">D906D521-7796-1440-863C-0542F10687C8</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_D906D521-7796-1440-863C-0542F10687C8_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Align Text" value="22"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Manage]" id="9">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">71F84B8E-D10D-C943-AE71-8D5AD2BB6964</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_71F84B8E-D10D-C943-AE71-8D5AD2BB6964_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Manage" value="157"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Find/Replace]" id="10">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">3CC2166D-4EF3-A64C-91E8-53B9F249A5BB</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_3CC2166D-4EF3-A64C-91E8-53B9F249A5BB_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Find/Replace" value="149"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Font]" id="11">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">E0A75F44-B267-9B41-B7B3-6605555D4E5D</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_E0A75F44-B267-9B41-B7B3-6605555D4E5D_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Font" value="18"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Line Spacing]" id="12">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">71AEE179-CF09-044D-AB10-C5353BA6CED2</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_71AEE179-CF09-044D-AB10-C5353BA6CED2_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Line Spacing" value="24"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Sharing]" id="13">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">7374E5FE-6A44-3643-8887-730D21F1E981</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_7374E5FE-6A44-3643-8887-730D21F1E981_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Sharing" value="156"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Go to Request]" id="14">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">FE9E35EB-0BAF-9749-B5C8-83EFFFFCF1F1</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_FE9E35EB-0BAF-9749-B5C8-83EFFFFCF1F1_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Go to Request" value="172"></Base>
+					<Options browseMode="False" findMode="True" previewMode="False"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Go to Record]" id="15">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">7D2117AE-B141-6A48-A674-37552FA67822</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_7D2117AE-B141-6A48-A674-37552FA67822_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Go to Record" value="159"></Base>
+					<Options browseMode="True" findMode="False" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Show Window]" id="16">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">B497D784-EFEB-4545-9B50-CD0EA33749A3</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_B497D784-EFEB-4545-9B50-CD0EA33749A3_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Show Window" value="38"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Size]" id="17">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">5B253A61-C4F6-374B-969F-024922E8EC36</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_5B253A61-C4F6-374B-969F-024922E8EC36_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Size" value="20"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Spelling]" id="18">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">C1A98B93-B2EF-2F45-B61B-EE9B4BA11378</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_C1A98B93-B2EF-2F45-B61B-EE9B4BA11378_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Spelling" value="19"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Style]" id="19">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">A04DFF9A-33DF-2043-8531-28E15A714CC3</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_A04DFF9A-33DF-2043-8531-28E15A714CC3_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Style" value="21"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Text Color]" id="20">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">80EB276C-1BCE-7A44-9915-1F987A612F2C</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_80EB276C-1BCE-7A44-9915-1F987A612F2C_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Text Color" value="181"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Saved Finds]" id="21">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">BB783B22-D9F3-4F41-915F-638F7ECEE15A</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_BB783B22-D9F3-4F41-915F-638F7ECEE15A_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Saved Finds" value="199"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Send]" id="22">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">B0835B5F-B9FF-144F-99F6-CBFAB96E373C</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_B0835B5F-B9FF-144F-99F6-CBFAB96E373C_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Send" value="200"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Favorites]" id="23">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">908DFE5D-4D5A-024F-A4A7-ED5F646704F4</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_908DFE5D-4D5A-024F-A4A7-ED5F646704F4_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Favorites" value="209"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="[Hosts]" id="24">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:06">BD28284F-C1E4-EA4B-8EA4-B845F0EED59D</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="0"></MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_BD28284F-C1E4-EA4B-8EA4-B845F0EED59D_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment></Comment>
+					<Base name="Hosts" value="73"></Base>
+					<Options browseMode="True" findMode="True" previewMode="True"></Options>
+				</CustomMenu>
+				<CustomMenu name="Custom Custom Menu" id="25">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-10-21T13:51:47">4B4D221B-C372-2D48-A740-DBC9A2913258</UUID>
+					<TagList></TagList>
+					<MenuItemList membercount="1">
+						<CustomMenuItem hash="C259F936A43A4686794F0DF0A9C82A17" index="0" isSubMenuItem="False" isSeparatorItem="False">
+							<UUID>F4499B88-6E8F-E942-A6B6-305F3316AC9A</UUID>
+							<action>
+								<Step hash="D3271B9B94C09A588D427C7F1F012AE8" index="0" id="93" name="Beep" enable="True">
+									<UUID>F4499B88-6E8F-E942-A6B6-305F3316AC9A</UUID>
+									<OwnerID></OwnerID>
+									<Options>0</Options>
+									<DDRREF kind="StepText" hash="0A97A2C1536EBD6CF534B108CE955990">_F4499B88-6E8F-E942-A6B6-305F3316AC9A</DDRREF>
+								</Step>
+							</action>
+							<Conditions>
+								<Install>
+									<Calculation>
+										<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_F4499B88-6E8F-E942-A6B6-305F3316AC9A_Install</DDRREF>
+										<Text><![CDATA[1]]></Text>
+									</Calculation>
+								</Install>
+							</Conditions>
+							<Name>
+								<Calculation>
+									<DDRREF kind="ChunkList" hash="57EDFA1215D37497ACF44A3445E724F8">_F4499B88-6E8F-E942-A6B6-305F3316AC9A_Name</DDRREF>
+									<Text><![CDATA["Custom Custom Menu Item"]]></Text>
+								</Calculation>
+							</Name>
+							<Command id="0"></Command>
+							<Override name="True" action="True" Shortcut="False"></Override>
+						</CustomMenuItem>
+					</MenuItemList>
+					<Conditions>
+						<Install>
+							<Calculation>
+								<DDRREF kind="ChunkList" hash="A93F17BC54CA1958073B692697D5ED21">_4B4D221B-C372-2D48-A740-DBC9A2913258_Install</DDRREF>
+								<Text><![CDATA[1]]></Text>
+							</Calculation>
+						</Install>
+					</Conditions>
+					<Comment>Custom Custom Menu</Comment>
+					<Options browseMode="True" findMode="True" previewMode="True">
+						<Override>
+							<Title>
+								<Calculation>
+									<DDRREF kind="ChunkList" hash="184757ACD2D8397CB3DEC853F19CA0DD">_4B4D221B-C372-2D48-A740-DBC9A2913258_Title</DDRREF>
+									<Text><![CDATA["Untitled"]]></Text>
+								</Calculation>
+							</Title>
+						</Override>
+					</Options>
+				</CustomMenu>
+			</CustomMenuCatalog>
+		</AddAction>
+	</Structure>
+	<DDR_INFO>
+		<Script>
+			<ObjectList>
+				<_F4499B88-6E8F-E942-A6B6-305F3316AC9A hash="0A97A2C1536EBD6CF534B108CE955990" datatype="StepText">Beep</_F4499B88-6E8F-E942-A6B6-305F3316AC9A>
+			</ObjectList>
+		</Script>
+		<Calculation>
+			<ObjectList>
+				<_9709C74F-A90F-3D48-8D84-9B8D1845A083_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_9709C74F-A90F-3D48-8D84-9B8D1845A083_Install>
+				<_916DD255-6CE6-CD4A-9FD4-CBDBEFCDEBAE_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_916DD255-6CE6-CD4A-9FD4-CBDBEFCDEBAE_Install>
+				<_50579C6C-DB27-DD46-87C4-5DE85B468C0E_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_50579C6C-DB27-DD46-87C4-5DE85B468C0E_Install>
+				<_A9DFA17E-840E-574A-915B-98775FD053D5_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_A9DFA17E-840E-574A-915B-98775FD053D5_Install>
+				<_BE4BDB6F-657C-5F41-99F8-BAE3300F0D1F_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_BE4BDB6F-657C-5F41-99F8-BAE3300F0D1F_Install>
+				<_1A9EE465-4098-7546-A8F6-2DD914AB9613_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_1A9EE465-4098-7546-A8F6-2DD914AB9613_Install>
+				<_A2C3F155-9604-D74A-825E-971F4C65CE6E_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_A2C3F155-9604-D74A-825E-971F4C65CE6E_Install>
+				<_D906D521-7796-1440-863C-0542F10687C8_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_D906D521-7796-1440-863C-0542F10687C8_Install>
+				<_71F84B8E-D10D-C943-AE71-8D5AD2BB6964_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_71F84B8E-D10D-C943-AE71-8D5AD2BB6964_Install>
+				<_3CC2166D-4EF3-A64C-91E8-53B9F249A5BB_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_3CC2166D-4EF3-A64C-91E8-53B9F249A5BB_Install>
+				<_E0A75F44-B267-9B41-B7B3-6605555D4E5D_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_E0A75F44-B267-9B41-B7B3-6605555D4E5D_Install>
+				<_71AEE179-CF09-044D-AB10-C5353BA6CED2_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_71AEE179-CF09-044D-AB10-C5353BA6CED2_Install>
+				<_7374E5FE-6A44-3643-8887-730D21F1E981_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_7374E5FE-6A44-3643-8887-730D21F1E981_Install>
+				<_FE9E35EB-0BAF-9749-B5C8-83EFFFFCF1F1_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_FE9E35EB-0BAF-9749-B5C8-83EFFFFCF1F1_Install>
+				<_7D2117AE-B141-6A48-A674-37552FA67822_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_7D2117AE-B141-6A48-A674-37552FA67822_Install>
+				<_B497D784-EFEB-4545-9B50-CD0EA33749A3_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_B497D784-EFEB-4545-9B50-CD0EA33749A3_Install>
+				<_5B253A61-C4F6-374B-969F-024922E8EC36_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_5B253A61-C4F6-374B-969F-024922E8EC36_Install>
+				<_C1A98B93-B2EF-2F45-B61B-EE9B4BA11378_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_C1A98B93-B2EF-2F45-B61B-EE9B4BA11378_Install>
+				<_A04DFF9A-33DF-2043-8531-28E15A714CC3_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_A04DFF9A-33DF-2043-8531-28E15A714CC3_Install>
+				<_80EB276C-1BCE-7A44-9915-1F987A612F2C_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_80EB276C-1BCE-7A44-9915-1F987A612F2C_Install>
+				<_BB783B22-D9F3-4F41-915F-638F7ECEE15A_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_BB783B22-D9F3-4F41-915F-638F7ECEE15A_Install>
+				<_B0835B5F-B9FF-144F-99F6-CBFAB96E373C_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_B0835B5F-B9FF-144F-99F6-CBFAB96E373C_Install>
+				<_908DFE5D-4D5A-024F-A4A7-ED5F646704F4_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_908DFE5D-4D5A-024F-A4A7-ED5F646704F4_Install>
+				<_BD28284F-C1E4-EA4B-8EA4-B845F0EED59D_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_BD28284F-C1E4-EA4B-8EA4-B845F0EED59D_Install>
+				<_F4499B88-6E8F-E942-A6B6-305F3316AC9A_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_F4499B88-6E8F-E942-A6B6-305F3316AC9A_Install>
+				<_F4499B88-6E8F-E942-A6B6-305F3316AC9A_Name hash="57EDFA1215D37497ACF44A3445E724F8" datatype="ChunkList">
+					<ChunkList hash="57EDFA1215D37497ACF44A3445E724F8">
+						<Chunk type="NoRef">&quot;Custom Custom Menu Item&quot;</Chunk>
+					</ChunkList>
+				</_F4499B88-6E8F-E942-A6B6-305F3316AC9A_Name>
+				<_4B4D221B-C372-2D48-A740-DBC9A2913258_Install hash="A93F17BC54CA1958073B692697D5ED21" datatype="ChunkList">
+					<ChunkList hash="A93F17BC54CA1958073B692697D5ED21">
+						<Chunk type="NoRef">1</Chunk>
+					</ChunkList>
+				</_4B4D221B-C372-2D48-A740-DBC9A2913258_Install>
+				<_4B4D221B-C372-2D48-A740-DBC9A2913258_Title hash="184757ACD2D8397CB3DEC853F19CA0DD" datatype="ChunkList">
+					<ChunkList hash="184757ACD2D8397CB3DEC853F19CA0DD">
+						<Chunk type="NoRef">&quot;Untitled&quot;</Chunk>
+					</ChunkList>
+				</_4B4D221B-C372-2D48-A740-DBC9A2913258_Title>
+			</ObjectList>
+		</Calculation>
+	</DDR_INFO>
+</FMSaveAsXML>

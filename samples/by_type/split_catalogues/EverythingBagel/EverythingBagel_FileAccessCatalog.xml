@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="EverythingBagel.fmp12" UUID="400FEDB4-F509-8F4D-AF05-472A0DE02EAC" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<FileAccessCatalog sameHost="False" required="True">
+				<UUID modifications="2" userName="Admin" accountName="" timestamp="2026-03-12T11:30:06">5CA0266D-B31E-4849-B5BB-8C503A6AC0FE</UUID>
+				<ObjectList membercount="2">
+					<Authorization id="1" type="Local" self="True">
+						<Source CreationTimestamp="03/12/2026 11:30:06 AM" CreationAccountName="Admin"></Source>
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-03-12T11:30:06">784A4464-3BE7-4B4B-8674-C11AD090B5BE</UUID>
+						<Display><![CDATA[EverythingBagel]]></Display>
+						<Authentication>D8C09F772ADDBF4569CCCDA591616DE304B5CBC1A7BB0B1E53B486B07B4633CD2C441B60AF7FAE7A821758316E2CBCAEE3EC53A3F35376898528085AA2FB34AF</Authentication>
+						<TagList></TagList>
+					</Authorization>
+					<Authorization id="2" type="External" self="True">
+						<Source CreationTimestamp="03/12/2026 11:30:06 AM" CreationAccountName="Admin"></Source>
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-03-12T11:30:06">34E0AC72-619B-A544-A389-DA56B200BD87</UUID>
+						<Display><![CDATA[EverythingBagel]]></Display>
+						<Authentication>718037E9036B575FE0988B4B4265ABFAB91A145E6ED9ECB54FCD5D462D4F2BBA</Authentication>
+						<TagList></TagList>
+					</Authorization>
+				</ObjectList>
+			</FileAccessCatalog>
+		</AddAction>
+	</Structure>
+	<DDR_INFO></DDR_INFO>
+</FMSaveAsXML>

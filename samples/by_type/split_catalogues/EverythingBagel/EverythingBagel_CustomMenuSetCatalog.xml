@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="EverythingBagel.fmp12" UUID="400FEDB4-F509-8F4D-AF05-472A0DE02EAC" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<CustomMenuSetCatalog membercount="1">
+				<PasteIndexList membercount="1">
+					<Object id="2"></Object>
+				</PasteIndexList>
+				<SortOrder>1</SortOrder>
+				<CustomOrderList>
+					<key>1</key>
+					<key>2</key>
+				</CustomOrderList>
+				<UUID modifications="3" userName="Admin" accountName="Admin" timestamp="2026-10-21T13:51:58">BFA80551-FDB7-3D44-9B03-648D46B61ACB</UUID>
+				<TagList></TagList>
+				<CustomMenuSetReference id="1" name="[Standard FileMaker Menus]" UUID="2C8E1610-3EFB-354E-B6B5-D099E62B1FF7"></CustomMenuSetReference>
+				<ObjectList membercount="1">
+					<CustomMenuSet name="Custom Menu Set" id="2" comment="Custom Menu Set Comments">
+						<UUID modifications="1" userName="Admin" accountName="Admin" timestamp="2026-10-21T13:51:57">4629F04A-F682-3448-A37F-2D33ED047415</UUID>
+						<TagList></TagList>
+						<CustomMenuList membercount="2">
+							<CustomMenuReference name="[Format]" id="1"></CustomMenuReference>
+							<CustomMenuReference name="Custom Custom Menu" id="25"></CustomMenuReference>
+						</CustomMenuList>
+					</CustomMenuSet>
+				</ObjectList>
+			</CustomMenuSetCatalog>
+		</AddAction>
+	</Structure>
+	<DDR_INFO></DDR_INFO>
+</FMSaveAsXML>
