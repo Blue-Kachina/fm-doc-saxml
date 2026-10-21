@@ -2,8 +2,8 @@
 <FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="EverythingBagel.fmp12" UUID="400FEDB4-F509-8F4D-AF05-472A0DE02EAC" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
 	<Structure membercount="1">
 		<AddAction membercount="1">
-			<LayoutCatalog membercount="1">
-				<UUID modifications="8" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:07">71B24C54-6AB1-9D48-A3CC-BE13FB4D15B5</UUID>
+			<LayoutCatalog membercount="2">
+				<UUID modifications="11" userName="Admin" accountName="Admin" timestamp="2026-10-21T14:52:12">71B24C54-6AB1-9D48-A3CC-BE13FB4D15B5</UUID>
 				<TagList></TagList>
 				<Layout id="1" name="EverythingBagel" width="1024">
 					<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
@@ -900,6 +900,26 @@
 					<Options hidden="False">64708872193</Options>
 					<MenuSet>
 						<CustomMenuSetReference id="0" name="[File Default]" UUID=""></CustomMenuSetReference>
+					</MenuSet>
+				</Layout>
+				<Layout id="2" name="CustomMenuSetLayout" width="1024">
+					<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+					<LayoutThemeReference id="4" name="com.filemaker.theme.custom.EF7F68C5_98F7_804C_8702_75FCEBC9E1E5" UUID="3B307897-4D8B-194E-9018-D8C0DD5859AE" Display="Apex Blue Copy" Base="com.filemaker.theme.apex_blue"></LayoutThemeReference>
+					<PartsList membercount="1">
+						<Part type="Body" kind="4">
+							<Definition type="Body" kind="4" size="658" absolute="0" Options="0"></Definition>
+						</Part>
+					</PartsList>
+					<UUID modifications="1" userName="Admin" accountName="Admin" timestamp="2026-10-21T14:52:12">8B17327E-1A97-DE44-BFEB-2C9C829C2123</UUID>
+					<TagList></TagList>
+					<GridStyle>
+						<Color red="0.500000" green="0.500000" blue="0.500000" alpha="1.000000"></Color>
+						<Style>5</Style>
+					</GridStyle>
+					<ClientType>3</ClientType>
+					<Options hidden="False">64708872205</Options>
+					<MenuSet>
+						<CustomMenuSetReference id="2" name="Custom Menu Set" UUID="4629F04A-F682-3448-A37F-2D33ED047415"></CustomMenuSetReference>
 					</MenuSet>
 				</Layout>
 			</LayoutCatalog>

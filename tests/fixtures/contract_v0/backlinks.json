@@ -1,0 +1,526 @@
+{
+  "field:EverythingBagel::textField": [
+    {
+      "sourceDocId": "table:EverythingBagel",
+      "sourceEntityType": "table",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "relationship:EverythingBagel__EVERYTHINGBAGEL__selfJoin__EverythingBagel",
+      "sourceEntityType": "relationship",
+      "relationshipType": "usesField",
+      "role": "left",
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "relationship:EverythingBagel__EVERYTHINGBAGEL__selfJoin__EverythingBagel",
+      "sourceEntityType": "relationship",
+      "relationshipType": "usesField",
+      "role": "right",
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "usesField",
+      "role": "display",
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layoutObject:EverythingBagel::2",
+      "sourceEntityType": "layoutObject",
+      "relationshipType": "usesField",
+      "role": "display",
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "valueList:ValuesFromField",
+      "sourceEntityType": "valueList",
+      "relationshipType": "usesField",
+      "role": "source",
+      "confidence": "exact"
+    }
+  ],
+  "field:EverythingBagel::numberField": [
+    {
+      "sourceDocId": "table:EverythingBagel",
+      "sourceEntityType": "table",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "field:EverythingBagel::summaryField",
+      "sourceEntityType": "field",
+      "relationshipType": "summarizes",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "usesField",
+      "role": "display",
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layoutObject:EverythingBagel::4",
+      "sourceEntityType": "layoutObject",
+      "relationshipType": "usesField",
+      "role": "display",
+      "confidence": "exact"
+    }
+  ],
+  "field:EverythingBagel::dateField": [
+    {
+      "sourceDocId": "table:EverythingBagel",
+      "sourceEntityType": "table",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "usesField",
+      "role": "display",
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layoutObject:EverythingBagel::6",
+      "sourceEntityType": "layoutObject",
+      "relationshipType": "usesField",
+      "role": "display",
+      "confidence": "exact"
+    }
+  ],
+  "field:EverythingBagel::timeField": [
+    {
+      "sourceDocId": "table:EverythingBagel",
+      "sourceEntityType": "table",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "usesField",
+      "role": "display",
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layoutObject:EverythingBagel::8",
+      "sourceEntityType": "layoutObject",
+      "relationshipType": "usesField",
+      "role": "display",
+      "confidence": "exact"
+    }
+  ],
+  "field:EverythingBagel::timestampField": [
+    {
+      "sourceDocId": "table:EverythingBagel",
+      "sourceEntityType": "table",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "usesField",
+      "role": "display",
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layoutObject:EverythingBagel::10",
+      "sourceEntityType": "layoutObject",
+      "relationshipType": "usesField",
+      "role": "display",
+      "confidence": "exact"
+    }
+  ],
+  "field:EverythingBagel::containerField": [
+    {
+      "sourceDocId": "table:EverythingBagel",
+      "sourceEntityType": "table",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "usesField",
+      "role": "display",
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layoutObject:EverythingBagel::12",
+      "sourceEntityType": "layoutObject",
+      "relationshipType": "usesField",
+      "role": "display",
+      "confidence": "exact"
+    }
+  ],
+  "field:EverythingBagel::calculationField": [
+    {
+      "sourceDocId": "table:EverythingBagel",
+      "sourceEntityType": "table",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "usesField",
+      "role": "display",
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layoutObject:EverythingBagel::14",
+      "sourceEntityType": "layoutObject",
+      "relationshipType": "usesField",
+      "role": "display",
+      "confidence": "exact"
+    }
+  ],
+  "field:EverythingBagel::summaryField": [
+    {
+      "sourceDocId": "table:EverythingBagel",
+      "sourceEntityType": "table",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "usesField",
+      "role": "display",
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layoutObject:EverythingBagel::16",
+      "sourceEntityType": "layoutObject",
+      "relationshipType": "usesField",
+      "role": "display",
+      "confidence": "exact"
+    }
+  ],
+  "table:EverythingBagel": [
+    {
+      "sourceDocId": "to:EverythingBagel",
+      "sourceEntityType": "tableOccurrence",
+      "relationshipType": "basedOnBaseTable",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "to:EverythingBagel__EVERYTHINGBAGEL__selfJoin",
+      "sourceEntityType": "tableOccurrence",
+      "relationshipType": "basedOnBaseTable",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "to:EverythingBagel__EVERYTHINGBAGEL__selfJoin": [
+    {
+      "sourceDocId": "relationship:EverythingBagel__EVERYTHINGBAGEL__selfJoin__EverythingBagel",
+      "sourceEntityType": "relationship",
+      "relationshipType": "joinsTo",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "to:EverythingBagel": [
+    {
+      "sourceDocId": "relationship:EverythingBagel__EVERYTHINGBAGEL__selfJoin__EverythingBagel",
+      "sourceEntityType": "relationship",
+      "relationshipType": "joinsTo",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "basedOnTableOccurrence",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layoutObject:EverythingBagel::2",
+      "sourceEntityType": "layoutObject",
+      "relationshipType": "basedOnTableOccurrence",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layoutObject:EverythingBagel::4",
+      "sourceEntityType": "layoutObject",
+      "relationshipType": "basedOnTableOccurrence",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layoutObject:EverythingBagel::6",
+      "sourceEntityType": "layoutObject",
+      "relationshipType": "basedOnTableOccurrence",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layoutObject:EverythingBagel::8",
+      "sourceEntityType": "layoutObject",
+      "relationshipType": "basedOnTableOccurrence",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layoutObject:EverythingBagel::10",
+      "sourceEntityType": "layoutObject",
+      "relationshipType": "basedOnTableOccurrence",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layoutObject:EverythingBagel::12",
+      "sourceEntityType": "layoutObject",
+      "relationshipType": "basedOnTableOccurrence",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layoutObject:EverythingBagel::14",
+      "sourceEntityType": "layoutObject",
+      "relationshipType": "basedOnTableOccurrence",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "layoutObject:EverythingBagel::16",
+      "sourceEntityType": "layoutObject",
+      "relationshipType": "basedOnTableOccurrence",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "valueList:ValuesFromField",
+      "sourceEntityType": "valueList",
+      "relationshipType": "usesTableOccurrence",
+      "role": "sourceTableOccurrence",
+      "confidence": "exact"
+    }
+  ],
+  "layoutObject:EverythingBagel::1": [
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "layoutObject:EverythingBagel::2": [
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "layoutObject:EverythingBagel::3": [
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "layoutObject:EverythingBagel::4": [
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "layoutObject:EverythingBagel::5": [
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "layoutObject:EverythingBagel::6": [
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "layoutObject:EverythingBagel::7": [
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "layoutObject:EverythingBagel::8": [
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "layoutObject:EverythingBagel::9": [
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "layoutObject:EverythingBagel::10": [
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "layoutObject:EverythingBagel::11": [
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "layoutObject:EverythingBagel::12": [
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "layoutObject:EverythingBagel::13": [
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "layoutObject:EverythingBagel::14": [
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "layoutObject:EverythingBagel::15": [
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "layoutObject:EverythingBagel::16": [
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
+      "relationshipType": "contains",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "privilegeSet:[Read-Only Access]": [
+    {
+      "sourceDocId": "account:[Guest]",
+      "sourceEntityType": "account",
+      "relationshipType": "assignedPrivilegeSet",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "extPriv:fmreauthenticate10",
+      "sourceEntityType": "extPriv",
+      "relationshipType": "grantedTo",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "privilegeSet:[Full Access]": [
+    {
+      "sourceDocId": "account:Admin",
+      "sourceEntityType": "account",
+      "relationshipType": "assignedPrivilegeSet",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "extPriv:fmreauthenticate10",
+      "sourceEntityType": "extPriv",
+      "relationshipType": "grantedTo",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "privilegeSet:Calculated Access": [
+    {
+      "sourceDocId": "account:calculated_access",
+      "sourceEntityType": "account",
+      "relationshipType": "assignedPrivilegeSet",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "extPriv:fmreauthenticate10",
+      "sourceEntityType": "extPriv",
+      "relationshipType": "grantedTo",
+      "role": null,
+      "confidence": "exact"
+    },
+    {
+      "sourceDocId": "extPriv:fmurlscript",
+      "sourceEntityType": "extPriv",
+      "relationshipType": "grantedTo",
+      "role": null,
+      "confidence": "exact"
+    }
+  ],
+  "privilegeSet:[Data Entry Only]": [
+    {
+      "sourceDocId": "extPriv:fmreauthenticate10",
+      "sourceEntityType": "extPriv",
+      "relationshipType": "grantedTo",
+      "role": null,
+      "confidence": "exact"
+    }
+  ]
+}

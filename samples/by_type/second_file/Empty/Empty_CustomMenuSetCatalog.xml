@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="Empty.fmp12" UUID="6684087B-0287-C749-8B40-A115480972D1" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
-	<Structure membercount="1">
-		<AddAction membercount="1">
-			<PasteIndexList membercount="0"></PasteIndexList>
-		</AddAction>
-	</Structure>
-	<DDR_INFO></DDR_INFO>
-</FMSaveAsXML>
