@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<FMPReport CreationDate="2026-10-21" CreationTime="1:58:11 PM" type="Summary" version="2.3.0.0" membercount="2">
+<FMPReport CreationDate="2026-10-21" CreationTime="2:45:15 PM" type="Summary" version="2.3.0.0" membercount="2">
 	<File name="Empty.fmp12" path="D:\Dev\FMDev\fmscriptinventory\system_with_all_script_steps\">
-		<XML path="D:\Dev\FMDev\fm-saxml-converter\SaXML_By_Type\second_file\Empty.xml"></XML>
+		<XML path="D:\Dev\FMDev\fm-saxml-converter\samples\by_type\second_file\Empty\"></XML>
 	</File>
 	<File name="EverythingBagel.fmp12" path="D:\Dev\FMDev\fmscriptinventory\system_with_all_script_steps\">
-		<XML path="D:\Dev\FMDev\fm-saxml-converter\SaXML_By_Type\second_file\EverythingBagel.xml"></XML>
+		<XML path="D:\Dev\FMDev\fm-saxml-converter\samples\by_type\second_file\EverythingBagel\"></XML>
 	</File>
 </FMPReport>

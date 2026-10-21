@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="EverythingBagel.fmp12" UUID="400FEDB4-F509-8F4D-AF05-472A0DE02EAC" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<CustomFunctionsCatalog membercount="1">
+				<UUID modifications="3" userName="Admin" accountName="Admin" timestamp="2026-03-12T12:14:19">A062D817-A8EB-E641-96A1-49FE70C95336</UUID>
+				<TagList></TagList>
+				<ObjectList membercount="1">
+					<CustomFunction id="1" name="Test" access="All">
+						<UUID modifications="1" userName="Admin" accountName="Admin" timestamp="2026-03-12T12:14:18">7D53E59D-2B29-CC42-9F15-86D36B0C0DF9</UUID>
+						<TagList></TagList>
+						<Calculation>
+							<DDRREF kind="ChunkList" hash="417828737184A786429BF6288F0C43DF">_7D53E59D-2B29-CC42-9F15-86D36B0C0DF9</DDRREF>
+							<Text><![CDATA["We received the parameter: " & parameter1]]></Text>
+						</Calculation>
+						<Display>Test ( parameter1 )</Display>
+						<ObjectList membercount="1">
+							<Parameter name="parameter1"></Parameter>
+						</ObjectList>
+					</CustomFunction>
+				</ObjectList>
+			</CustomFunctionsCatalog>
+		</AddAction>
+	</Structure>
+	<DDR_INFO>
+		<Calculation>
+			<ObjectList>
+				<_7D53E59D-2B29-CC42-9F15-86D36B0C0DF9 hash="417828737184A786429BF6288F0C43DF" datatype="ChunkList">
+					<ChunkList hash="417828737184A786429BF6288F0C43DF">
+						<Chunk type="NoRef">&quot;We received the parameter: &quot; &amp; </Chunk>
+						<Chunk type="VariableReference">parameter1</Chunk>
+					</ChunkList>
+				</_7D53E59D-2B29-CC42-9F15-86D36B0C0DF9>
+			</ObjectList>
+		</Calculation>
+	</DDR_INFO>
+</FMSaveAsXML>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="EverythingBagel.fmp12" UUID="400FEDB4-F509-8F4D-AF05-472A0DE02EAC" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<ExternalDataSourceCatalog membercount="2">
+				<SortOrder>1</SortOrder>
+				<CustomOrderList>
+					<key>1</key>
+					<key>2</key>
+				</CustomOrderList>
+				<UUID modifications="4" userName="Admin" accountName="Admin" timestamp="2026-10-21T14:41:47">5613F626-F16F-FC49-882F-95B643E2B4A3</UUID>
+				<TagList></TagList>
+				<ExternalDataSource name="Empty" type="FileMaker" id="1">
+					<File>
+						<UniversalPathList>file:Empty&#13;fmnet:/127.0.0.1/Empty</UniversalPathList>
+					</File>
+					<UUID modifications="1" userName="Admin" accountName="Admin" timestamp="2026-10-21T14:41:09">E005F7A7-19A4-AA43-B012-BC4B36E44FEF</UUID>
+					<TagList></TagList>
+				</ExternalDataSource>
+				<ExternalDataSource name="odbc_test" type="ODBC" id="2">
+					<ODBC name="TestDatabase">
+						<Authentication type="Prompt"></Authentication>
+						<Filter catalogName="" schemaName="" tableName="" typeBasedFilter="True" tables="True" views="False" systemTable="False"></Filter>
+					</ODBC>
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-10-21T14:41:45">BC91A6FB-42D0-CC46-B3C3-E2C044FED050</UUID>
+					<TagList></TagList>
+				</ExternalDataSource>
+			</ExternalDataSourceCatalog>
+		</AddAction>
+	</Structure>
+	<DDR_INFO></DDR_INFO>
+</FMSaveAsXML>

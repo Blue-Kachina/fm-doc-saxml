@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="Empty.fmp12" UUID="6684087B-0287-C749-8B40-A115480972D1" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<LayoutCatalog membercount="1">
+				<UUID modifications="4" userName="Admin" accountName="Admin" timestamp="2026-10-21T13:56:27">DCEC8803-8D3D-1B41-8C3A-26087B8C59A9</UUID>
+				<TagList></TagList>
+				<Layout id="1" name="Empty" width="1024">
+					<TableOccurrenceReference id="-1" name="&lt;Table Missing&gt;" UUID=""></TableOccurrenceReference>
+					<LayoutThemeReference id="1" name="com.filemaker.theme.apex_blue" UUID="ED44D3C3-3E17-5943-A1A1-A4417CCEA565" Base="com.filemaker.theme.minimalist_touch"></LayoutThemeReference>
+					<PartsList membercount="2">
+						<Part type="Top Navigation" kind="12">
+							<Definition type="Top Navigation" kind="12" size="110" absolute="0" Options="0"></Definition>
+						</Part>
+						<Part type="Body" kind="4">
+							<Definition type="Body" kind="4" size="658" absolute="110" Options="0"></Definition>
+						</Part>
+					</PartsList>
+					<UUID modifications="2" userName="Admin" accountName="Admin" timestamp="2026-10-21T13:56:42">F06E4751-808A-FB44-A29F-2CFDE2B06B61</UUID>
+					<TagList></TagList>
+					<GridStyle>
+						<Color red="0.500000" green="0.500000" blue="0.500000" alpha="1.000000"></Color>
+						<Style>5</Style>
+					</GridStyle>
+					<ClientType>3</ClientType>
+					<Options hidden="False">64708872193</Options>
+					<MenuSet>
+						<CustomMenuSetReference id="0" name="[File Default]" UUID=""></CustomMenuSetReference>
+					</MenuSet>
+				</Layout>
+			</LayoutCatalog>
+		</AddAction>
+	</Structure>
+	<DDR_INFO></DDR_INFO>
+</FMSaveAsXML>

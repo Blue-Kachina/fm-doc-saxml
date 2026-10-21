@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="EverythingBagel.fmp12" UUID="400FEDB4-F509-8F4D-AF05-472A0DE02EAC" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<RelationshipCatalog membercount="1">
+				<UUID modifications="2" userName="Admin" accountName="Admin" timestamp="2026-10-21T13:57:35">C2A18162-EDAF-0F4F-ACF7-BF54983A98D4</UUID>
+				<Relationship id="1">
+					<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:31:40">25279EA9-BB75-1046-866E-A22940D84D12</UUID>
+					<LeftTable cascadeCreate="False" cascadeDelete="False" type="Local">
+						<TableOccurrenceReference id="1065090" name="EverythingBagel__EVERYTHINGBAGEL__selfJoin" UUID="7844680B-43C1-6C49-AC4C-90C390CE343A"></TableOccurrenceReference>
+					</LeftTable>
+					<RightTable cascadeCreate="False" cascadeDelete="False" type="Local">
+						<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+					</RightTable>
+					<JoinPredicateList membercount="1">
+						<JoinPredicate type="Equal">
+							<LeftField>
+								<FieldReference id="6" name="textField" UUID="F0065580-4FBD-C84F-BEDB-B4AC58598BAE">
+									<TableOccurrenceReference id="1065090" name="EverythingBagel__EVERYTHINGBAGEL__selfJoin" UUID="7844680B-43C1-6C49-AC4C-90C390CE343A"></TableOccurrenceReference>
+								</FieldReference>
+							</LeftField>
+							<RightField>
+								<FieldReference id="6" name="textField" UUID="F0065580-4FBD-C84F-BEDB-B4AC58598BAE">
+									<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+								</FieldReference>
+							</RightField>
+						</JoinPredicate>
+					</JoinPredicateList>
+					<TagList></TagList>
+				</Relationship>
+			</RelationshipCatalog>
+		</AddAction>
+	</Structure>
+	<DDR_INFO></DDR_INFO>
+</FMSaveAsXML>

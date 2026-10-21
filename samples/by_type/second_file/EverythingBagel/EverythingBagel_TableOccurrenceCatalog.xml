@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="EverythingBagel.fmp12" UUID="400FEDB4-F509-8F4D-AF05-472A0DE02EAC" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<TableOccurrenceCatalog membercount="3">
+				<CustomOrderList>
+					<key>1065091</key>
+					<key>1065089</key>
+					<key>1065090</key>
+				</CustomOrderList>
+				<UUID modifications="4" userName="Admin" accountName="Admin" timestamp="2026-10-21T13:57:35">6A81F2C2-1C50-444C-A7AA-CAEC82915656</UUID>
+				<TagList></TagList>
+				<TableOccurrence View="Full" height="0" id="1065089" name="EverythingBagel" type="Local">
+					<UUID modifications="2" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:31:40">B17A7B1A-16D3-834D-A4F1-02119A3BD0DC</UUID>
+					<BaseTableSourceReference type="BaseTableReference">
+						<BaseTableReference id="129" name="EverythingBagel" UUID="0BBD652D-58E9-2541-BC3E-9306E802E9CB"></BaseTableReference>
+					</BaseTableSourceReference>
+					<CoordRect top="20" left="20" bottom="131" right="151"></CoordRect>
+					<Color red="120" green="120" blue="120" alpha="1.00"></Color>
+					<TagList></TagList>
+				</TableOccurrence>
+				<TableOccurrence View="Full" height="67" id="1065090" name="EverythingBagel__EVERYTHINGBAGEL__selfJoin" type="Local">
+					<UUID modifications="6" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:32:08">7844680B-43C1-6C49-AC4C-90C390CE343A</UUID>
+					<BaseTableSourceReference type="BaseTableReference">
+						<BaseTableReference id="129" name="EverythingBagel" UUID="0BBD652D-58E9-2541-BC3E-9306E802E9CB"></BaseTableReference>
+					</BaseTableSourceReference>
+					<CoordRect top="21" left="191" bottom="134" right="465"></CoordRect>
+					<Color red="119" green="119" blue="119" alpha="1.00"></Color>
+					<TagList></TagList>
+				</TableOccurrence>
+				<TableOccurrence View="Full" height="80" id="1065091" name="Empty" type="External">
+					<UUID modifications="2" userName="Admin" accountName="Admin" timestamp="2026-10-21T13:57:33">85EA8F26-622C-A24E-BDB2-790FA46A2720</UUID>
+					<BaseTableSourceReference type="ExternalDataSourceReference">
+						<DataSourceReference id="1" name="Empty" UUID="E005F7A7-19A4-AA43-B012-BC4B36E44FEF"></DataSourceReference>
+						<BaseTableReference id="129" name="Empty" UUID="7A2EC438-36A8-C546-B699-2E90E39CC4D0"></BaseTableReference>
+					</BaseTableSourceReference>
+					<CoordRect top="24" left="619" bottom="135" right="750"></CoordRect>
+					<Color red="120" green="120" blue="120" alpha="1.00"></Color>
+					<TagList></TagList>
+				</TableOccurrence>
+			</TableOccurrenceCatalog>
+		</AddAction>
+	</Structure>
+	<DDR_INFO></DDR_INFO>
+</FMSaveAsXML>

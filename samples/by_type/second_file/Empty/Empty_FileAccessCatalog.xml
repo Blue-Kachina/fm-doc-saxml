@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="Empty.fmp12" UUID="6684087B-0287-C749-8B40-A115480972D1" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<FileAccessCatalog sameHost="False" required="True">
+				<UUID modifications="3" userName="Admin" accountName="Admin" timestamp="2026-10-21T13:57:31">B3FA2FE1-EDC0-C64C-B0FB-C931BA2EAAB7</UUID>
+				<ObjectList membercount="3">
+					<Authorization id="1" type="Local" self="True">
+						<Source CreationTimestamp="10/21/2026 01:56:27 PM" CreationAccountName="Admin"></Source>
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-21T13:56:27">87F49EFE-4172-CC4C-B459-90EEAD3066D5</UUID>
+						<Display><![CDATA[Empty]]></Display>
+						<Authentication>3B07E86DC94E6FC280DD68C2EB346BF2FE77D123F4821231CF1628244CEB6E8A6ABDB44DDE8B8C6116AF02FB9787463EEABEF98D648A20E35D64FBEAD10432B7</Authentication>
+						<TagList></TagList>
+					</Authorization>
+					<Authorization id="2" type="External" self="True">
+						<Source CreationTimestamp="10/21/2026 01:56:27 PM" CreationAccountName="Admin"></Source>
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-21T13:56:27">3843E13E-0389-C348-9188-DA01301CBC9D</UUID>
+						<Display><![CDATA[Empty]]></Display>
+						<Authentication>75E81384E1E75914A30B5EE4D05150ED0FCD7916ADEFB75F0BBE016EB88BF622</Authentication>
+						<TagList></TagList>
+					</Authorization>
+					<Authorization id="3" type="External">
+						<Source CreationTimestamp="10/21/2026 01:57:31 PM" CreationAccountName="Admin"></Source>
+						<UUID modifications="0" userName="Admin" accountName="Admin" timestamp="2026-10-21T13:57:31">03C7DF23-67B6-B44D-8DA2-D4BD5CD5CA09</UUID>
+						<Display><![CDATA[EverythingBagel]]></Display>
+						<Authentication>A7B1562200099DA6D07B114D911858A23DF2AF9D5D41FB06269E2E056AAF0AEF</Authentication>
+						<TagList></TagList>
+					</Authorization>
+				</ObjectList>
+			</FileAccessCatalog>
+		</AddAction>
+	</Structure>
+	<DDR_INFO></DDR_INFO>
+</FMSaveAsXML>

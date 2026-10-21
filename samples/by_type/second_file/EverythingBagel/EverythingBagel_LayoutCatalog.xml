@@ -1,0 +1,949 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="EverythingBagel.fmp12" UUID="400FEDB4-F509-8F4D-AF05-472A0DE02EAC" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<LayoutCatalog membercount="1">
+				<UUID modifications="8" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:30:07">71B24C54-6AB1-9D48-A3CC-BE13FB4D15B5</UUID>
+				<TagList></TagList>
+				<Layout id="1" name="EverythingBagel" width="1024">
+					<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+					<LayoutThemeReference id="3" name="com.filemaker.theme.custom.E1351EFD_0067_4E44_A8BC_3E7A959006D9" UUID="F0797BE7-8F51-B644-A07C-D838BDD53F30" Display="Vibrant Custom" Base="com.filemaker.theme.vibrant"></LayoutThemeReference>
+					<PartsList membercount="2">
+						<Part type="Top Navigation" kind="12">
+							<Definition type="Top Navigation" kind="12" size="110" absolute="0" Options="0"></Definition>
+						</Part>
+						<Part type="Body" kind="4">
+							<Definition type="Body" kind="4" size="658" absolute="110" Options="0"></Definition>
+							<ObjectList membercount="26">
+								<LayoutObject hash="F8FB9896486456E13A7739D628905C74" id="1" type="Text" name="" kind="2">
+									<UUID>F3C2D184-F698-6742-B307-7068FE533175</UUID>
+									<Bounds top="120" left="63" bottom="142" right="127"></Bounds>
+									<Options>805306368</Options>
+									<Text>
+										<Options>0</Options>
+										<StyledText>
+											<Data><![CDATA[textField]]></Data>
+										</StyledText>
+									</Text>
+									<LocalCSS type="ObjectCustomStyle" name="" displayName=""><![CDATA[self:normal .self
+{
+	text-align: right;
+}
+]]></LocalCSS>
+								</LayoutObject>
+								<LayoutObject hash="3F982B403908FB907F68B3F1E9D781F0" id="2" type="Edit Box" name="" kind="1">
+									<UUID>59934A2C-1269-F446-959B-D67C2D9C1537</UUID>
+									<Bounds top="114" left="138" bottom="146" right="391"></Bounds>
+									<Options>805306368</Options>
+									<Field>
+										<FieldReference id="6" name="textField" repetition="1" UUID="F0065580-4FBD-C84F-BEDB-B4AC58598BAE">
+											<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+										</FieldReference>
+										<Options>32</Options>
+										<Display Style="0" show="1"></Display>
+										<Usage inputMode="0" type="1"></Usage>
+									</Field>
+									<LocalCSS type="ThemeCustomStyle" name="FM-B9C26F7D-8330-5346-B911-0FEBE1685606" displayName="centered_text"><![CDATA[self.FM-B9C26F7D-8330-5346-B911-0FEBE1685606
+{
+}
+]]></LocalCSS>
+									<ExtendedAttributes>
+										<Formatting>
+											<Graphic>
+												<Options>5</Options>
+											</Graphic>
+											<Time>
+												<Options>143</Options>
+											</Time>
+											<Numeric>
+												<Options>2304</Options>
+												<Style>
+													<Negative>
+														<Color red="221" green="0" blue="0" alpha="1.00"></Color>
+													</Negative>
+												</Style>
+												<DecimalDigits>2</DecimalDigits>
+											</Numeric>
+										</Formatting>
+									</ExtendedAttributes>
+									<Accessibility>
+										<Label>1</Label>
+									</Accessibility>
+								</LayoutObject>
+								<LayoutObject hash="BECBB72CFE5F5BD70D6F5C4A2819036F" id="3" type="Text" name="" kind="2">
+									<UUID>AB4FD1F9-BA95-3F4D-96A9-1F0F6E44BCAB</UUID>
+									<Bounds top="156" left="35" bottom="178" right="127"></Bounds>
+									<Options>805306368</Options>
+									<Text>
+										<Options>0</Options>
+										<StyledText>
+											<Data><![CDATA[numberField]]></Data>
+										</StyledText>
+									</Text>
+									<LocalCSS type="ObjectCustomStyle" name="" displayName=""><![CDATA[self:normal .self
+{
+	text-align: right;
+}
+]]></LocalCSS>
+								</LayoutObject>
+								<LayoutObject hash="9333132FC402102E806E7EED11468B60" id="4" type="Edit Box" name="" kind="1">
+									<UUID>DB8F8418-EB8B-2F47-B92A-8633C1DB7F08</UUID>
+									<Bounds top="150" left="138" bottom="182" right="239"></Bounds>
+									<Options>805306368</Options>
+									<Field>
+										<FieldReference id="7" name="numberField" repetition="1" UUID="DB873002-F451-CE4D-8E5A-CFCF767DEDA7">
+											<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+										</FieldReference>
+										<Options>32</Options>
+										<Display Style="0" show="1"></Display>
+										<Usage inputMode="0" type="1"></Usage>
+									</Field>
+									<LocalCSS type="ObjectCustomStyle" name="" displayName=""><![CDATA[self:normal .self
+{
+	text-align: right;
+}
+]]></LocalCSS>
+									<ExtendedAttributes>
+										<Formatting>
+											<Graphic>
+												<Options>5</Options>
+											</Graphic>
+											<Time>
+												<Options>143</Options>
+											</Time>
+											<Numeric>
+												<Options>2304</Options>
+												<Style>
+													<Negative>
+														<Color red="221" green="0" blue="0" alpha="1.00"></Color>
+													</Negative>
+												</Style>
+												<DecimalDigits>2</DecimalDigits>
+											</Numeric>
+										</Formatting>
+									</ExtendedAttributes>
+									<Accessibility>
+										<Label>3</Label>
+									</Accessibility>
+								</LayoutObject>
+								<LayoutObject hash="274D0B33B7F3BE9347219B70F76110BD" id="5" type="Text" name="" kind="2">
+									<UUID>C3B35276-A63F-934B-809A-BD4EA968BAFD</UUID>
+									<Bounds top="192" left="56" bottom="214" right="127"></Bounds>
+									<Options>805306368</Options>
+									<Text>
+										<Options>0</Options>
+										<StyledText>
+											<Data><![CDATA[dateField]]></Data>
+										</StyledText>
+									</Text>
+									<LocalCSS type="ObjectCustomStyle" name="" displayName=""><![CDATA[self:normal .self
+{
+	text-align: right;
+}
+]]></LocalCSS>
+								</LayoutObject>
+								<LayoutObject hash="844C24B87F4785B90D0BE73125150E43" id="6" type="Drop-down Calendar" name="" kind="1">
+									<UUID>40ACF0C9-6AFF-594C-800C-93EA67AD12DA</UUID>
+									<Bounds top="186" left="138" bottom="218" right="259"></Bounds>
+									<Options>805306368</Options>
+									<Field>
+										<FieldReference id="8" name="dateField" repetition="1" UUID="6F0AB3E7-BE36-344E-89AA-DEECD6638A44">
+											<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+										</FieldReference>
+										<Options>32</Options>
+										<Display Style="6" show="1"></Display>
+										<Usage inputMode="0" type="1"></Usage>
+									</Field>
+									<ExtendedAttributes>
+										<Formatting>
+											<Graphic>
+												<Options>5</Options>
+											</Graphic>
+											<Time>
+												<Options>143</Options>
+											</Time>
+											<Numeric>
+												<Options>2304</Options>
+												<Style>
+													<Negative>
+														<Color red="221" green="0" blue="0" alpha="1.00"></Color>
+													</Negative>
+												</Style>
+												<DecimalDigits>2</DecimalDigits>
+											</Numeric>
+										</Formatting>
+									</ExtendedAttributes>
+									<Accessibility>
+										<Label>5</Label>
+									</Accessibility>
+								</LayoutObject>
+								<LayoutObject hash="F72F5059AE08C3E1BEC743DCCFCED773" id="7" type="Text" name="" kind="2">
+									<UUID>FFB6897A-EFB5-E142-BCB3-602C49734099</UUID>
+									<Bounds top="228" left="57" bottom="250" right="127"></Bounds>
+									<Options>805306368</Options>
+									<Text>
+										<Options>0</Options>
+										<StyledText>
+											<Data><![CDATA[timeField]]></Data>
+										</StyledText>
+									</Text>
+									<LocalCSS type="ObjectCustomStyle" name="" displayName=""><![CDATA[self:normal .self
+{
+	text-align: right;
+}
+]]></LocalCSS>
+								</LayoutObject>
+								<LayoutObject hash="7E4F6E9E9084FC9469BCC645A6354E5C" id="8" type="Edit Box" name="" kind="1">
+									<UUID>ED2A1C70-14F2-F94C-8331-D490C5773CF5</UUID>
+									<Bounds top="222" left="138" bottom="254" right="259"></Bounds>
+									<Options>805306368</Options>
+									<Field>
+										<FieldReference id="9" name="timeField" repetition="1" UUID="7F483143-B868-2E47-A7BE-3C9211977C24">
+											<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+										</FieldReference>
+										<Options>32</Options>
+										<Display Style="0" show="1"></Display>
+										<Usage inputMode="0" type="1"></Usage>
+									</Field>
+									<ExtendedAttributes>
+										<Formatting>
+											<Graphic>
+												<Options>5</Options>
+											</Graphic>
+											<Time>
+												<Options>143</Options>
+											</Time>
+											<Numeric>
+												<Options>2304</Options>
+												<Style>
+													<Negative>
+														<Color red="221" green="0" blue="0" alpha="1.00"></Color>
+													</Negative>
+												</Style>
+												<DecimalDigits>2</DecimalDigits>
+											</Numeric>
+										</Formatting>
+									</ExtendedAttributes>
+									<Accessibility>
+										<Label>7</Label>
+									</Accessibility>
+								</LayoutObject>
+								<LayoutObject hash="26F49A9B9B80A22E2272486F504CCC36" id="9" type="Text" name="" kind="2">
+									<UUID>AB94C0EC-0C14-4A41-A472-1BE5CEF34939</UUID>
+									<Bounds top="264" left="14" bottom="286" right="127"></Bounds>
+									<Options>805306368</Options>
+									<Text>
+										<Options>0</Options>
+										<StyledText>
+											<Data><![CDATA[timestampField]]></Data>
+										</StyledText>
+									</Text>
+									<LocalCSS type="ObjectCustomStyle" name="" displayName=""><![CDATA[self:normal .self
+{
+	text-align: right;
+}
+]]></LocalCSS>
+								</LayoutObject>
+								<LayoutObject hash="9686FF695A51EFAD990FA366D30EA91A" id="10" type="Edit Box" name="" kind="1">
+									<UUID>32EE4BFA-CEE4-6C47-A33B-E22750E1756F</UUID>
+									<Bounds top="258" left="138" bottom="290" right="379"></Bounds>
+									<Options>805306368</Options>
+									<Field>
+										<FieldReference id="10" name="timestampField" repetition="1" UUID="BF25DDF1-2BC6-8248-84A8-43CDA43B80B8">
+											<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+										</FieldReference>
+										<Options>32</Options>
+										<Display Style="0" show="1"></Display>
+										<Usage inputMode="0" type="1"></Usage>
+									</Field>
+									<ExtendedAttributes>
+										<Formatting>
+											<Graphic>
+												<Options>5</Options>
+											</Graphic>
+											<Time>
+												<Options>143</Options>
+											</Time>
+											<Numeric>
+												<Options>2304</Options>
+												<Style>
+													<Negative>
+														<Color red="221" green="0" blue="0" alpha="1.00"></Color>
+													</Negative>
+												</Style>
+												<DecimalDigits>2</DecimalDigits>
+											</Numeric>
+										</Formatting>
+									</ExtendedAttributes>
+									<Accessibility>
+										<Label>9</Label>
+									</Accessibility>
+								</LayoutObject>
+								<LayoutObject hash="44AC583BBC55A57BD753E4CE91F34AB5" id="11" type="Text" name="" kind="2">
+									<UUID>BFA0F92C-8C9D-C64F-900E-3B8915CDA169</UUID>
+									<Bounds top="300" left="23" bottom="322" right="127"></Bounds>
+									<Options>805306368</Options>
+									<Text>
+										<Options>0</Options>
+										<StyledText>
+											<Data><![CDATA[containerField]]></Data>
+										</StyledText>
+									</Text>
+									<LocalCSS type="ObjectCustomStyle" name="" displayName=""><![CDATA[self:normal .self
+{
+	text-align: right;
+}
+]]></LocalCSS>
+								</LayoutObject>
+								<LayoutObject hash="A13CD31048AEBCE45A4AC1FA35675A38" id="12" type="Container" name="" kind="1">
+									<UUID>CF4ACCDF-2248-B043-AEE1-569BC7D4F07F</UUID>
+									<Bounds top="294" left="138" bottom="419" right="391"></Bounds>
+									<Options>805306368</Options>
+									<Field>
+										<FieldReference id="11" name="containerField" repetition="1" UUID="9B66D604-BAC5-3945-A6C4-D455D954F7DB">
+											<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+										</FieldReference>
+										<Options>32</Options>
+										<Display Style="0" show="1"></Display>
+										<Usage inputMode="0" type="1"></Usage>
+									</Field>
+									<ExtendedAttributes>
+										<Formatting>
+											<Graphic>
+												<Options>5</Options>
+											</Graphic>
+											<Time>
+												<Options>143</Options>
+											</Time>
+											<Numeric>
+												<Options>2304</Options>
+												<Style>
+													<Negative>
+														<Color red="221" green="0" blue="0" alpha="1.00"></Color>
+													</Negative>
+												</Style>
+												<DecimalDigits>2</DecimalDigits>
+											</Numeric>
+										</Formatting>
+									</ExtendedAttributes>
+									<Accessibility>
+										<Label>11</Label>
+									</Accessibility>
+								</LayoutObject>
+								<LayoutObject hash="C2E2B379424893BEB421CD8489509AF6" id="13" type="Text" name="" kind="2">
+									<UUID>53CE228A-B520-864A-8B15-2F7930ED7FFF</UUID>
+									<Bounds top="429" left="14" bottom="451" right="127"></Bounds>
+									<Options>805306368</Options>
+									<Text>
+										<Options>0</Options>
+										<StyledText>
+											<Data><![CDATA[calculationField]]></Data>
+										</StyledText>
+									</Text>
+									<LocalCSS type="ObjectCustomStyle" name="" displayName=""><![CDATA[self:normal .self
+{
+	text-align: right;
+}
+]]></LocalCSS>
+								</LayoutObject>
+								<LayoutObject hash="960D87011DE6E26DCC0CF90C1C3A8A7D" id="14" type="Edit Box" name="" kind="1">
+									<UUID>B4FA9476-F3BB-E849-AFAD-05692BC70B93</UUID>
+									<Bounds top="423" left="138" bottom="455" right="239"></Bounds>
+									<Options>805306368</Options>
+									<Field>
+										<FieldReference id="12" name="calculationField" repetition="1" UUID="A8A9B668-2FAC-6843-8626-C9B3C8FA14C0">
+											<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+										</FieldReference>
+										<Options>32</Options>
+										<Display Style="0" show="1"></Display>
+										<Usage inputMode="0" type="1"></Usage>
+									</Field>
+									<ExtendedAttributes>
+										<Formatting>
+											<Graphic>
+												<Options>5</Options>
+											</Graphic>
+											<Time>
+												<Options>143</Options>
+											</Time>
+											<Numeric>
+												<Options>2304</Options>
+												<Style>
+													<Negative>
+														<Color red="221" green="0" blue="0" alpha="1.00"></Color>
+													</Negative>
+												</Style>
+												<DecimalDigits>2</DecimalDigits>
+											</Numeric>
+										</Formatting>
+									</ExtendedAttributes>
+									<Accessibility>
+										<Label>13</Label>
+									</Accessibility>
+								</LayoutObject>
+								<LayoutObject hash="1D663FB6E2ACD1831A80EF66B51E3ADB" id="15" type="Text" name="" kind="2">
+									<UUID>4CD737AA-F13A-6A4D-8D58-CC3DC7DBDEEC</UUID>
+									<Bounds top="465" left="24" bottom="487" right="127"></Bounds>
+									<Options>805306368</Options>
+									<Text>
+										<Options>0</Options>
+										<StyledText>
+											<Data><![CDATA[summaryField]]></Data>
+										</StyledText>
+									</Text>
+									<LocalCSS type="ObjectCustomStyle" name="" displayName=""><![CDATA[self:normal .self
+{
+	text-align: right;
+}
+]]></LocalCSS>
+								</LayoutObject>
+								<LayoutObject hash="11427E1A05E66EB0F4A33EE667C8038E" id="16" type="Edit Box" name="" kind="1">
+									<UUID>6F067874-6F1D-854F-B337-D81BF9D14E12</UUID>
+									<Bounds top="459" left="138" bottom="491" right="239"></Bounds>
+									<Options>805306368</Options>
+									<Field>
+										<FieldReference id="13" name="summaryField" repetition="1" UUID="5C850F3D-7CE4-4E44-804E-398EA16D9D6A">
+											<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+										</FieldReference>
+										<Options>32</Options>
+										<Display Style="0" show="1"></Display>
+										<Usage inputMode="0" type="1"></Usage>
+									</Field>
+									<ExtendedAttributes>
+										<Formatting>
+											<Graphic>
+												<Options>5</Options>
+											</Graphic>
+											<Time>
+												<Options>143</Options>
+											</Time>
+											<Numeric>
+												<Options>2304</Options>
+												<Style>
+													<Negative>
+														<Color red="221" green="0" blue="0" alpha="1.00"></Color>
+													</Negative>
+												</Style>
+												<DecimalDigits>2</DecimalDigits>
+											</Numeric>
+										</Formatting>
+									</ExtendedAttributes>
+									<Accessibility>
+										<Label>15</Label>
+									</Accessibility>
+								</LayoutObject>
+								<LayoutObject hash="783C3473AECF05B3FE41D9F270D876F5" id="17" type="Portal" name="" kind="9">
+									<UUID>FFAC2C9C-B5D8-7148-B8BD-69EC41146C54</UUID>
+									<Bounds top="152" left="465" bottom="298" right="920"></Bounds>
+									<Options>805306368</Options>
+									<Portal>
+										<TableOccurrenceReference id="1065090" name="EverythingBagel__EVERYTHINGBAGEL__selfJoin" UUID="7844680B-43C1-6C49-AC4C-90C390CE343A"></TableOccurrenceReference>
+										<Options index="1" show="6">16</Options>
+										<ObjectList membercount="2">
+											<LayoutObject hash="CA4CBD7971E1FAB31464D5C8CDDC0AD4" id="18" type="Edit Box" name="" kind="1">
+												<UUID>5D8A8DFC-7849-934D-8819-AA46375FAD3D</UUID>
+												<Bounds top="2" left="2" bottom="22" right="226"></Bounds>
+												<Options>805306368</Options>
+												<Field>
+													<FieldReference id="7" name="numberField" repetition="1" UUID="DB873002-F451-CE4D-8E5A-CFCF767DEDA7">
+														<TableOccurrenceReference id="1065090" name="EverythingBagel__EVERYTHINGBAGEL__selfJoin" UUID="7844680B-43C1-6C49-AC4C-90C390CE343A"></TableOccurrenceReference>
+													</FieldReference>
+													<Options>32</Options>
+													<Display Style="0" show="1"></Display>
+													<Usage inputMode="0" type="1"></Usage>
+												</Field>
+												<LocalCSS type="ThemeCustomStyle" name="minimal_edit_box" displayName="Minimal Edit Box"><![CDATA[self.minimal_edit_box
+{
+}
+]]></LocalCSS>
+												<ExtendedAttributes>
+													<Formatting>
+														<Graphic>
+															<Options>5</Options>
+														</Graphic>
+														<Time>
+															<Options>143</Options>
+														</Time>
+														<Numeric>
+															<Options>2304</Options>
+															<Style>
+																<Negative>
+																	<Color red="221" green="0" blue="0" alpha="1.00"></Color>
+																</Negative>
+															</Style>
+															<DecimalDigits>2</DecimalDigits>
+														</Numeric>
+													</Formatting>
+												</ExtendedAttributes>
+											</LayoutObject>
+											<LayoutObject hash="8DF616F7FCFFF2E9D4092CD442F3CCCA" id="19" type="Edit Box" name="" kind="1">
+												<UUID>A207488E-42D4-AB44-A0C0-E82757396CCF</UUID>
+												<Bounds top="2" left="228" bottom="22" right="451"></Bounds>
+												<Options>805306368</Options>
+												<Field>
+													<FieldReference id="6" name="textField" repetition="1" UUID="F0065580-4FBD-C84F-BEDB-B4AC58598BAE">
+														<TableOccurrenceReference id="1065090" name="EverythingBagel__EVERYTHINGBAGEL__selfJoin" UUID="7844680B-43C1-6C49-AC4C-90C390CE343A"></TableOccurrenceReference>
+													</FieldReference>
+													<Options>32</Options>
+													<Display Style="0" show="1"></Display>
+													<Usage inputMode="0" type="1"></Usage>
+												</Field>
+												<LocalCSS type="ThemeCustomStyle" name="minimal_edit_box" displayName="Minimal Edit Box"><![CDATA[self.minimal_edit_box
+{
+}
+]]></LocalCSS>
+												<ExtendedAttributes>
+													<Formatting>
+														<Graphic>
+															<Options>5</Options>
+														</Graphic>
+														<Time>
+															<Options>143</Options>
+														</Time>
+														<Numeric>
+															<Options>2304</Options>
+															<Style>
+																<Negative>
+																	<Color red="221" green="0" blue="0" alpha="1.00"></Color>
+																</Negative>
+															</Style>
+															<DecimalDigits>2</DecimalDigits>
+														</Numeric>
+													</Formatting>
+												</ExtendedAttributes>
+											</LayoutObject>
+										</ObjectList>
+									</Portal>
+								</LayoutObject>
+								<LayoutObject hash="51F41F1F3E7E3FEB7CEAC7D71F75B37D" id="20" type="Button Bar" name="" kind="18">
+									<UUID>C042A4B0-FAEC-A14C-98B4-16C3175FCB0E</UUID>
+									<Bounds top="329" left="456" bottom="458" right="607"></Bounds>
+									<Options>805306368</Options>
+									<ButtonBar>
+										<Options>3</Options>
+										<Select>
+											<Calculation>
+												<DDRREF kind="ChunkList" hash="B15835F133FF2E27C7CB28117BFAE8F4">_C042A4B0-FAEC-A14C-98B4-16C3175FCB0E_ButtonBar</DDRREF>
+												<Text><![CDATA[True]]></Text>
+											</Calculation>
+										</Select>
+										<ObjectList membercount="3">
+											<LayoutObject hash="CE031067263B86098ED2EFCF12DFF07F" id="21" type="Button" name="" kind="10">
+												<UUID>E2C14848-9729-9849-A16D-730BF1319008</UUID>
+												<Bounds top="0" left="0" bottom="43" right="152"></Bounds>
+												<Options>805306376</Options>
+												<Button>
+													<Options>2</Options>
+													<Label>
+														<Calculation>
+															<DDRREF kind="ChunkList" hash="F39074AB83E5A2DA9EC8490F88901BE2">_E2C14848-9729-9849-A16D-730BF1319008_Label</DDRREF>
+															<Text><![CDATA["Sample 1"]]></Text>
+														</Calculation>
+													</Label>
+													<IconData type="4" size="12">
+														<BinaryData>
+															<StreamList>
+																<Stream name="MAIN" type="id" size="4">SVG </Stream>
+																<Stream name="SVG " type="Base64" size="340">PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgdmVyc2lvbj0iMS4yIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIg0KCSB4PSIwcHgiIHk9IjBweCIgd2lkdGg9IjI0cHgiIGhlaWdodD0iMjRweCIgdmlld0JveD0iMCAwIDI0IDI0Ij4NCjxnIGNsYXNzPSJmbV9maWxsIj4NCjxwb2x5Z29uIHBvaW50cz0iMjQsMTAgMTQsMTAgMTQsMCAxMCwwIDEwLDEwIC0wLjAwMSwxMCAtMC4wMDEsMTQgMTAsMTQgMTAsMjQgMTQsMjQgMTQsMTQgMjQsMTQgIi8+DQo8L2c+DQo8L3N2Zz4NCg==</Stream>
+																<Stream name="GLPH" type="Hex" size="1">01</Stream>
+																<Stream name="FNAM" type="Hex" size="23">000000010533373B3D3F000B3B6B69053B3E3E74292C3D</Stream>
+															</StreamList>
+														</BinaryData>
+													</IconData>
+												</Button>
+											</LayoutObject>
+											<LayoutObject hash="102493F74EC11342DD916B482A6A1610" id="22" type="Button" name="" kind="10">
+												<UUID>A0A70876-294F-BF43-9336-179A58D2CD26</UUID>
+												<Bounds top="43" left="0" bottom="86" right="152"></Bounds>
+												<Options>805306376</Options>
+												<Button>
+													<Options>2</Options>
+													<Label>
+														<Calculation>
+															<DDRREF kind="ChunkList" hash="15C0AA96F657DAAB4BCC1A147EA599A4">_A0A70876-294F-BF43-9336-179A58D2CD26_Label</DDRREF>
+															<Text><![CDATA["Sample 2"]]></Text>
+														</Calculation>
+													</Label>
+													<IconData type="4" size="12">
+														<BinaryData>
+															<StreamList>
+																<Stream name="MAIN" type="id" size="4">SVG </Stream>
+																<Stream name="SVG " type="Base64" size="290">PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgdmVyc2lvbj0iMS4yIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCIgd2lkdGg9IjI0cHgiIGhlaWdodD0iMjRweCIgdmlld0JveD0iMCAwIDI0IDI0Ij4NCjxnIGNsYXNzPSJmbV9maWxsIj4NCjxyZWN0IHg9Ii0wLjAwMSIgeT0iMTAiIHdpZHRoPSIyNC4wMDEiIGhlaWdodD0iNCIvPg0KPC9nPg0KPC9zdmc+DQo=</Stream>
+																<Stream name="GLPH" type="Hex" size="1">01</Stream>
+																<Stream name="FNAM" type="Hex" size="26">000000010533373B3D3F000E3B686B053E3F363F2E3F74292C3D</Stream>
+															</StreamList>
+														</BinaryData>
+													</IconData>
+												</Button>
+											</LayoutObject>
+											<LayoutObject hash="BBFFC20273D95C8754DA4EB7D3F25296" id="23" type="Button" name="" kind="10">
+												<UUID>E61E1C75-7370-3347-B62C-112A1D1EA71E</UUID>
+												<Bounds top="86" left="0" bottom="129" right="152"></Bounds>
+												<Options>805371912</Options>
+												<Button>
+													<Options>2</Options>
+													<Label>
+														<Calculation>
+															<DDRREF kind="ChunkList" hash="EAC9283EB1A4B582C3701FEE28D3D12B">_E61E1C75-7370-3347-B62C-112A1D1EA71E_Label</DDRREF>
+															<Text><![CDATA["Sample 3"]]></Text>
+														</Calculation>
+													</Label>
+													<IconData type="4" size="12">
+														<BinaryData>
+															<StreamList>
+																<Stream name="MAIN" type="id" size="4">SVG </Stream>
+																<Stream name="SVG " type="Base64" size="383">PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgdmVyc2lvbj0iMS4yIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIg0KCSB4PSIwcHgiIHk9IjBweCIgd2lkdGg9IjI0cHgiIGhlaWdodD0iMjRweCIgdmlld0JveD0iMCAwIDI0IDI0Ij4NCjxnIGNsYXNzPSJmbV9maWxsIj4NCjxwb2x5Z29uIHBvaW50cz0iMjEuMTcyLDAgMTIsOS4xNzEgMi44MjksMCAwLDIuODI4IDkuMTcyLDEyIDAsMjEuMTcyIDIuODI4LDI0IDEyLDE0LjgyOCAyMS4xNzMsMjMuOTk5IA0KCTI0LjAwMSwyMS4xNzEgMTQuODI4LDEyIDI0LDIuODI4ICIvPg0KPC9nPg0KPC9zdmc+DQo=</Stream>
+																<Stream name="GLPH" type="Hex" size="1">01</Stream>
+																<Stream name="FNAM" type="Hex" size="21">000000010533373B3D3F00093B6863052274292C3D</Stream>
+															</StreamList>
+														</BinaryData>
+													</IconData>
+													<action>
+														<Options>4</Options>
+														<ScriptReference id="2" name="Just Beep" UUID="123348D9-193B-5048-87E8-5260BA0B7BF7"></ScriptReference>
+														<Calculation>
+															<DDRREF kind="ChunkList" hash="B15835F133FF2E27C7CB28117BFAE8F4">_E61E1C75-7370-3347-B62C-112A1D1EA71E_action</DDRREF>
+															<Text><![CDATA[True]]></Text>
+														</Calculation>
+													</action>
+												</Button>
+											</LayoutObject>
+										</ObjectList>
+									</ButtonBar>
+								</LayoutObject>
+								<LayoutObject hash="10D830B2960FE9B78F2EDC92606FDA3D" id="24" type="Popover Button" name="" kind="14">
+									<UUID>8C4D3716-E497-5944-AE71-F4591CC78E09</UUID>
+									<Bounds top="328" left="642" bottom="370" right="757"></Bounds>
+									<Options>805306376</Options>
+									<PopoverButton>
+										<Options>0</Options>
+										<Label>
+											<Text>
+												<Options>2</Options>
+												<StyledText>
+													<Data><![CDATA[Popover Button Text]]></Data>
+												</StyledText>
+											</Text>
+										</Label>
+										<IconData type="0" size="11"></IconData>
+										<LayoutObject hash="D4ADD132DB8F1C3924C6AB4907DE5E32" id="25" type="PopoverPanel" name="" kind="15" position="0" Options="0">
+											<UUID>7DBDE3AF-6156-F846-8F4C-CFEF1730B5E2</UUID>
+											<Bounds top="149" left="768" bottom="549" right="1058"></Bounds>
+											<Options>805306368</Options>
+											<Title>
+												<DDRREF kind="ChunkList" hash="7228D90BF0FEA30D45888E54361CF4C1">_7DBDE3AF-6156-F846-8F4C-CFEF1730B5E2_PopoverPanel</DDRREF>
+												<Text><![CDATA["Popover Title"]]></Text>
+											</Title>
+											<ObjectList membercount="0"></ObjectList>
+										</LayoutObject>
+									</PopoverButton>
+								</LayoutObject>
+								<LayoutObject hash="A1E9D9612AFC923F300E1D426657B837" id="26" type="Drop-down List" name="" kind="1">
+									<UUID>6F81978A-2EFC-0F40-B0B8-FCE3AF70EB37</UUID>
+									<Bounds top="517" left="405" bottom="549" right="658"></Bounds>
+									<Options>805306368</Options>
+									<Field>
+										<FieldReference id="6" name="textField" repetition="1" UUID="F0065580-4FBD-C84F-BEDB-B4AC58598BAE">
+											<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+										</FieldReference>
+										<Options>32</Options>
+										<Display Style="1" show="1">
+											<ValueListReference id="1" name="HardcodedValueList" UUID="6DE8851C-124F-EA4D-8D23-E0EB1A50A28F"></ValueListReference>
+										</Display>
+										<Usage inputMode="0" type="1"></Usage>
+									</Field>
+									<LocalCSS type="ThemeCustomStyle" name="FM-B9C26F7D-8330-5346-B911-0FEBE1685606" displayName="centered_text"><![CDATA[self.FM-B9C26F7D-8330-5346-B911-0FEBE1685606
+{
+}
+]]></LocalCSS>
+									<ExtendedAttributes>
+										<Formatting>
+											<Graphic>
+												<Options>5</Options>
+											</Graphic>
+											<Time>
+												<Options>143</Options>
+											</Time>
+											<Numeric>
+												<Options>2304</Options>
+												<Style>
+													<Negative>
+														<Color red="221" green="0" blue="0" alpha="1.00"></Color>
+													</Negative>
+												</Style>
+												<DecimalDigits>2</DecimalDigits>
+											</Numeric>
+										</Formatting>
+									</ExtendedAttributes>
+									<Accessibility>
+										<Label>27</Label>
+									</Accessibility>
+								</LayoutObject>
+								<LayoutObject hash="683AA94E350D1E1BA89B17466DDDA170" id="27" type="Text" name="" kind="2">
+									<UUID>C77F9696-47C0-2348-939E-CAE79B46C857</UUID>
+									<Bounds top="520" left="337" bottom="536" right="394"></Bounds>
+									<Options>805306368</Options>
+									<Text>
+										<Options>0</Options>
+										<StyledText>
+											<Data><![CDATA[textField]]></Data>
+										</StyledText>
+									</Text>
+									<LocalCSS type="ObjectCustomStyle" name="" displayName=""><![CDATA[self:normal .self
+{
+	text-align: right;
+}
+]]></LocalCSS>
+								</LayoutObject>
+								<LayoutObject hash="5A13B78DCF7BB5790633D913067554F5" id="28" type="Pop-up Menu" name="" kind="1">
+									<UUID>1BFC09F0-B87B-3244-916D-D5B851DECE6D</UUID>
+									<Bounds top="556" left="405" bottom="588" right="658"></Bounds>
+									<Options>805306368</Options>
+									<Field>
+										<FieldReference id="6" name="textField" repetition="1" UUID="F0065580-4FBD-C84F-BEDB-B4AC58598BAE">
+											<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+										</FieldReference>
+										<Options>32</Options>
+										<Display Style="2" show="1">
+											<ValueListReference id="1" name="HardcodedValueList" UUID="6DE8851C-124F-EA4D-8D23-E0EB1A50A28F"></ValueListReference>
+										</Display>
+										<Usage inputMode="0" type="1"></Usage>
+									</Field>
+									<ExtendedAttributes>
+										<Formatting>
+											<Graphic>
+												<Options>5</Options>
+											</Graphic>
+											<Time>
+												<Options>143</Options>
+											</Time>
+											<Numeric>
+												<Options>2304</Options>
+												<Style>
+													<Negative>
+														<Color red="221" green="0" blue="0" alpha="1.00"></Color>
+													</Negative>
+												</Style>
+												<DecimalDigits>2</DecimalDigits>
+											</Numeric>
+										</Formatting>
+									</ExtendedAttributes>
+									<Accessibility>
+										<Label>29</Label>
+									</Accessibility>
+								</LayoutObject>
+								<LayoutObject hash="A93BBDE66529FCF8CE49C5D40DE2A92D" id="29" type="Text" name="" kind="2">
+									<UUID>7638CB72-C5F9-FA4B-B072-D321A963016D</UUID>
+									<Bounds top="559" left="337" bottom="575" right="394"></Bounds>
+									<Options>805306368</Options>
+									<Text>
+										<Options>0</Options>
+										<StyledText>
+											<Data><![CDATA[textField]]></Data>
+										</StyledText>
+									</Text>
+									<LocalCSS type="ObjectCustomStyle" name="" displayName=""><![CDATA[self:normal .self
+{
+	text-align: right;
+}
+]]></LocalCSS>
+								</LayoutObject>
+								<LayoutObject hash="AE7E7188031B76A7D56739987F0DFC22" id="30" type="Edit Box" name="" kind="1">
+									<UUID>06096027-2074-C546-8EA9-A89A17E5CB03</UUID>
+									<Bounds top="595" left="405" bottom="627" right="658"></Bounds>
+									<Options>805306372</Options>
+									<Field>
+										<FieldReference id="6" name="textField" repetition="1" UUID="F0065580-4FBD-C84F-BEDB-B4AC58598BAE">
+											<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+										</FieldReference>
+										<Options>32816</Options>
+										<Display Style="0" show="1"></Display>
+										<Usage inputMode="0" type="1"></Usage>
+									</Field>
+									<ExtendedAttributes>
+										<Formatting>
+											<Graphic>
+												<Options>5</Options>
+											</Graphic>
+											<Time>
+												<Options>143</Options>
+											</Time>
+											<Numeric>
+												<Options>2304</Options>
+												<Style>
+													<Negative>
+														<Color red="221" green="0" blue="0" alpha="1.00"></Color>
+													</Negative>
+												</Style>
+												<DecimalDigits>2</DecimalDigits>
+											</Numeric>
+										</Formatting>
+									</ExtendedAttributes>
+									<Accessibility>
+										<Label>31</Label>
+									</Accessibility>
+									<Conditions>
+										<Hide findMode="False">
+											<Calculation>
+												<DDRREF kind="ChunkList" hash="">_06096027-2074-C546-8EA9-A89A17E5CB03_Hide</DDRREF>
+												<Text><![CDATA[Exact ( Get ( WindowMode ) ; 1 )
+// Hide when in find mode]]></Text>
+											</Calculation>
+										</Hide>
+									</Conditions>
+									<CanEntryCalc>
+										<Calculation>
+											<DDRREF kind="ChunkList" hash="01ABFC750A0C942167651C40D088531D">_06096027-2074-C546-8EA9-A89A17E5CB03_Hide</DDRREF>
+											<Text><![CDATA[False]]></Text>
+										</Calculation>
+									</CanEntryCalc>
+								</LayoutObject>
+								<LayoutObject hash="3283D4A842C0B95B0308BA7D263E3AE4" id="31" type="Text" name="" kind="2">
+									<UUID>76268BE2-8950-9940-9242-0EEB28C8AEB4</UUID>
+									<Bounds top="598" left="337" bottom="614" right="394"></Bounds>
+									<Options>805306368</Options>
+									<Text>
+										<Options>0</Options>
+										<StyledText>
+											<Data><![CDATA[textField]]></Data>
+										</StyledText>
+									</Text>
+									<LocalCSS type="ObjectCustomStyle" name="" displayName=""><![CDATA[self:normal .self
+{
+	text-align: right;
+}
+]]></LocalCSS>
+								</LayoutObject>
+								<LayoutObject hash="009A49BBD0357808DA7B2D3F8D5528F6" id="32" type="Button" name="" kind="10">
+									<UUID>D7022637-2DFB-704C-AFF7-BCD73AD1CA18</UUID>
+									<Bounds top="600" left="780" bottom="675" right="895"></Bounds>
+									<Options>805306376</Options>
+									<Button>
+										<Options>0</Options>
+										<Label></Label>
+										<IconData type="1" size="54">
+											<BinaryData>
+												<StreamList>
+													<Stream name="MAIN" type="id" size="4">SVG </Stream>
+													<Stream name="SVG " type="Base64" size="1175">PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgdmVyc2lvbj0iMS4yIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIg0KCSB4PSIwcHgiIHk9IjBweCIgd2lkdGg9IjI0cHgiIGhlaWdodD0iMjRweCIgdmlld0JveD0iMCAwIDI0IDI0Ij4NCjxnIGNsYXNzPSJmbV9maWxsIj4NCjxwYXRoIGQ9Ik0xMi4wMDEsMEM1LjM3NSwwLDAsNS4zNzMsMCwxMnM1LjM3NCwxMiwxMiwxMmM2LjYyNiwwLDEyLTUuMzczLDEyLTEyUzE4LjYyNywwLDEyLjAwMSwweiBNMTEuMDIxLDEzLjY5Mg0KCWMwLDAtMy43MTktMC44Ni00LjQ0My0yLjMxMWMtMS40NTgtMi45MjMtMS42MzEtMi4zNTgtMS44MS0zLjI2M0M0LjU4Myw3LjIxMiw0Ljg1Nyw1LjM1Myw0Ljg1Nyw1LjM1M1M0LjgxMiw1LjcxNiw2LjYyMiwzLjM2MQ0KCWMxLjI4OS0xLjY3MSw0LjMwMS0xLjA3Niw1LjM0OC0wLjcyNGMwLjQzNCwwLjE0My0xLjg1NiwwLTEuOTUsMS4yMjRjLTAuMDg5LDEuMjIxLDAuMTg1LDEuMDQzLDEuMjI2LDEuMzEzDQoJYzEuMDQ1LDAuMjcsMC45OTgtMi4xMzIsMC45OTgtMi4xMzJsMS41ODUsMC45NTJsMC41OTEsMC41OTFjMCwwLDAuMTY0LDEuNDY4LTAuMzY2LDIuMTNjLTAuNjA0LDAuNzU5LTEuNDE2LDAuNzUyLTEuNTM3LDIuMDgzDQoJYy0wLjA5LDAuOTczLDAuMDg5LDIuNTgzLDAuMDg5LDIuNTgzcy0wLjIwNiwwLjI2Ny0wLjQ5OSwwLjA0NGMtMC40MTUtMC4zMTQtMC44NTgtMC44NTUtMS4xNzctMS40OTQNCgljLTAuNTQzLTEuMDg5LTIuMTMtMC4zMTctMi4xNzUtMC4xODJjLTAuODc2LDIuNjMxLDIuMzExLDMuMTcxLDIuMzExLDMuMTcxTDExLjAyMSwxMy42OTJ6IE0xMi40MjMsMjIuNzU2DQoJYzAuMTgzLTAuNzI1LDEuOTk3LTIuMzU4LDEuNjMxLTMuMDgyYy0wLjM2LTAuNzI1LTEuMDg1LTAuNzI1LTEuODEtMS4yN2MtMC43MjctMC41NDMtMC43ODctMi4yMzQsMC4zNjEtMy4yNjINCgljMS4wOS0wLjk3NSwyLjM1OC0xLjA4NywyLjM1OC0xLjA4N3MyLjM1NSwwLjcyNCwzLjA3OSwwLjkwNGMwLjcyNywwLjE4MywyLjM1OC0wLjM2LDIuMzU4LDAuOTA3DQoJQzIwLjQwMSwyMC41ODMsMTIuMjQ0LDIzLjQ4MiwxMi40MjMsMjIuNzU2eiIvPg0KPC9nPg0KPC9zdmc+DQo=</Stream>
+													<Stream name="GLPH" type="Hex" size="1">01</Stream>
+													<Stream name="FNAM" type="Hex" size="23">000000010533373B3D3F000B3B6C63052F283674292C3D</Stream>
+												</StreamList>
+											</BinaryData>
+										</IconData>
+									</Button>
+								</LayoutObject>
+							</ObjectList>
+						</Part>
+					</PartsList>
+					<TableView>
+						<ObjectList membercount="10">
+							<TableViewLayoutObject hidden="False" id="3" name="numberField" width="75">
+								<FieldReference id="7" name="numberField" repetition="1" UUID="DB873002-F451-CE4D-8E5A-CFCF767DEDA7">
+									<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+								</FieldReference>
+							</TableViewLayoutObject>
+							<TableViewLayoutObject hidden="False" id="13" name="numberField" width="75">
+								<FieldReference id="7" name="numberField" repetition="1" UUID="DB873002-F451-CE4D-8E5A-CFCF767DEDA7">
+									<TableOccurrenceReference id="1065090" name="EverythingBagel__EVERYTHINGBAGEL__selfJoin" UUID="7844680B-43C1-6C49-AC4C-90C390CE343A"></TableOccurrenceReference>
+								</FieldReference>
+							</TableViewLayoutObject>
+							<TableViewLayoutObject hidden="False" id="14" name="textField" width="120">
+								<FieldReference id="6" name="textField" repetition="1" UUID="F0065580-4FBD-C84F-BEDB-B4AC58598BAE">
+									<TableOccurrenceReference id="1065090" name="EverythingBagel__EVERYTHINGBAGEL__selfJoin" UUID="7844680B-43C1-6C49-AC4C-90C390CE343A"></TableOccurrenceReference>
+								</FieldReference>
+							</TableViewLayoutObject>
+							<TableViewLayoutObject hidden="False" id="4" name="dateField" width="75">
+								<FieldReference id="8" name="dateField" repetition="1" UUID="6F0AB3E7-BE36-344E-89AA-DEECD6638A44">
+									<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+								</FieldReference>
+							</TableViewLayoutObject>
+							<TableViewLayoutObject hidden="False" id="5" name="timeField" width="75">
+								<FieldReference id="9" name="timeField" repetition="1" UUID="7F483143-B868-2E47-A7BE-3C9211977C24">
+									<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+								</FieldReference>
+							</TableViewLayoutObject>
+							<TableViewLayoutObject hidden="False" id="6" name="timestampField" width="150">
+								<FieldReference id="10" name="timestampField" repetition="1" UUID="BF25DDF1-2BC6-8248-84A8-43CDA43B80B8">
+									<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+								</FieldReference>
+							</TableViewLayoutObject>
+							<TableViewLayoutObject hidden="False" id="7" name="containerField" width="75">
+								<FieldReference id="11" name="containerField" repetition="1" UUID="9B66D604-BAC5-3945-A6C4-D455D954F7DB">
+									<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+								</FieldReference>
+							</TableViewLayoutObject>
+							<TableViewLayoutObject hidden="False" id="8" name="calculationField" width="75">
+								<FieldReference id="12" name="calculationField" repetition="1" UUID="A8A9B668-2FAC-6843-8626-C9B3C8FA14C0">
+									<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+								</FieldReference>
+							</TableViewLayoutObject>
+							<TableViewLayoutObject hidden="False" id="2" name="textField" width="120">
+								<FieldReference id="6" name="textField" repetition="1" UUID="F0065580-4FBD-C84F-BEDB-B4AC58598BAE">
+									<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+								</FieldReference>
+							</TableViewLayoutObject>
+							<TableViewLayoutObject hidden="False" id="9" name="summaryField" width="75">
+								<FieldReference id="13" name="summaryField" repetition="1" UUID="5C850F3D-7CE4-4E44-804E-398EA16D9D6A">
+									<TableOccurrenceReference id="1065089" name="EverythingBagel" UUID="B17A7B1A-16D3-834D-A4F1-02119A3BD0DC"></TableOccurrenceReference>
+								</FieldReference>
+							</TableViewLayoutObject>
+						</ObjectList>
+					</TableView>
+					<UUID modifications="6" userName="Admin" accountName="Admin" timestamp="2026-10-21T14:37:59">9A1BD310-F375-CD49-9BEC-551EB5C8523D</UUID>
+					<TagList></TagList>
+					<GridStyle>
+						<Color red="0.500000" green="0.500000" blue="0.500000" alpha="1.000000"></Color>
+						<Style>5</Style>
+					</GridStyle>
+					<ClientType>3</ClientType>
+					<Options hidden="False">64708872193</Options>
+					<MenuSet>
+						<CustomMenuSetReference id="0" name="[File Default]" UUID=""></CustomMenuSetReference>
+					</MenuSet>
+				</Layout>
+			</LayoutCatalog>
+		</AddAction>
+	</Structure>
+	<DDR_INFO>
+		<Calculation>
+			<ObjectList>
+				<_C042A4B0-FAEC-A14C-98B4-16C3175FCB0E_ButtonBar hash="B15835F133FF2E27C7CB28117BFAE8F4" datatype="ChunkList">
+					<ChunkList hash="B15835F133FF2E27C7CB28117BFAE8F4">
+						<Chunk type="FunctionRef">True</Chunk>
+					</ChunkList>
+				</_C042A4B0-FAEC-A14C-98B4-16C3175FCB0E_ButtonBar>
+				<_E2C14848-9729-9849-A16D-730BF1319008_Label hash="F39074AB83E5A2DA9EC8490F88901BE2" datatype="ChunkList">
+					<ChunkList hash="F39074AB83E5A2DA9EC8490F88901BE2">
+						<Chunk type="NoRef">&quot;Sample 1&quot;</Chunk>
+					</ChunkList>
+				</_E2C14848-9729-9849-A16D-730BF1319008_Label>
+				<_A0A70876-294F-BF43-9336-179A58D2CD26_Label hash="15C0AA96F657DAAB4BCC1A147EA599A4" datatype="ChunkList">
+					<ChunkList hash="15C0AA96F657DAAB4BCC1A147EA599A4">
+						<Chunk type="NoRef">&quot;Sample 2&quot;</Chunk>
+					</ChunkList>
+				</_A0A70876-294F-BF43-9336-179A58D2CD26_Label>
+				<_E61E1C75-7370-3347-B62C-112A1D1EA71E_Label hash="EAC9283EB1A4B582C3701FEE28D3D12B" datatype="ChunkList">
+					<ChunkList hash="EAC9283EB1A4B582C3701FEE28D3D12B">
+						<Chunk type="NoRef">&quot;Sample 3&quot;</Chunk>
+					</ChunkList>
+				</_E61E1C75-7370-3347-B62C-112A1D1EA71E_Label>
+				<_E61E1C75-7370-3347-B62C-112A1D1EA71E_action hash="B15835F133FF2E27C7CB28117BFAE8F4" datatype="ChunkList">
+					<ChunkList hash="B15835F133FF2E27C7CB28117BFAE8F4">
+						<Chunk type="FunctionRef">True</Chunk>
+					</ChunkList>
+				</_E61E1C75-7370-3347-B62C-112A1D1EA71E_action>
+				<_7DBDE3AF-6156-F846-8F4C-CFEF1730B5E2_PopoverPanel hash="7228D90BF0FEA30D45888E54361CF4C1" datatype="ChunkList">
+					<ChunkList hash="7228D90BF0FEA30D45888E54361CF4C1">
+						<Chunk type="NoRef">&quot;Popover Title&quot;</Chunk>
+					</ChunkList>
+				</_7DBDE3AF-6156-F846-8F4C-CFEF1730B5E2_PopoverPanel>
+				<_06096027-2074-C546-8EA9-A89A17E5CB03_Hide hash="01ABFC750A0C942167651C40D088531D" datatype="ChunkList">
+					<ChunkList hash="01ABFC750A0C942167651C40D088531D">
+						<Chunk type="FunctionRef">False</Chunk>
+					</ChunkList>
+				</_06096027-2074-C546-8EA9-A89A17E5CB03_Hide>
+			</ObjectList>
+		</Calculation>
+	</DDR_INFO>
+</FMSaveAsXML>

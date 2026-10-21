@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="Empty.fmp12" UUID="6684087B-0287-C749-8B40-A115480972D1" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
+	<Structure membercount="1">
+		<AddAction membercount="1">
+			<ExtendedPrivilegesCatalog membercount="11">
+				<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-21T13:56:27">B6B88912-543D-0F46-9F40-14B23A2731E8</UUID>
+				<ObjectList membercount="11">
+					<ExtendedPrivilege id="1" name="fmwebdirect">
+						<Description>Access via FileMaker WebDirect</Description>
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-21T13:56:27">7797FE96-1501-184D-9AC3-8A09E10F7498</UUID>
+						<TagList></TagList>
+					</ExtendedPrivilege>
+					<ExtendedPrivilege id="2" name="fmxdbc">
+						<Description>Access via ODBC/JDBC</Description>
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-21T13:56:27">4694FA39-2ADE-4D46-B71A-D30883C8CF5F</UUID>
+						<TagList></TagList>
+					</ExtendedPrivilege>
+					<ExtendedPrivilege id="3" name="fmapp">
+						<Description>Access via FileMaker Network</Description>
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-21T13:56:27">DEE7128A-6C5D-1D46-B5B7-F9F05BC9B8FD</UUID>
+						<TagList></TagList>
+					</ExtendedPrivilege>
+					<ExtendedPrivilege id="4" name="fmreauthenticate10">
+						<Description>Require re-authentication after the specified minutes in sleep/background.</Description>
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-21T13:56:27">94F8D558-BDD5-C24A-8E46-781F1908CB0D</UUID>
+						<TagList></TagList>
+						<ObjectList membercount="3">
+							<PrivilegeSetReference id="1" name="[Full Access]"></PrivilegeSetReference>
+							<PrivilegeSetReference id="2" name="[Data Entry Only]"></PrivilegeSetReference>
+							<PrivilegeSetReference id="3" name="[Read-Only Access]"></PrivilegeSetReference>
+						</ObjectList>
+					</ExtendedPrivilege>
+					<ExtendedPrivilege id="5" name="fmxml">
+						<Description>Access via XML Web Publishing - FMS only</Description>
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-21T13:56:27">3B97BB8B-5C40-994A-B6FD-BE517211BD85</UUID>
+						<TagList></TagList>
+					</ExtendedPrivilege>
+					<ExtendedPrivilege id="6" name="fmphp">
+						<Description>Access via PHP Web Publishing - FMS only</Description>
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-21T13:56:27">2C5B4C78-02EA-B343-AC54-F8CAC1514CAD</UUID>
+						<TagList></TagList>
+					</ExtendedPrivilege>
+					<ExtendedPrivilege id="7" name="fmextscriptaccess">
+						<Description>Allow Apple events and ActiveX to perform FileMaker operations</Description>
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-21T13:56:27">5B82731F-25D7-E247-9760-02CBE8A01847</UUID>
+						<TagList></TagList>
+					</ExtendedPrivilege>
+					<ExtendedPrivilege id="8" name="fmurlscript">
+						<Description>Allow URLs to run FileMaker scripts</Description>
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-21T13:56:27">63D82729-2A1F-1945-A744-F88CF0CE9CB1</UUID>
+						<TagList></TagList>
+					</ExtendedPrivilege>
+					<ExtendedPrivilege id="9" name="fmrest">
+						<Description>Access via FileMaker Data API</Description>
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-21T13:56:27">92319377-7E3A-7741-992D-8233A37594C3</UUID>
+						<TagList></TagList>
+					</ExtendedPrivilege>
+					<ExtendedPrivilege id="10" name="fmodata">
+						<Description>Access via OData</Description>
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-21T13:56:27">D45B2E79-6019-F741-B062-93580A99366C</UUID>
+						<TagList></TagList>
+					</ExtendedPrivilege>
+					<ExtendedPrivilege id="11" name="fmplugin">
+						<Description>Validate cross-file plug-in access</Description>
+						<UUID modifications="0" userName="Admin" accountName="" timestamp="2026-10-21T13:56:27">2B03C5D1-AAC0-5F46-8E23-27887F5B4FBB</UUID>
+						<TagList></TagList>
+					</ExtendedPrivilege>
+				</ObjectList>
+			</ExtendedPrivilegesCatalog>
+		</AddAction>
+	</Structure>
+	<DDR_INFO></DDR_INFO>
+</FMSaveAsXML>

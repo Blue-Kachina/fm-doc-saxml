@@ -2,16 +2,21 @@
 <FMSaveAsXML version="2.3.0.0" Source="26.0.3" File="EverythingBagel.fmp12" UUID="400FEDB4-F509-8F4D-AF05-472A0DE02EAC" locale="English" Has_DDR_INFO="True" binary_under_lo="True" split_catalogs="True">
 	<Structure membercount="1">
 		<AddAction membercount="2">
-			<ScriptCatalog membercount="1">
-				<UUID modifications="4" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:38:30">404B6033-DB24-6645-9A39-32A0DFB4F856</UUID>
+			<ScriptCatalog membercount="2">
+				<UUID modifications="8" userName="Admin" accountName="Admin" timestamp="2026-10-21T14:40:09">404B6033-DB24-6645-9A39-32A0DFB4F856</UUID>
 				<TagList></TagList>
 				<Script id="1" name="OneOfEverything">
-					<UUID modifications="1" userName="Admin" accountName="Admin" timestamp="2026-03-12T11:38:30">D8C45FAE-2DB7-5949-BDD9-9EC4E5DCDBDC</UUID>
+					<UUID modifications="2" userName="Admin" accountName="Admin" timestamp="2026-10-21T14:40:09">D8C45FAE-2DB7-5949-BDD9-9EC4E5DCDBDC</UUID>
 					<Options hidden="False" access="ReadWrite" SiriShortcutVisible="False" runwithfullaccess="False" compatibility="0">0</Options>
 					<TagList></TagList>
 				</Script>
+				<Script id="2" name="Just Beep">
+					<UUID modifications="1" userName="Admin" accountName="Admin" timestamp="2026-10-21T14:33:34">123348D9-193B-5048-87E8-5260BA0B7BF7</UUID>
+					<Options hidden="True" access="ReadWrite" SiriShortcutVisible="False" runwithfullaccess="False" compatibility="0">8</Options>
+					<TagList></TagList>
+				</Script>
 			</ScriptCatalog>
-			<StepsForScripts membercount="1">
+			<StepsForScripts membercount="2">
 				<Script>
 					<ScriptReference id="1" name="OneOfEverything" UUID="D8C45FAE-2DB7-5949-BDD9-9EC4E5DCDBDC"></ScriptReference>
 					<ObjectList membercount="207">
@@ -222,17 +227,25 @@
 								</Parameter>
 							</ParameterValues>
 						</Step>
-						<Step hash="8BE14EC5A369DF29413F258B7FA66E62" index="20" id="212" name="Configure AI Account" enable="True">
+						<Step hash="C79C5BDCCA578F008EC2B91BB86B8996" index="20" id="212" name="Configure AI Account" enable="True">
 							<UUID>213C7A75-300B-E74B-BF73-E6950A617554</UUID>
 							<OwnerID></OwnerID>
-							<Options>2</Options>
-							<DDRREF kind="StepText" hash="DA842DEE971C9AF68A93FEEB5A25B114">_213C7A75-300B-E74B-BF73-E6950A617554</DDRREF>
-							<ParameterValues membercount="2">
+							<Options>16386</Options>
+							<DDRREF kind="StepText" hash="51991808FB8EC97AB535644D530B1056">_213C7A75-300B-E74B-BF73-E6950A617554</DDRREF>
+							<ParameterValues membercount="3">
 								<Parameter type="Boolean">
 									<Boolean type="Verify SSL Certificates" id="268435456" value="False"></Boolean>
 								</Parameter>
 								<Parameter type="List">
 									<List name="OpenAI" value="0"></List>
+								</Parameter>
+								<Parameter type="LLMAccountName">
+									<Calculation datatype="1" position="1">
+										<Calculation>
+											<DDRREF kind="ChunkList" hash="990003ADD3BE9BB281F6035FE4E63FF6">_213C7A75-300B-E74B-BF73-E6950A617554_1</DDRREF>
+											<Text><![CDATA["accountNameGoesHere"]]></Text>
+										</Calculation>
+									</Calculation>
 								</Parameter>
 							</ParameterValues>
 						</Step>
@@ -247,14 +260,22 @@
 								</Parameter>
 							</ParameterValues>
 						</Step>
-						<Step hash="570AC9C328737051DE01A6F103C1E1FE" index="22" id="202" name="Configure Machine Learning Model" enable="True">
+						<Step hash="A6CEC9731ABE64323494224935D5D40C" index="22" id="202" name="Configure Machine Learning Model" enable="True">
 							<UUID>F1524138-6451-C149-8C27-1F961D02DDA7</UUID>
 							<OwnerID></OwnerID>
-							<Options>0</Options>
-							<DDRREF kind="StepText" hash="7C3478D01FE85D1194AA6CAA4731830E">_F1524138-6451-C149-8C27-1F961D02DDA7</DDRREF>
-							<ParameterValues membercount="1">
+							<Options>16384</Options>
+							<DDRREF kind="StepText" hash="B4CAFC27CF0B58F41825C15C784A99FE">_F1524138-6451-C149-8C27-1F961D02DDA7</DDRREF>
+							<ParameterValues membercount="2">
 								<Parameter type="operation">
 									<List name="uninstall" value="0"></List>
+								</Parameter>
+								<Parameter type="name">
+									<Calculation datatype="1" position="1">
+										<Calculation>
+											<DDRREF kind="ChunkList" hash="193AEB9A19510EAC9D32CA6F26189B2F">_F1524138-6451-C149-8C27-1F961D02DDA7_1</DDRREF>
+											<Text><![CDATA["nameGoesHere"]]></Text>
+										</Calculation>
+									</Calculation>
 								</Parameter>
 							</ParameterValues>
 						</Step>
@@ -286,14 +307,22 @@
 								</Parameter>
 							</ParameterValues>
 						</Step>
-						<Step hash="CF97858426C4284B4DAE6424834C43E1" index="25" id="227" name="Configure RAG Account " enable="True">
+						<Step hash="B47F7E708C0371C4DCE2B905685A0620" index="25" id="227" name="Configure RAG Account " enable="True">
 							<UUID>A7795091-3F49-9B4A-A92C-F5359E82A4ED</UUID>
 							<OwnerID></OwnerID>
-							<Options>0</Options>
-							<DDRREF kind="StepText" hash="FB15E9EB8F0D79F378CC070B5FB79B40">_A7795091-3F49-9B4A-A92C-F5359E82A4ED</DDRREF>
-							<ParameterValues membercount="1">
+							<Options>16384</Options>
+							<DDRREF kind="StepText" hash="019965F055D5A4EDAE4E8F3D53B28AA1">_A7795091-3F49-9B4A-A92C-F5359E82A4ED</DDRREF>
+							<ParameterValues membercount="2">
 								<Parameter type="Boolean">
 									<Boolean type="Verify SSL Certificates" id="268435456" value="False"></Boolean>
+								</Parameter>
+								<Parameter type="RAGAccountName">
+									<Calculation datatype="1" position="1">
+										<Calculation>
+											<DDRREF kind="ChunkList" hash="821AA14FD0858AEC176D52E6BA36134E">_A7795091-3F49-9B4A-A92C-F5359E82A4ED_1</DDRREF>
+											<Text><![CDATA["RAGAccountName"]]></Text>
+										</Calculation>
+									</Calculation>
 								</Parameter>
 							</ParameterValues>
 						</Step>
@@ -308,14 +337,22 @@
 								</Parameter>
 							</ParameterValues>
 						</Step>
-						<Step hash="65B31CE137553EEE69D410F71C10E505" index="27" id="222" name="Configure Regression Model" enable="True">
+						<Step hash="4AC1DF1F2531D1362A0A3183124C3EFA" index="27" id="222" name="Configure Regression Model" enable="True">
 							<UUID>11B2ADFB-518C-D445-8C46-9989FB77F73C</UUID>
 							<OwnerID></OwnerID>
-							<Options>0</Options>
-							<DDRREF kind="StepText" hash="7BDC6F2F981A3722A95626276F849285">_11B2ADFB-518C-D445-8C46-9989FB77F73C</DDRREF>
-							<ParameterValues membercount="3">
+							<Options>16384</Options>
+							<DDRREF kind="StepText" hash="69B4C7E87F6D4386ED4FF6B751DB0CF8">_11B2ADFB-518C-D445-8C46-9989FB77F73C</DDRREF>
+							<ParameterValues membercount="4">
 								<Parameter type="Boolean">
 									<Boolean type="Skip empty or invalid records" id="4096" value="False"></Boolean>
+								</Parameter>
+								<Parameter type="LLMTrainModelName">
+									<Calculation datatype="1" position="3">
+										<Calculation>
+											<DDRREF kind="ChunkList" hash="84283E783FE832B9935D2D86F6255A61">_11B2ADFB-518C-D445-8C46-9989FB77F73C_3</DDRREF>
+											<Text><![CDATA["modelName"]]></Text>
+										</Calculation>
+									</Calculation>
 								</Parameter>
 								<Parameter type="LLMTrainAlgorithm">
 									<List name="Random Forest" value="0"></List>
@@ -486,25 +523,41 @@
 								</Parameter>
 							</ParameterValues>
 						</Step>
-						<Step hash="A7BE9B770885C7162B3BFAE22C0BE331" index="45" id="68" name="If" enable="True">
+						<Step hash="29CCF94A185432BF72648CDBB53FC821" index="45" id="68" name="If" enable="True">
 							<UUID>9128A462-728C-8546-A1A4-AF35912D4482</UUID>
 							<OwnerID></OwnerID>
-							<Options>0</Options>
-							<DDRREF kind="StepText" hash="5F1ADCB7A5F0AECF20F1B0ED8B106C22">_9128A462-728C-8546-A1A4-AF35912D4482</DDRREF>
-							<ParameterValues membercount="1">
+							<Options>16384</Options>
+							<DDRREF kind="StepText" hash="B0E24EE740992E3B9C9776FBCDB6A321">_9128A462-728C-8546-A1A4-AF35912D4482</DDRREF>
+							<ParameterValues membercount="2">
 								<Parameter type="Boolean">
 									<Boolean type="Collapsed" id="33554432" value="False"></Boolean>
 								</Parameter>
+								<Parameter type="Calculation">
+									<Calculation datatype="7" position="0">
+										<Calculation>
+											<DDRREF kind="ChunkList" hash="B15835F133FF2E27C7CB28117BFAE8F4">_9128A462-728C-8546-A1A4-AF35912D4482_0</DDRREF>
+											<Text><![CDATA[True]]></Text>
+										</Calculation>
+									</Calculation>
+								</Parameter>
 							</ParameterValues>
 						</Step>
-						<Step hash="EFCE5776582C7D6BDE03D260FA525444" index="46" id="125" name="Else If" enable="True">
+						<Step hash="F2C0B78DD93640DF6C5202CC88ECC2B0" index="46" id="125" name="Else If" enable="True">
 							<UUID>97EE0174-D5EF-6A45-877E-6BADC38E4C71</UUID>
 							<OwnerID></OwnerID>
-							<Options>0</Options>
-							<DDRREF kind="StepText" hash="4FA87CAB7D603D0797019C44784A3A4C">_97EE0174-D5EF-6A45-877E-6BADC38E4C71</DDRREF>
-							<ParameterValues membercount="1">
+							<Options>16384</Options>
+							<DDRREF kind="StepText" hash="E914ADD8DF5A85DFC1D4935AF322167B">_97EE0174-D5EF-6A45-877E-6BADC38E4C71</DDRREF>
+							<ParameterValues membercount="2">
 								<Parameter type="Boolean">
 									<Boolean type="Collapsed" id="33554432" value="False"></Boolean>
+								</Parameter>
+								<Parameter type="Calculation">
+									<Calculation datatype="7" position="0">
+										<Calculation>
+											<DDRREF kind="ChunkList" hash="B15835F133FF2E27C7CB28117BFAE8F4">_97EE0174-D5EF-6A45-877E-6BADC38E4C71_0</DDRREF>
+											<Text><![CDATA[True]]></Text>
+										</Calculation>
+									</Calculation>
 								</Parameter>
 							</ParameterValues>
 						</Step>
@@ -553,11 +606,21 @@
 								</Parameter>
 							</ParameterValues>
 						</Step>
-						<Step hash="731B5BECBAFDE752261CFF004812E4C0" index="51" id="72" name="Exit Loop If" enable="True">
+						<Step hash="43E2512C83C02729B6793475646BFE5B" index="51" id="72" name="Exit Loop If" enable="True">
 							<UUID>A91D442B-483D-114A-9DE8-61A74A473255</UUID>
 							<OwnerID></OwnerID>
-							<Options>0</Options>
-							<DDRREF kind="StepText" hash="F76289F41F87C50AFF9D4D2908035EB4">_A91D442B-483D-114A-9DE8-61A74A473255</DDRREF>
+							<Options>16384</Options>
+							<DDRREF kind="StepText" hash="875ACCEFCCDB865B136D29534B18364D">_A91D442B-483D-114A-9DE8-61A74A473255</DDRREF>
+							<ParameterValues membercount="1">
+								<Parameter type="Calculation">
+									<Calculation datatype="7" position="0">
+										<Calculation>
+											<DDRREF kind="ChunkList" hash="B15835F133FF2E27C7CB28117BFAE8F4">_A91D442B-483D-114A-9DE8-61A74A473255_0</DDRREF>
+											<Text><![CDATA[True]]></Text>
+										</Calculation>
+									</Calculation>
+								</Parameter>
+							</ParameterValues>
 						</Step>
 						<Step hash="AF138B8836C9CC7440C27C176DCFC306" index="52" id="73" name="End Loop" enable="True">
 							<UUID>E52621DB-43C0-FF41-9509-E0A956ED48A2</UUID>
@@ -640,11 +703,21 @@
 							<Options>0</Options>
 							<DDRREF kind="StepText" hash="6B9D225293B54E50AAE185EDF506DA8A">_C8EC0CA5-3929-3A46-98D5-A85D999930CB</DDRREF>
 						</Step>
-						<Step hash="09F3328BC26E5A463E86467E0DC1F489" index="60" id="103" name="Exit Script" enable="True">
+						<Step hash="49BE7EB3B5D3606F9E421B3AC9D0061C" index="60" id="103" name="Exit Script" enable="True">
 							<UUID>B9AB62BD-F1DD-F448-9100-1C1330249406</UUID>
 							<OwnerID></OwnerID>
-							<Options>0</Options>
-							<DDRREF kind="StepText" hash="45107692DAC19823F9FCF7C09CC20F12">_B9AB62BD-F1DD-F448-9100-1C1330249406</DDRREF>
+							<Options>16384</Options>
+							<DDRREF kind="StepText" hash="B1E7C206147CA569F9CD88B2B227D3AF">_B9AB62BD-F1DD-F448-9100-1C1330249406</DDRREF>
+							<ParameterValues membercount="1">
+								<Parameter type="Calculation">
+									<Calculation datatype="1" position="0">
+										<Calculation>
+											<DDRREF kind="ChunkList" hash="B15835F133FF2E27C7CB28117BFAE8F4">_B9AB62BD-F1DD-F448-9100-1C1330249406_0</DDRREF>
+											<Text><![CDATA[True]]></Text>
+										</Calculation>
+									</Calculation>
+								</Parameter>
+							</ParameterValues>
 						</Step>
 						<Step hash="A3CC54F150888D25BEC74D085D251240" index="61" id="132" name="Export Field Contents" enable="True">
 							<UUID>EDA07866-77DA-BA4E-A98F-B85C2FB217B2</UUID>
@@ -688,14 +761,22 @@
 								</Parameter>
 							</ParameterValues>
 						</Step>
-						<Step hash="AC8A274D8364A755BD4A2FDB7D75B5F3" index="65" id="213" name="Fine-Tune Model" enable="True">
+						<Step hash="2867C3BD52D3EDD799C5226FCDFB0386" index="65" id="213" name="Fine-Tune Model" enable="True">
 							<UUID>5786990B-D7A3-9F45-BECB-97EBB72A1A80</UUID>
 							<OwnerID></OwnerID>
-							<Options>0</Options>
-							<DDRREF kind="StepText" hash="BF0B869E39BC8C61E54FD307140DFC2E">_5786990B-D7A3-9F45-BECB-97EBB72A1A80</DDRREF>
-							<ParameterValues membercount="1">
+							<Options>16384</Options>
+							<DDRREF kind="StepText" hash="E788030699063368D664E1F5900A95CB">_5786990B-D7A3-9F45-BECB-97EBB72A1A80</DDRREF>
+							<ParameterValues membercount="2">
 								<Parameter type="FineTuneDataSource">
 									<List name="Table" value="1"></List>
+								</Parameter>
+								<Parameter type="FineTuneAccountName">
+									<Calculation datatype="1" position="1">
+										<Calculation>
+											<DDRREF kind="ChunkList" hash="C24AFD8F0AE6E56276ED3CED520B63B9">_5786990B-D7A3-9F45-BECB-97EBB72A1A80_1</DDRREF>
+											<Text><![CDATA["accountName"]]></Text>
+										</Calculation>
+									</Calculation>
 								</Parameter>
 							</ParameterValues>
 						</Step>
@@ -711,12 +792,12 @@
 							<Options>0</Options>
 							<DDRREF kind="StepText" hash="7AD1F4C003836BC5172EA00C18016D46">_8AFC314C-DA25-8E4D-8B78-22E2D2342C41</DDRREF>
 						</Step>
-						<Step hash="B1D044455DA45D9D50D7C62F7A2D5A89" index="68" id="220" name="Generate Response from Model" enable="True">
+						<Step hash="F90991324285C8277A0D8843D16E29BA" index="68" id="220" name="Generate Response from Model" enable="True">
 							<UUID>91650E9E-180F-2A49-B588-77EDF0F67022</UUID>
 							<OwnerID></OwnerID>
-							<Options>131072</Options>
-							<DDRREF kind="StepText" hash="3BFC1BDFD0B3C3EC751EE3F6C54C8E84">_91650E9E-180F-2A49-B588-77EDF0F67022</DDRREF>
-							<ParameterValues membercount="3">
+							<Options>147456</Options>
+							<DDRREF kind="StepText" hash="45E649D377644DAD0DB2E464C3332640">_91650E9E-180F-2A49-B588-77EDF0F67022</DDRREF>
+							<ParameterValues membercount="6">
 								<Parameter type="Boolean">
 									<Boolean type="Agentic mode" id="131072" value="True"></Boolean>
 								</Parameter>
@@ -725,6 +806,30 @@
 								</Parameter>
 								<Parameter type="LLMAction">
 									<List name="" value="0"></List>
+								</Parameter>
+								<Parameter type="LLMUserPrompt">
+									<Calculation datatype="1" position="3">
+										<Calculation>
+											<DDRREF kind="ChunkList" hash="2995D72FBD20891261DC1BEAC0F51700">_91650E9E-180F-2A49-B588-77EDF0F67022_3</DDRREF>
+											<Text><![CDATA["promptGoesHere"]]></Text>
+										</Calculation>
+									</Calculation>
+								</Parameter>
+								<Parameter type="LLMModel">
+									<Calculation datatype="1" position="2">
+										<Calculation>
+											<DDRREF kind="ChunkList" hash="2FE2DD61C86B2CBC720BD63B7D57A894">_91650E9E-180F-2A49-B588-77EDF0F67022_2</DDRREF>
+											<Text><![CDATA["modelGoesHere"]]></Text>
+										</Calculation>
+									</Calculation>
+								</Parameter>
+								<Parameter type="LLMAccountName">
+									<Calculation datatype="1" position="1">
+										<Calculation>
+											<DDRREF kind="ChunkList" hash="C24AFD8F0AE6E56276ED3CED520B63B9">_91650E9E-180F-2A49-B588-77EDF0F67022_1</DDRREF>
+											<Text><![CDATA["accountName"]]></Text>
+										</Calculation>
+									</Calculation>
 								</Parameter>
 							</ParameterValues>
 						</Step>
@@ -789,12 +894,20 @@
 								</Parameter>
 							</ParameterValues>
 						</Step>
-						<Step hash="4D2863D5ACE148EE446EA7B5C4CE6455" index="75" id="228" name="Go to List of Records" enable="True">
+						<Step hash="96039F07DA4DDD318FAD33E36E730F25" index="75" id="228" name="Go to List of Records" enable="True">
 							<UUID>58E75842-5199-EF4A-9FFB-1FA674C90794</UUID>
 							<OwnerID></OwnerID>
-							<Options>0</Options>
-							<DDRREF kind="StepText" hash="E3DCB5297A3096E4C2B5591D5A512B4D">_58E75842-5199-EF4A-9FFB-1FA674C90794</DDRREF>
-							<ParameterValues membercount="2">
+							<Options>16384</Options>
+							<DDRREF kind="StepText" hash="04579EB63EB7B0DEC8E606CA49D81570">_58E75842-5199-EF4A-9FFB-1FA674C90794</DDRREF>
+							<ParameterValues membercount="3">
+								<Parameter type="Calculation">
+									<Calculation datatype="1" position="7">
+										<Calculation>
+											<DDRREF kind="ChunkList" hash="3D02CD9700192CBB78A47747F240D509">_58E75842-5199-EF4A-9FFB-1FA674C90794_7</DDRREF>
+											<Text><![CDATA["recordIdsGoHere"]]></Text>
+										</Calculation>
+									</Calculation>
+								</Parameter>
 								<Parameter type="LayoutReferenceContainer">
 									<LayoutReferenceContainer value="1">
 										<Label>original layout</Label>
@@ -2347,12 +2460,88 @@
 						</Step>
 					</ObjectList>
 				</Script>
+				<Script>
+					<ScriptReference id="2" name="Just Beep" UUID="123348D9-193B-5048-87E8-5260BA0B7BF7"></ScriptReference>
+					<ObjectList membercount="1">
+						<Step hash="A1AD333F7236D6104C45EA49359CEAF4" index="0" id="93" name="Beep" enable="True">
+							<UUID>4F9F7454-8B3B-AD42-AA46-12DED6C841D8</UUID>
+							<OwnerID></OwnerID>
+							<Options>0</Options>
+							<DDRREF kind="StepText" hash="0A97A2C1536EBD6CF534B108CE955990">_4F9F7454-8B3B-AD42-AA46-12DED6C841D8</DDRREF>
+						</Step>
+					</ObjectList>
+				</Script>
 			</StepsForScripts>
 		</AddAction>
 	</Structure>
 	<DDR_INFO>
 		<Calculation>
 			<ObjectList>
+				<_213C7A75-300B-E74B-BF73-E6950A617554_1 hash="990003ADD3BE9BB281F6035FE4E63FF6" datatype="ChunkList">
+					<ChunkList hash="990003ADD3BE9BB281F6035FE4E63FF6">
+						<Chunk type="NoRef">&quot;accountNameGoesHere&quot;</Chunk>
+					</ChunkList>
+				</_213C7A75-300B-E74B-BF73-E6950A617554_1>
+				<_F1524138-6451-C149-8C27-1F961D02DDA7_1 hash="193AEB9A19510EAC9D32CA6F26189B2F" datatype="ChunkList">
+					<ChunkList hash="193AEB9A19510EAC9D32CA6F26189B2F">
+						<Chunk type="NoRef">&quot;nameGoesHere&quot;</Chunk>
+					</ChunkList>
+				</_F1524138-6451-C149-8C27-1F961D02DDA7_1>
+				<_A7795091-3F49-9B4A-A92C-F5359E82A4ED_1 hash="821AA14FD0858AEC176D52E6BA36134E" datatype="ChunkList">
+					<ChunkList hash="821AA14FD0858AEC176D52E6BA36134E">
+						<Chunk type="NoRef">&quot;RAGAccountName&quot;</Chunk>
+					</ChunkList>
+				</_A7795091-3F49-9B4A-A92C-F5359E82A4ED_1>
+				<_11B2ADFB-518C-D445-8C46-9989FB77F73C_3 hash="84283E783FE832B9935D2D86F6255A61" datatype="ChunkList">
+					<ChunkList hash="84283E783FE832B9935D2D86F6255A61">
+						<Chunk type="NoRef">&quot;modelName&quot;</Chunk>
+					</ChunkList>
+				</_11B2ADFB-518C-D445-8C46-9989FB77F73C_3>
+				<_9128A462-728C-8546-A1A4-AF35912D4482_0 hash="B15835F133FF2E27C7CB28117BFAE8F4" datatype="ChunkList">
+					<ChunkList hash="B15835F133FF2E27C7CB28117BFAE8F4">
+						<Chunk type="FunctionRef">True</Chunk>
+					</ChunkList>
+				</_9128A462-728C-8546-A1A4-AF35912D4482_0>
+				<_97EE0174-D5EF-6A45-877E-6BADC38E4C71_0 hash="B15835F133FF2E27C7CB28117BFAE8F4" datatype="ChunkList">
+					<ChunkList hash="B15835F133FF2E27C7CB28117BFAE8F4">
+						<Chunk type="FunctionRef">True</Chunk>
+					</ChunkList>
+				</_97EE0174-D5EF-6A45-877E-6BADC38E4C71_0>
+				<_A91D442B-483D-114A-9DE8-61A74A473255_0 hash="B15835F133FF2E27C7CB28117BFAE8F4" datatype="ChunkList">
+					<ChunkList hash="B15835F133FF2E27C7CB28117BFAE8F4">
+						<Chunk type="FunctionRef">True</Chunk>
+					</ChunkList>
+				</_A91D442B-483D-114A-9DE8-61A74A473255_0>
+				<_B9AB62BD-F1DD-F448-9100-1C1330249406_0 hash="B15835F133FF2E27C7CB28117BFAE8F4" datatype="ChunkList">
+					<ChunkList hash="B15835F133FF2E27C7CB28117BFAE8F4">
+						<Chunk type="FunctionRef">True</Chunk>
+					</ChunkList>
+				</_B9AB62BD-F1DD-F448-9100-1C1330249406_0>
+				<_5786990B-D7A3-9F45-BECB-97EBB72A1A80_1 hash="C24AFD8F0AE6E56276ED3CED520B63B9" datatype="ChunkList">
+					<ChunkList hash="C24AFD8F0AE6E56276ED3CED520B63B9">
+						<Chunk type="NoRef">&quot;accountName&quot;</Chunk>
+					</ChunkList>
+				</_5786990B-D7A3-9F45-BECB-97EBB72A1A80_1>
+				<_91650E9E-180F-2A49-B588-77EDF0F67022_3 hash="2995D72FBD20891261DC1BEAC0F51700" datatype="ChunkList">
+					<ChunkList hash="2995D72FBD20891261DC1BEAC0F51700">
+						<Chunk type="NoRef">&quot;promptGoesHere&quot;</Chunk>
+					</ChunkList>
+				</_91650E9E-180F-2A49-B588-77EDF0F67022_3>
+				<_91650E9E-180F-2A49-B588-77EDF0F67022_2 hash="2FE2DD61C86B2CBC720BD63B7D57A894" datatype="ChunkList">
+					<ChunkList hash="2FE2DD61C86B2CBC720BD63B7D57A894">
+						<Chunk type="NoRef">&quot;modelGoesHere&quot;</Chunk>
+					</ChunkList>
+				</_91650E9E-180F-2A49-B588-77EDF0F67022_2>
+				<_91650E9E-180F-2A49-B588-77EDF0F67022_1 hash="C24AFD8F0AE6E56276ED3CED520B63B9" datatype="ChunkList">
+					<ChunkList hash="C24AFD8F0AE6E56276ED3CED520B63B9">
+						<Chunk type="NoRef">&quot;accountName&quot;</Chunk>
+					</ChunkList>
+				</_91650E9E-180F-2A49-B588-77EDF0F67022_1>
+				<_58E75842-5199-EF4A-9FFB-1FA674C90794_7 hash="3D02CD9700192CBB78A47747F240D509" datatype="ChunkList">
+					<ChunkList hash="3D02CD9700192CBB78A47747F240D509">
+						<Chunk type="NoRef">&quot;recordIdsGoHere&quot;</Chunk>
+					</ChunkList>
+				</_58E75842-5199-EF4A-9FFB-1FA674C90794_7>
 				<_868605DB-3063-D646-B5CB-D7F6159D4032_1 hash="2B691EDCDB5BB38B9E80BBD6684F0CE3" datatype="ChunkList">
 					<ChunkList hash="2B691EDCDB5BB38B9E80BBD6684F0CE3">
 						<Chunk type="FunctionRef">JSONSetElement</Chunk>
@@ -2406,14 +2595,14 @@
 				<_A718B299-DC30-074B-94C2-284D3311F767 hash="583212A3714706A52E70931E03F1AB5B" datatype="StepText">Close Popover</_A718B299-DC30-074B-94C2-284D3311F767>
 				<_0381B1D1-8613-3B4A-A02E-49063A021FFC hash="D08F1FCB21F4A7A4AB17F3D73585FE86" datatype="StepText">Close Window [ Current Window ]</_0381B1D1-8613-3B4A-A02E-49063A021FFC>
 				<_B95EF9C5-F385-604D-85E3-08799218F23F hash="799D0AD1517E469D925824E940938FCD" datatype="StepText">Commit Records/Requests&#13;[ No dialog ]</_B95EF9C5-F385-604D-85E3-08799218F23F>
-				<_213C7A75-300B-E74B-BF73-E6950A617554 hash="DA842DEE971C9AF68A93FEEB5A25B114" datatype="StepText">Configure AI Account [ Model Provider: OpenAI ]</_213C7A75-300B-E74B-BF73-E6950A617554>
+				<_213C7A75-300B-E74B-BF73-E6950A617554 hash="51991808FB8EC97AB535644D530B1056" datatype="StepText">Configure AI Account [ Account Name:&quot;accountNameGoesHere&quot;; Model Provider: OpenAI ]</_213C7A75-300B-E74B-BF73-E6950A617554>
 				<_57B38838-E77A-8846-8761-A16B787D771D hash="360772F80E40ACE826B1C1B8FBF75E41" datatype="StepText">Configure Local Notification [ Action: Queue ]</_57B38838-E77A-8846-8761-A16B787D771D>
-				<_F1524138-6451-C149-8C27-1F961D02DDA7 hash="7C3478D01FE85D1194AA6CAA4731830E" datatype="StepText">Configure Machine Learning Model [  Operation: Unload ]</_F1524138-6451-C149-8C27-1F961D02DDA7>
+				<_F1524138-6451-C149-8C27-1F961D02DDA7 hash="B4CAFC27CF0B58F41825C15C784A99FE" datatype="StepText">Configure Machine Learning Model [  Operation: Unload ; Name: &quot;nameGoesHere&quot; ]</_F1524138-6451-C149-8C27-1F961D02DDA7>
 				<_1BCB965D-4CD4-DE43-9CF3-8ACE10B04402 hash="0DEDEF783562DC07D7792ECD4B37FDEA" datatype="StepText">Configure NFC Reading [ Action: Read ]</_1BCB965D-4CD4-DE43-9CF3-8ACE10B04402>
 				<_C150405D-87CD-4443-81AA-BCA3CCB9E3E2 hash="22EC1C99681603BC35C8E865AA81A2D2" datatype="StepText">Configure Prompt Template [ Model Provider: OpenAI; Template Type: SQL Query ]</_C150405D-87CD-4443-81AA-BCA3CCB9E3E2>
-				<_A7795091-3F49-9B4A-A92C-F5359E82A4ED hash="FB15E9EB8F0D79F378CC070B5FB79B40" datatype="StepText">Configure RAG Account </_A7795091-3F49-9B4A-A92C-F5359E82A4ED>
+				<_A7795091-3F49-9B4A-A92C-F5359E82A4ED hash="019965F055D5A4EDAE4E8F3D53B28AA1" datatype="StepText">Configure RAG Account  [ Account Name:&quot;RAGAccountName&quot; ]</_A7795091-3F49-9B4A-A92C-F5359E82A4ED>
 				<_B8596DD3-350A-3446-90C3-5CD774B86378 hash="DBFE16E9D34607F776E3618FD4E55E17" datatype="StepText">Configure Region Monitor Script [ Monitor: iBeacon ]</_B8596DD3-350A-3446-90C3-5CD774B86378>
-				<_11B2ADFB-518C-D445-8C46-9989FB77F73C hash="7BDC6F2F981A3722A95626276F849285" datatype="StepText">Configure Regression Model [ Action: Train Model; Algorithm: Random Forest ]</_11B2ADFB-518C-D445-8C46-9989FB77F73C>
+				<_11B2ADFB-518C-D445-8C46-9989FB77F73C hash="69B4C7E87F6D4386ED4FF6B751DB0CF8" datatype="StepText">Configure Regression Model [ Action: Train Model; Model Name:&quot;modelName&quot;; Algorithm: Random Forest ]</_11B2ADFB-518C-D445-8C46-9989FB77F73C>
 				<_928CB9A7-5AF5-254F-A876-75E84E29ECC8 hash="0879134F8A88EC1601280A555E6DB88E" datatype="StepText">Constrain Found Set [  ]</_928CB9A7-5AF5-254F-A876-75E84E29ECC8>
 				<_7A524589-BA81-3547-AEB1-EE6B97D9E067 hash="7673BB2688425152E631B65881511225" datatype="StepText">Convert File [ Open file after conversion ]</_7A524589-BA81-3547-AEB1-EE6B97D9E067>
 				<_2FAB95AB-BBCF-3145-BF7A-2A70A65AD856 hash="A6E3FB813C00C690BD0A1E8A551F005F" datatype="StepText">Copy [  ]&#13;[ Select ]</_2FAB95AB-BBCF-3145-BF7A-2A70A65AD856>
@@ -2431,13 +2620,13 @@
 				<_1244F971-EE6F-8D4A-87A3-10A3EE3219C9 hash="7666C081F3C4FC6A6097E3095EDF7AF6" datatype="StepText">Duplicate Record/Request</_1244F971-EE6F-8D4A-87A3-10A3EE3219C9>
 				<_D584347F-3583-FB40-8774-DED64A73125D hash="A3C7F1ECB85C70C4BEBB3FED9087C7C1" datatype="StepText">Edit User Dictionary</_D584347F-3583-FB40-8774-DED64A73125D>
 				<_2101BB7E-4083-F440-9794-BE82E02AEEBC hash="6A6F82B940F1F3C2FFAD0F920AC3C41D" datatype="StepText"></_2101BB7E-4083-F440-9794-BE82E02AEEBC>
-				<_9128A462-728C-8546-A1A4-AF35912D4482 hash="5F1ADCB7A5F0AECF20F1B0ED8B106C22" datatype="StepText">If [  ]</_9128A462-728C-8546-A1A4-AF35912D4482>
-				<_97EE0174-D5EF-6A45-877E-6BADC38E4C71 hash="4FA87CAB7D603D0797019C44784A3A4C" datatype="StepText">Else If [  ]</_97EE0174-D5EF-6A45-877E-6BADC38E4C71>
+				<_9128A462-728C-8546-A1A4-AF35912D4482 hash="B0E24EE740992E3B9C9776FBCDB6A321" datatype="StepText">If [ True ]</_9128A462-728C-8546-A1A4-AF35912D4482>
+				<_97EE0174-D5EF-6A45-877E-6BADC38E4C71 hash="E914ADD8DF5A85DFC1D4935AF322167B" datatype="StepText">Else If [ True ]</_97EE0174-D5EF-6A45-877E-6BADC38E4C71>
 				<_E9F8A3C2-4C71-2B4B-95BC-5CD34C248062 hash="E301DBD6168FA47169A88BEA7A35D5F6" datatype="StepText">Else [  ]</_E9F8A3C2-4C71-2B4B-95BC-5CD34C248062>
 				<_5FC7CE04-2B61-1845-8AA0-1B52FB6355E9 hash="6810BA5A814F0984C8271E60BE0587A1" datatype="StepText">End If</_5FC7CE04-2B61-1845-8AA0-1B52FB6355E9>
 				<_2F6B5593-96AD-5C44-A73E-14705FD4FB7C hash="684791E79C990367E6388DD8B6236985" datatype="StepText"></_2F6B5593-96AD-5C44-A73E-14705FD4FB7C>
 				<_95D50105-5088-8D4C-856B-DD6431B32D77 hash="DC67722C7066FBC583BA80A948A5BE07" datatype="StepText">Loop [ Flush: Always ]</_95D50105-5088-8D4C-856B-DD6431B32D77>
-				<_A91D442B-483D-114A-9DE8-61A74A473255 hash="F76289F41F87C50AFF9D4D2908035EB4" datatype="StepText">Exit Loop If [  ]</_A91D442B-483D-114A-9DE8-61A74A473255>
+				<_A91D442B-483D-114A-9DE8-61A74A473255 hash="875ACCEFCCDB865B136D29534B18364D" datatype="StepText">Exit Loop If [ True ]</_A91D442B-483D-114A-9DE8-61A74A473255>
 				<_E52621DB-43C0-FF41-9509-E0A956ED48A2 hash="0C96121A672B792E172C8FB34CC4AB04" datatype="StepText">End Loop</_E52621DB-43C0-FF41-9509-E0A956ED48A2>
 				<_A7FBAFC3-BDFD-CB48-9470-F4126EBCDB62 hash="C40ABD6578DED02D8BC670FB6A6AE03B" datatype="StepText"></_A7FBAFC3-BDFD-CB48-9470-F4126EBCDB62>
 				<_1242639B-9D0D-2943-864F-6A4D3BDDF3C4 hash="32E61BDEA94031CE023A402C07792683" datatype="StepText">Enter Browse Mode</_1242639B-9D0D-2943-864F-6A4D3BDDF3C4>
@@ -2446,22 +2635,22 @@
 				<_A09D69CB-2076-B94C-BAB3-4AB3D1E3FF1D hash="F826001B3F6A9DB6A5183E74151B2AC4" datatype="StepText">Execute FileMaker Data API [  ]&#13;[ Select ]</_A09D69CB-2076-B94C-BAB3-4AB3D1E3FF1D>
 				<_8F6EAD4A-03B1-1E4E-AC93-4CCBE7FBEF93 hash="2613AAE30CE12199C634EAA5DB89317F" datatype="StepText">Execute SQL [  ]&#13;[ No dialog ]</_8F6EAD4A-03B1-1E4E-AC93-4CCBE7FBEF93>
 				<_C8EC0CA5-3929-3A46-98D5-A85D999930CB hash="6B9D225293B54E50AAE185EDF506DA8A" datatype="StepText">Exit Application</_C8EC0CA5-3929-3A46-98D5-A85D999930CB>
-				<_B9AB62BD-F1DD-F448-9100-1C1330249406 hash="45107692DAC19823F9FCF7C09CC20F12" datatype="StepText">Exit Script [  ]</_B9AB62BD-F1DD-F448-9100-1C1330249406>
+				<_B9AB62BD-F1DD-F448-9100-1C1330249406 hash="B1E7C206147CA569F9CD88B2B227D3AF" datatype="StepText">Exit Script [ Result: True ]</_B9AB62BD-F1DD-F448-9100-1C1330249406>
 				<_EDA07866-77DA-BA4E-A98F-B85C2FB217B2 hash="E8F71760DB824EA106EB081D8CA59547" datatype="StepText">Export Field Contents [ Create folders:Yes ]</_EDA07866-77DA-BA4E-A98F-B85C2FB217B2>
 				<_9A7FF7F0-DC38-8541-9662-109F4B281DF3 hash="7527800AA8AD1E240E84A4541F118831" datatype="StepText">Export Records [ Create folders:Yes ]&#13;[ No dialog ]</_9A7FF7F0-DC38-8541-9662-109F4B281DF3>
 				<_AF240E47-C53A-CA43-94B0-EFCF914844F5 hash="3E7C95DEF78B911E36AA150A32A039DF" datatype="StepText">Extend Found Set [  ]</_AF240E47-C53A-CA43-94B0-EFCF914844F5>
 				<_B8B8E6F9-C0F0-474E-91DA-18CAC4F5C4F5 hash="0B2182B990F2C881C03D37B6C75615F2" datatype="StepText">Find Matching Records [ Replace ]</_B8B8E6F9-C0F0-474E-91DA-18CAC4F5C4F5>
-				<_5786990B-D7A3-9F45-BECB-97EBB72A1A80 hash="BF0B869E39BC8C61E54FD307140DFC2E" datatype="StepText">Fine-Tune Model [ Training Data: Table ]</_5786990B-D7A3-9F45-BECB-97EBB72A1A80>
+				<_5786990B-D7A3-9F45-BECB-97EBB72A1A80 hash="E788030699063368D664E1F5900A95CB" datatype="StepText">Fine-Tune Model [ Account Name:&quot;accountName&quot;; Training Data: Table ]</_5786990B-D7A3-9F45-BECB-97EBB72A1A80>
 				<_15AEA35D-9245-A84E-B5B4-D09D583A1F6B hash="3EF0D99AADDA545E196D54AF7DE04C56" datatype="StepText">Flush Cache to Disk</_15AEA35D-9245-A84E-B5B4-D09D583A1F6B>
 				<_8AFC314C-DA25-8E4D-8B78-22E2D2342C41 hash="7AD1F4C003836BC5172EA00C18016D46" datatype="StepText">Freeze Window</_8AFC314C-DA25-8E4D-8B78-22E2D2342C41>
-				<_91650E9E-180F-2A49-B588-77EDF0F67022 hash="3BFC1BDFD0B3C3EC751EE3F6C54C8E84" datatype="StepText">Generate Response from Model [ Agentic mode:On; Stream:Off ]</_91650E9E-180F-2A49-B588-77EDF0F67022>
+				<_91650E9E-180F-2A49-B588-77EDF0F67022 hash="45E649D377644DAD0DB2E464C3332640" datatype="StepText">Generate Response from Model [ Account Name:&quot;accountName&quot;; Model:&quot;modelGoesHere&quot;; User Prompt:&quot;promptGoesHere&quot;; Agentic mode:On; Stream:Off ]</_91650E9E-180F-2A49-B588-77EDF0F67022>
 				<_EFF2FF9D-5176-BC4D-9442-D47AB28FBAF5 hash="55C7E2784C1E8907A300442B4F514F27" datatype="StepText">Get Data File Position [  Target:  ]</_EFF2FF9D-5176-BC4D-9442-D47AB28FBAF5>
 				<_2144AEA2-5F73-4642-A587-3012AC19E291 hash="07B5A5345B08962364D14BBA41CD5A00" datatype="StepText">Get File Exists [   ; Target:  ]</_2144AEA2-5F73-4642-A587-3012AC19E291>
 				<_98AA60CA-2F5E-1A40-8153-EECC43CA7EAF hash="95499FF9B6679965E49627ED17F47F28" datatype="StepText">Get File Size [   ; Target:  ]</_98AA60CA-2F5E-1A40-8153-EECC43CA7EAF>
 				<_7B76E880-E4BF-494C-9B98-4532F6712A2E hash="9FF30CD6EBFF34F595959F34151FA32A" datatype="StepText">Get Folder Path [  ]</_7B76E880-E4BF-494C-9B98-4532F6712A2E>
 				<_DD2D80E1-2E9A-DB49-B986-D508E2B9B43D hash="448C03B73EAA01E6D2C8002851A85ECF" datatype="StepText">Go to Field [  ]</_DD2D80E1-2E9A-DB49-B986-D508E2B9B43D>
 				<_29F5EFE9-85CC-3948-9F59-AFC8CE2847B2 hash="58610889EB3B6045A19A15574BE4FB1B" datatype="StepText">Go to Layout [ original layout ]</_29F5EFE9-85CC-3948-9F59-AFC8CE2847B2>
-				<_58E75842-5199-EF4A-9FFB-1FA674C90794 hash="E3DCB5297A3096E4C2B5591D5A512B4D" datatype="StepText">Go to List of Records [ Using layout: &lt;Current Layout&gt; ]</_58E75842-5199-EF4A-9FFB-1FA674C90794>
+				<_58E75842-5199-EF4A-9FFB-1FA674C90794 hash="04579EB63EB7B0DEC8E606CA49D81570" datatype="StepText">Go to List of Records [ List of record IDs:&quot;recordIdsGoHere&quot;; Using layout: &lt;Current Layout&gt; ]</_58E75842-5199-EF4A-9FFB-1FA674C90794>
 				<_BE1ABFDD-1564-0A4C-B59F-A5709871A155 hash="F992086B3625949A7CBE8E2A657EEC78" datatype="StepText">Go to Next Field</_BE1ABFDD-1564-0A4C-B59F-A5709871A155>
 				<_50CBAC7D-8C57-DE4D-9E2E-537E022DC5F4 hash="2239BFF9E910CA1BEC5D61196F517CAE" datatype="StepText">Go to Object [  ]</_50CBAC7D-8C57-DE4D-9E2E-537E022DC5F4>
 				<_D0A95E4B-3C31-6D4A-A5C0-5176624E9D72 hash="5387EFA39E1B1FEF50C529F25B5F26B1" datatype="StepText">Go to Portal Row&#13;[ First ]</_D0A95E4B-3C31-6D4A-A5C0-5176624E9D72>
@@ -2593,6 +2782,7 @@
 				<_2D3A18F0-FCF9-6842-94EB-E2C2E926B88A hash="96D10B879547A3E5F8A65E4F5E0DDA0E" datatype="StepText">Unsort Records</_2D3A18F0-FCF9-6842-94EB-E2C2E926B88A>
 				<_F96300FA-5531-9946-ABF7-0990C7F73A2D hash="3D71E80AF0063CEDD644D2F39AD73A20" datatype="StepText">View As&#13;[ Cycle ]</_F96300FA-5531-9946-ABF7-0990C7F73A2D>
 				<_D1ABC564-38B0-D24B-B3E7-2A6334CE8DC9 hash="B7A6486504553E0380BC63A70E365810" datatype="StepText">Write to Data File [  Data source:  ; Write as: UTF-16 ; Append line feed: On ]</_D1ABC564-38B0-D24B-B3E7-2A6334CE8DC9>
+				<_4F9F7454-8B3B-AD42-AA46-12DED6C841D8 hash="0A97A2C1536EBD6CF534B108CE955990" datatype="StepText">Beep</_4F9F7454-8B3B-AD42-AA46-12DED6C841D8>
 			</ObjectList>
 		</Script>
 	</DDR_INFO>
