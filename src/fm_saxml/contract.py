@@ -1,6 +1,8 @@
 """The published JSON contract: the files other tools may read from a docs folder.
 
-Four files make up the contract, and they share one version:
+Every output root has a ``docs.json`` catalog (``ROOT_CATALOG``) saying whether it
+holds one file's docs or a batch, and where each file's docs are. Four files then
+describe each FileMaker file. They all share one version:
 
 * ``entities.json``             every entity collection, ``{docId: entity}``, plus
                                 ``fileOptions`` and ``graphNotes``
@@ -31,6 +33,8 @@ if TYPE_CHECKING:
 
 CONTRACT_VERSION: tuple[int, int] = (1, 0)
 CONTRACT_FILES = ("entities.json", "references.json", "backlinks.json", "external-references.json")
+# At the root of every output folder (one file's docs, or a batch): what it holds. Same version.
+ROOT_CATALOG = "docs.json"
 # Top-level keys every contract file starts with. In entities.json they sit next to the
 # collections, so no collection may use one of these names.
 ENVELOPE_KEYS = ("schemaVersion", "generator", "source")

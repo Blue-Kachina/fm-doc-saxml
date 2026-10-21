@@ -13,11 +13,11 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .contract import CONTRACT_VERSION, format_version
+from .contract import CONTRACT_VERSION, ROOT_CATALOG, format_version
 from .model.document_model import EntityMaps, ExternalDataSource, FileOptions, GraphNote
 from .model.indirection import IndirectionSite
 from .model.references import ExternalTarget, ReferenceRecord
@@ -131,6 +131,47 @@ class ExternalReferencesDoc(ContractEnvelope):
     model_config = ConfigDict(populate_by_name=True)
 
 
+class CatalogFile(BaseModel):
+    """One FileMaker file whose docs are under this output root."""
+
+    name: str                       # FileMaker file name without extension
+    folder: str                     # its docs, relative to the root: "" for a single-file build
+    fmp_file_name: Optional[str] = Field(None, alias="fmpFileName")
+    file_uuid: Optional[str] = Field(None, alias="fileUuid")
+    scope: Optional[str] = None
+    file_maker_version: Optional[str] = Field(None, alias="fileMakerVersion")
+    saxml_version: Optional[str] = Field(None, alias="saxmlVersion")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class CatalogPairing(BaseModel):
+    """A FileMaker data source of one file, and the file of this batch it names (if found)."""
+
+    folder: str                                   # folder of the file that defines the data source
+    data_source: str = Field(alias="dataSource")
+    data_source_uuid: Optional[str] = Field(None, alias="dataSourceUuid")
+    target_folder: Optional[str] = Field(None, alias="targetFolder")
+    match: str = ""                               # "path", "name" (weak), or "" when not paired
+    reason: str = ""                              # why it isn't paired
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class DocsCatalog(BaseModel):
+    """docs.json at an output root: one file's docs ("single") or a multi-file build ("batch")."""
+
+    schema_version: str = Field(alias="schemaVersion")
+    generator: Optional[Generator] = None
+    kind: Literal["single", "batch"]
+    solution: str                                 # the name find_docs() looks up
+    files: list[CatalogFile] = []
+    pairings: list[CatalogPairing] = []           # batch only
+    synthesized_manifest: bool = Field(False, alias="synthesizedManifest")  # Summary.xml made up by fm-saxml
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
 DOC_MODELS: dict[str, type[ContractEnvelope]] = {
     "entities.json": EntitiesDoc,
     "references.json": ReferencesDoc,
@@ -148,7 +189,7 @@ def schema_dir_name() -> str:
 def json_schemas() -> dict[str, dict]:
     """JSON Schema of each contract file, keyed by the schema's file name."""
     out = {}
-    for file_name, model in DOC_MODELS.items():
+    for file_name, model in {ROOT_CATALOG: DocsCatalog, **DOC_MODELS}.items():
         schema = model.model_json_schema(by_alias=True)
         schema["$schema"] = "https://json-schema.org/draft/2020-12/schema"
         schema["$id"] = f"fm-saxml/contract/{schema_dir_name()}/{file_name.removesuffix('.json')}.schema.json"

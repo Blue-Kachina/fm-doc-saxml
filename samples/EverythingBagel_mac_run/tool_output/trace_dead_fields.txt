@@ -1,0 +1,17 @@
+⚠️  WARNING: xref.index contains NO layout references — 'fields' dead results are UNRELIABLE.
+    Layout placements, button scripts and script triggers are missing, so trigger-only / layout-only objects will be falsely flagged as dead.
+    Regenerate layout summaries and rebuild before trusting this output:
+      python3 agent/scripts/layout_to_summary.py --solution "EverythingBagel"
+      python3 agent/scripts/trace.py build -s "EverythingBagel"
+
+=== Potentially unused fields (EverythingBagel) ===
+
+HIGH CONFIDENCE — no references found anywhere (6):
+  EverythingBagel::calculationField
+  EverythingBagel::containerField
+  EverythingBagel::dateField
+  EverythingBagel::numberField
+  EverythingBagel::timeField
+  EverythingBagel::timestampField
+
+Summary: 6 high, 0 medium unused out of 8 total fields

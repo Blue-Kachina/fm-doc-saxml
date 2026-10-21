@@ -1,0 +1,12 @@
+⚠️  WARNING: xref.index contains NO layout references — 'value_lists' dead results are UNRELIABLE.
+    Layout placements, button scripts and script triggers are missing, so trigger-only / layout-only objects will be falsely flagged as dead.
+    Regenerate layout summaries and rebuild before trusting this output:
+      python3 agent/scripts/layout_to_summary.py --solution "EverythingBagel"
+      python3 agent/scripts/trace.py build -s "EverythingBagel"
+
+=== Potentially unused value_lists (EverythingBagel) ===
+
+HIGH CONFIDENCE — no references found anywhere (1):
+  
+
+Summary: 1 high, 0 medium unused out of 1 total value_lists

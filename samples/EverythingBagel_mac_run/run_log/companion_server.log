@@ -1,0 +1,39 @@
+2026-10-21T16:22:11 INFO companion_server v1.0.0 listening on 127.0.0.1:8765
+2026-10-21T16:22:11 INFO Clients reach it at http://local.hub:8765 (advertise_host).
+2026-10-21T16:22:11 INFO Idle auto-shutdown: disabled (always-on).
+2026-10-21T16:22:11 INFO Endpoints: GET /health  GET /clipboard  GET /webviewer/status  GET /preview/<name>  GET|POST /plugin/<path>  POST /explode  POST /context  POST /clipboard  POST /trigger  POST /debug  POST /webviewer/start  POST /webviewer/stop  POST /webviewer/push  POST /preview/<name>
+2026-10-21T16:22:11 INFO Press Ctrl-C to stop.
+2026-10-21T16:22:15 INFO 127.0.0.1 - "GET /health HTTP/1.1" 200 -
+2026-10-21T16:29:10 INFO Running fmparse.sh: solution='EverythingBagel' export='/Users/francoisdube/Desktop/EverythingBagel.xml' cwd='/Users/francoisdube/Documents/Projets DIS/IDI2/TQ - Team Quality/Exploration/test_custom-harness-2/tools/agentic-fm/'
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==> Using fm-xml-export-exploder from: /Users/francoisdube/bin/fm-xml-export-exploder
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==> Created archive folder: xml_exports/EverythingBagel/2026-10-21
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==> Copied file: EverythingBagel.xml -> xml_exports/EverythingBagel/2026-10-21/
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==> Created agent/xml_parsed/
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==> Running fm-xml-export-exploder...
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==>   Source: xml_exports/EverythingBagel/2026-10-21
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==>   Target: agent/xml_parsed/
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==>   Output tree: domain
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] Start processing 1 files...
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] → EverythingBagel.xml finished in 20 ms.
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] Completed in 21 ms.
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] 
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==> Parse complete.
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==>   Archived to: xml_exports/EverythingBagel/2026-10-21/
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==>   Parsed into: agent/xml_parsed/ (78 files in 43 directories)
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] 
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==> Running fmcontext.sh to regenerate agent/context/EverythingBagel/...
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==> Created agent/context/EverythingBagel/
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==> Generating index files for: EverythingBagel
+2026-10-21T16:29:11 INFO [fmparse.sh stdout] ==>   fields.index: 8 fields
+2026-10-21T16:29:11 INFO [fmparse.sh stdout] ==>   relationships.index: 1 relationships
+2026-10-21T16:29:11 INFO [fmparse.sh stdout] ==>   layouts.index: 2 layouts
+2026-10-21T16:29:11 INFO [fmparse.sh stdout] ==>   scripts.index: 4 scripts
+2026-10-21T16:29:11 INFO [fmparse.sh stdout] ==>   table_occurrences.index: 3 table occurrences
+2026-10-21T16:29:11 INFO [fmparse.sh stdout] ==>   value_lists.index: 2 value lists
+2026-10-21T16:29:11 INFO [fmparse.sh stdout] ==>   custom_functions.index: 0 custom functions
+2026-10-21T16:29:11 INFO [fmparse.sh stdout] 
+2026-10-21T16:29:11 INFO [fmparse.sh stdout] ==> Done!
+2026-10-21T16:29:11 INFO [fmparse.sh stdout] ==>   Output: agent/context/ (20 total entries,  28K)
+2026-10-21T16:29:11 INFO [fmparse.sh stdout] ==>   Files per solution: fields.index, relationships.index, layouts.index, scripts.index, table_occurrences.index, value_lists.index, custom_functions.index
+2026-10-21T16:29:11 INFO fmparse.sh exited with code 0
+2026-10-21T16:29:11 INFO 127.0.0.1 - "POST /explode HTTP/1.1" 200 -

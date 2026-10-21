@@ -107,8 +107,11 @@ SALT_ENV = "FM_SAXML_SCRUB_SALT"
 
 IncludeJsonOpt = Annotated[bool, typer.Option(
     "--include-json/--no-include-json",
-    help="Write the JSON data files (entities, references, backlinks, external-references) into the docs dir",
+    help="Write the JSON data files (docs.json, entities, references, backlinks, external-references) into the docs dir",
 )]
+
+# Where converted solutions live, so tools can find them by name (find_docs). See docs/contract.md.
+DOCS_ROOT_ENV = "FM_SAXML_DOCS_ROOT"
 HtmlOpt = Annotated[bool, typer.Option(
     "--html",
     help="Also write index.html for browsing the docs in a web browser, straight from disk "
@@ -269,6 +272,76 @@ def _default_out_dir(input_xml: Path) -> Path:
     return input_xml.parent / f"{input_xml.name if input_xml.is_dir() else input_xml.stem}_docs"
 
 
+def _solution_name(input_xml: Path, scan, source) -> str:
+    """Name a build is filed under in a docs root and docs.json.
+
+    One file: its FileMaker file name, read from the export, so a timestamped or renamed
+    export file still lands in the same place. Several files: the input folder's name.
+    """
+    from .parser.input_scan import _strip_fm_ext, sniff_root
+
+    if scan is not None and scan.is_batch:
+        return input_xml.name
+    fmp = source.fmp_file_name if source is not None else ""
+    if not fmp and input_xml.is_file():
+        root = sniff_root(input_xml)
+        fmp = "" if isinstance(root, str) else root.attrs.get("File", "")
+    return _strip_fm_ext(fmp) or (input_xml.name if input_xml.is_dir() else input_xml.stem)
+
+
+# A rebuild writes next to its output folder, then swaps the two, so a reader never sees a
+# half-written folder. On Windows a folder can't be renamed while a program has a file in
+# it open: the swap retries for a few seconds, then gives up and leaves the new docs staged.
+_SWAP_ATTEMPTS = 15
+_SWAP_DELAY = 0.2
+
+
+class _staged_output:
+    """``with _staged_output(out) as work:`` write into ``work``; on success it replaces ``out``."""
+
+    def __init__(self, out: Path) -> None:
+        self.out = out
+        self.work = out.with_name(f"{out.name}.tmp-{os.getpid()}")
+
+    def __enter__(self) -> Path:
+        if self.work.exists():
+            shutil.rmtree(self.work)
+        self.work.mkdir(parents=True)
+        return self.work
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        if exc_type is not None:
+            shutil.rmtree(self.work, ignore_errors=True)
+            return False
+        _swap_into_place(self.work, self.out)
+        return False
+
+
+def _swap_into_place(work: Path, out: Path) -> None:
+    import time
+
+    aside = None
+    if out.exists():
+        aside = out.with_name(f"{out.name}.old-{os.getpid()}")
+        if aside.exists():
+            shutil.rmtree(aside, ignore_errors=True)
+        for attempt in range(_SWAP_ATTEMPTS):
+            try:
+                os.replace(out, aside)
+                break
+            except OSError as exc:
+                if attempt == _SWAP_ATTEMPTS - 1:
+                    _fail(f"Could not replace {out}: {exc.strerror or exc}.",
+                          f"A program probably has a file in it open. Close it and build again; "
+                          f"the new docs are in {work}.")
+                time.sleep(_SWAP_DELAY)
+    os.replace(work, out)
+    if aside is not None:
+        shutil.rmtree(aside, ignore_errors=True)
+        if aside.exists():
+            console.print(f"[yellow]Couldn't delete the previous docs at {aside}; remove that folder by hand.[/yellow]")
+
+
 def _fail(message: str, hint: str | None = None) -> "typer.Exit":
     err_console.print(f"[red]Error:[/red] {message}")
     if hint:
@@ -298,7 +371,13 @@ def _open_folder(path: Path) -> None:
 @app.command()
 def build(
     input_xml: Annotated[Path, typer.Argument(help="FileMaker SaveAsXML file, or a folder of them (FileMaker 26 multi-file export)")],
-    out: Annotated[Optional[Path], typer.Option("--out", "-o", help="Markdown output directory (defaults to <input name>_docs next to the input)")] = None,
+    out: Annotated[Optional[Path], typer.Option("--out", "-o", help="Markdown output directory (defaults to <docs root>/<solution>, else <input name>_docs next to the input)")] = None,
+    docs_root: Annotated[Optional[Path], typer.Option(
+        "--docs-root", envvar=DOCS_ROOT_ENV,
+        help=f"Folder holding every converted solution: without --out, write to <docs root>/<solution>. Also ${DOCS_ROOT_ENV}")] = None,
+    solution: Annotated[Optional[str], typer.Option(
+        "--solution", help="Solution name for --docs-root and docs.json (default: the FileMaker file name, "
+                           "or the folder name for a multi-file export)")] = None,
     model_out: Annotated[Optional[Path], typer.Option("--model-out", help="Path to write model.json")] = None,
     include_json: IncludeJsonOpt = True,
     strict: Annotated[bool, typer.Option("--strict", help="Exit non-zero if there are unresolved references")] = False,
@@ -325,8 +404,15 @@ def build(
     """
     input_xml = _normalize_path(input_xml)
     _validate_input(input_xml, allow_dir=True)
-    out = _normalize_path(out) if out else _default_out_dir(input_xml)
     scan, source = _resolve_input(input_xml)
+    solution = solution or _solution_name(input_xml, scan, source)
+    if out:
+        out = _normalize_path(out)
+    elif docs_root:
+        from .normalize.names import safe_slug
+        out = _normalize_path(docs_root) / safe_slug(solution)
+    else:
+        out = _default_out_dir(input_xml)
     coverage = coverage or fail_on_coverage_gap
     html = html or webmcp
     _check_serve(serve, webmcp)
@@ -336,7 +422,7 @@ def build(
             _fail("--model-out isn't supported when converting several files.",
                   "Each file's data is in entities.json and references.json inside its own folder.")
         scrubber = _make_scrubber(disable_scrubbing, scrub_level, scrub_keyword, scrub_allow)
-        _build_batch(scan, out, scrubber, include_json=include_json, strict=strict, force=force or yes,
+        _build_batch(scan, out, scrubber, solution=solution, include_json=include_json, strict=strict, force=force or yes,
                      html=html, webmcp=webmcp, fail_on_secrets=fail_on_secrets, open_when_done=open_when_done,
                      coverage=coverage, fail_on_coverage_gap=fail_on_coverage_gap)
         if serve:
@@ -344,7 +430,7 @@ def build(
         return
 
     scrubber = _make_scrubber(disable_scrubbing, scrub_level, scrub_keyword, scrub_allow)
-    _confirm_output_directory(out, force=force or yes)
+    _confirm_output_directory(out, force=force or yes, wipe=False)
     if scan is not None:
         _print_manifest_check(scan)
 
@@ -356,18 +442,18 @@ def build(
         write_model_json(model, model_out)
         console.print(f"[green]Model JSON written to {model_out}[/green]")
 
-    _render_markdown_with_progress(model, out)
+    with _staged_output(out) as work:
+        _render_markdown_with_progress(model, work)
+        if include_json:
+            from .render.json.writer import build_root_catalog, write_root_catalog, write_split_json
+            write_split_json(model, work)
+            write_root_catalog(work, build_root_catalog("single", solution, [(model, "", model.solution.name)]))
+        if html:
+            _render_html_viewer(work, _write_webmcp_data([(model, "", None)], work) if webmcp else None, shown=out)
+        (work / OUTPUT_MARKER).write_text("Generated by fm-saxml. Safe to overwrite.\n", encoding="utf-8")
     console.print(f"[green]Markdown documentation written to {out}[/green]")
-
     if include_json:
-        from .render.json.writer import write_split_json
-        write_split_json(model, out)
         console.print(f"[dim]JSON data files written to {out}[/dim]")
-
-    if html:
-        _render_html_viewer(out, _write_webmcp_data([(model, "", None)], out) if webmcp else None)
-
-    (out / OUTPUT_MARKER).write_text("Generated by fm-saxml. Safe to overwrite.\n", encoding="utf-8")
 
     _guard_output(scrubber, out, model_out)
     _print_summary(model)
@@ -393,7 +479,7 @@ def build(
 _RESERVED_BATCH_FOLDERS = {"reports", "_viewer"}
 
 
-def _build_batch(scan, out: Path, scrubber, *, include_json: bool, strict: bool, force: bool,
+def _build_batch(scan, out: Path, scrubber, *, solution: str, include_json: bool, strict: bool, force: bool,
                  html: bool, fail_on_secrets: bool, open_when_done: bool, webmcp: bool = False,
                  coverage: bool = False, fail_on_coverage_gap: bool = False) -> None:
     """Convert every export in a folder into its own subfolder of ``out``, with cross-file links."""
@@ -401,27 +487,28 @@ def _build_batch(scan, out: Path, scrubber, *, include_json: bool, strict: bool,
     from .batch.report import BatchResult, combined_scrubbing, write_batch_reports
 
     folders = _batch_folders(scan)
-    _confirm_output_directory(out, force=force)
+    _confirm_output_directory(out, force=force, wipe=False)
     files, failed, missing, extra = _analyze_batch(scan, scrubber, folders, coverage=coverage)
 
     links = link_batch(files)
-    _render_batch_with_progress(files, links, out)
-    if include_json:
-        from .render.json.writer import write_split_json
-        for f in files:
-            write_split_json(f.model, out / f.folder)
-
     hosts = sorted({e.host for e in scan.manifest.entries if e.host}) if scan.manifest else []
     if scrubber is not None:
         hosts = [scrubber.scrub_text(h, "Summary.xml host") for h in hosts]
-    write_batch_reports(BatchResult(scan=scan, files=files, links=links, failed=failed,
-                                    manifest_missing=missing, manifest_extra=extra, manifest_hosts=hosts), out)
+    with _staged_output(out) as work:
+        _render_batch_with_progress(files, links, work)
+        if include_json:
+            from .render.json.writer import build_root_catalog, write_root_catalog, write_split_json
+            for f in files:
+                write_split_json(f.model, work / f.folder)
+            write_root_catalog(work, build_root_catalog(
+                "batch", solution, [(f.model, f.folder, f.name) for f in files], links.pairings))
+        write_batch_reports(BatchResult(scan=scan, files=files, links=links, failed=failed,
+                                        manifest_missing=missing, manifest_extra=extra, manifest_hosts=hosts), work)
+        if html:
+            data = [(f.model, f.folder, f.name) for f in files]
+            _render_html_viewer(work, _write_webmcp_data(data, work, links.cross_file) if webmcp else None, shown=out)
+        (work / OUTPUT_MARKER).write_text("Generated by fm-saxml. Safe to overwrite.\n", encoding="utf-8")
     console.print(f"[green]Markdown documentation for {len(files)} files written to {out}[/green]")
-
-    if html:
-        data = [(f.model, f.folder, f.name) for f in files]
-        _render_html_viewer(out, _write_webmcp_data(data, out, links.cross_file) if webmcp else None)
-    (out / OUTPUT_MARKER).write_text("Generated by fm-saxml. Safe to overwrite.\n", encoding="utf-8")
 
     _guard_output(scrubber, out)
     _print_batch_summary(files, links)
@@ -657,8 +744,9 @@ def render(
     _render_markdown_with_progress(model, out)
     console.print(f"[green]Markdown documentation written to {out}[/green]")
     if include_json:
-        from .render.json.writer import write_split_json
+        from .render.json.writer import build_root_catalog, write_root_catalog, write_split_json
         write_split_json(model, out)
+        write_root_catalog(out, build_root_catalog("single", model.solution.name, [(model, "", model.solution.name)]))
         console.print(f"[dim]JSON data files written to {out}[/dim]")
     if html or webmcp:
         _render_html_viewer(out, _write_webmcp_data([(model, "", None)], out) if webmcp else None)
@@ -1101,7 +1189,7 @@ def _resolve_input(path: Path):
 EXPORT_HINT = "In FileMaker Pro: Tools > Save a Copy as XML..., then run fm-saxml on that file."
 
 
-def _confirm_output_directory(out_dir: Path, force: bool = False) -> None:
+def _confirm_output_directory(out_dir: Path, force: bool = False, wipe: bool = True) -> None:
     """Ensure the output directory is empty, or get explicit user consent.
 
     Behavior:
@@ -1130,7 +1218,8 @@ def _confirm_output_directory(out_dir: Path, force: bool = False) -> None:
         return
 
     if force:
-        _wipe_directory(out_dir)
+        if wipe:
+            _wipe_directory(out_dir)
         return
 
     console.print(f"[yellow]Output directory already exists and is not empty:[/yellow] {out_dir}")
@@ -1146,7 +1235,8 @@ def _confirm_output_directory(out_dir: Path, force: bool = False) -> None:
     ).strip().lower()
 
     if choice in ("o", "overwrite", "y", "yes"):
-        _wipe_directory(out_dir)
+        if wipe:  # else a staged build replaces the folder once it's written (_staged_output)
+            _wipe_directory(out_dir)
     else:
         console.print("[yellow]Cancelled. No files were written.[/yellow]")
         raise typer.Exit(0)
@@ -1284,11 +1374,12 @@ def _render_markdown_with_progress(model, out: Path) -> None:
         progress.update(task, completed=written, total=written, description=f"Wrote {written} pages")
 
 
-def _render_html_viewer(out: Path, webmcp_files: Optional[list[dict]] = None) -> None:
+def _render_html_viewer(out: Path, webmcp_files: Optional[list[dict]] = None, shown: Optional[Path] = None) -> None:
+    """``shown``: where the docs will be once a staged build is swapped in (for the message)."""
     from .render.html import render_html_viewer
 
     pages = render_html_viewer(out, webmcp_files)
-    console.print(f"[green]HTML viewer written to {out / 'index.html'}[/green] [dim]({pages} pages)[/dim]")
+    console.print(f"[green]HTML viewer written to {(shown or out) / 'index.html'}[/green] [dim]({pages} pages)[/dim]")
     if webmcp_files is not None:
         console.print("[dim]WebMCP tools added: agents can query the solution from the viewer "
                       "(also on window.FMDocs.tools).[/dim]")

@@ -1,0 +1,2867 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmxmlsnippet type="LayoutObjectList">
+  <Layout enclosingRectTop="475.0000000" enclosingRectLeft="339.0000000" enclosingRectBottom="741.0000000" enclosingRectRight="660.0000000">
+    <Object type="Field" key="26" LabelKey="27" flags="0" rotation="0">
+      <Bounds top="475.0000000" left="407.0000000" bottom="507.0000000" right="660.0000000"/>
+      <FieldObj numOfReps="1" flags="32" inputMode="0" keyboardType="1" displayType="1" quickFind="1" pictFormat="5">
+        <Name>EverythingBagel::textField</Name>
+        <ValueList>HardcodedValueList</ValueList>
+        <ExtendedAttributes fontHeight="12" graphicFormat="5">
+          <NumFormat flags="2304" charStyle="0" negativeStyle="0" currencySymbol="$" thousandsSep="44" decimalPoint="46" negativeColor="#DD000000" decimalDigits="2" trueString="Yes" falseString="No"/>
+          <DateFormat format="0" charStyle="0" monthStyle="1" dayStyle="1" separator="45">
+            <DateElement>6</DateElement>
+            <DateElement>1</DateElement>
+            <DateElement>8</DateElement>
+            <DateElement>0</DateElement>
+            <DateElementSep index="0"/>
+            <DateElementSep index="1"> </DateElementSep>
+            <DateElementSep index="2">, </DateElementSep>
+            <DateElementSep index="3"/>
+            <DateElementSep index="4"/>
+          </DateFormat>
+          <TimeFormat flags="143" charStyle="0" hourStyle="0" minsecStyle="1" separator="58" amString=" AM" pmString=" PM" ampmString=""/>
+          <CharacterStyle mask="32695">
+            <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+            <Font-size>11</Font-size>
+            <Face>0</Face>
+            <Color>#000000</Color>
+          </CharacterStyle>
+        </ExtendedAttributes>
+        <Styles>
+          <CustomStyles>
+            <Name>FM-B9C26F7D-8330-5346-B911-0FEBE1685606</Name>
+          </CustomStyles>
+          <FullCSS>
+self:normal .self
+{
+	background-image: -webkit-gradient(linear,25% 0%,25% 100%, from(rgba(94.5098%,94.5098%,94.5098%,1)), color-stop(0.05, rgba(94.5098%,94.5098%,94.5098%,1)), color-stop(0.95, rgba(96.8627%,96.8627%,96.8627%,1)), to(rgba(100%,100%,100%,1)));
+	background-position: 0% 0%;
+	background-size: auto;
+	background-repeat: repeat repeat;
+	background-origin: padding-box;
+	background-clip: border-box;
+	background-color: rgba(0%,0%,0%,0);
+	border-top-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-right-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-bottom-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-left-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-top-style: solid;
+	border-right-style: solid;
+	border-bottom-style: solid;
+	border-left-style: solid;
+	border-top-width: 1pt;
+	border-right-width: 1pt;
+	border-bottom-width: 1pt;
+	border-left-width: 1pt;
+	border-top-right-radius: 3pt 3pt;
+	border-bottom-right-radius: 3pt 3pt;
+	border-bottom-left-radius: 3pt 3pt;
+	border-top-left-radius: 3pt 3pt;
+	border-image-source: none;
+	border-image-slice: 100% 100% 100% 100% fill;
+	border-image-width: 1 1 1 1;
+	border-image-outset: 0 0 0 0;
+	border-image-repeat: stretch stretch;
+	outline-width: 0pt;
+	outline-style: none;
+	outline-color: invert;
+	outline-offset: 0pt;
+	font-family: -fm-font-family(verdana,sans-serif,Verdana;sans-serif);
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: normal;
+	font-variant: normal;
+	font-size: 11pt;
+	color: rgba(0%,0%,0%,1);
+	direction: ltr;
+	line-height: 1line;
+	block-progression: tb;
+	text-align: left;
+	text-transform: none;
+	text-indent: 0pt;
+	box-shadow: none;
+	box-sizing: content-box;
+	vertical-align: baseline;
+	-fm-digit-set: roman;
+	-fm-space-before: 0line;
+	-fm-space-after: 0line;
+	-fm-tab-stops: ;
+	-fm-strikethrough: false;
+	-fm-underline: none;
+	-fm-glyph-variant: ;
+	-fm-paragraph-margin-left: 0pt;
+	-fm-paragraph-margin-right: 0pt;
+	-fm-character-direction: ;
+	-fm-use-default-appearance: false;
+	-fm-override-with-classic: false;
+	-fm-baseline-shift: 0pt;
+	-fm-fill-effect: 0;
+	-fm-highlight-color: rgba(0%,0%,0%,0);
+	-fm-text-vertical-align: center;
+	-fm-tategaki: false;
+	-fm-rotation: 0;
+	-fm-borders-between-reps: false;
+	-fm-borders-baseline: false;
+	-fm-texty-field: false;
+	-fm-box-shadow-persist: none;
+}
+self:focus .self
+{
+	border-top-color: rgba(0%,0%,0%,1);
+	border-right-color: rgba(0%,0%,0%,1);
+	border-bottom-color: rgba(0%,0%,0%,1);
+	border-left-color: rgba(0%,0%,0%,1);
+	box-shadow: 0pt 0pt 2pt 1pt rgba(0%,43.9216%,81.1765%,1);
+}
+self:placeholder .self
+{
+	color: rgba(53.3333%,53.3333%,53.3333%,1);
+}
+self:normal .inner_border
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 2pt 2pt;
+	border-bottom-right-radius: 2pt 2pt;
+	border-bottom-left-radius: 2pt 2pt;
+	border-top-left-radius: 2pt 2pt;
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	width: auto;
+	height: auto;
+	top: auto;
+	right: auto;
+	bottom: auto;
+	left: auto;
+	position: static;
+	box-shadow: inset 1pt 1pt 3pt 0pt rgba(0%,0%,0%,0.1);
+	box-sizing: content-box;
+}
+self:droptarget .inner_border
+{
+	box-shadow: inset 0pt 0pt 2pt 1pt rgba(0%,43.9216%,81.1765%,1);
+}
+self:normal .text
+{
+	margin-top: 3pt;
+	margin-right: 6pt;
+	margin-bottom: 0pt;
+	margin-left: 6pt;
+	height: auto;
+	top: 0pt;
+	right: 0pt;
+	bottom: 0pt;
+	left: 0pt;
+	position: absolute;
+	box-sizing: border-box;
+}
+self:normal .icon
+{
+	background-position: center center;
+}
+self:normal .baseline
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 1pt;
+	border-left-width: 0pt;
+}
+self:normal .repeat_border
+{
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-bottom-style: none;
+	border-bottom-width: 0pt;
+}
+</FullCSS>
+          <ThemeName>com.filemaker.theme.custom.E1351EFD_0067_4E44_A8BC_3E7A959006D9</ThemeName>
+        </Styles>
+        <DDRInfo>
+          <Field name="textField" id="6" repetition="1" maxRepetition="1" table="EverythingBagel"/>
+          <ValueList name="HardcodedValueList" id="1"/>
+        </DDRInfo>
+      </FieldObj>
+    </Object>
+    <Object type="Text" key="27" LabelKey="0" flags="0" rotation="0">
+      <Bounds top="478.0000000" left="339.0000000" bottom="494.0000000" right="396.0000000"/>
+      <TextObj flags="0">
+        <ExtendedAttributes fontHeight="13" graphicFormat="0">
+          <NumFormat flags="0" charStyle="0" negativeStyle="0" currencySymbol="" thousandsSep="0" decimalPoint="0" negativeColor="#0" decimalDigits="0" trueString="" falseString=""/>
+          <DateFormat format="0" charStyle="0" monthStyle="0" dayStyle="0" separator="0">
+            <DateElement>0</DateElement>
+            <DateElement>0</DateElement>
+            <DateElement>0</DateElement>
+            <DateElement>0</DateElement>
+            <DateElementSep index="0"/>
+            <DateElementSep index="1"/>
+            <DateElementSep index="2"/>
+            <DateElementSep index="3"/>
+            <DateElementSep index="4"/>
+          </DateFormat>
+          <TimeFormat flags="0" charStyle="0" hourStyle="0" minsecStyle="0" separator="0" amString="" pmString="" ampmString=""/>
+          <CharacterStyle mask="32695">
+            <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+            <Font-size>11</Font-size>
+            <Face>0</Face>
+            <Color>#000000</Color>
+          </CharacterStyle>
+        </ExtendedAttributes>
+        <Styles>
+          <LocalCSS>
+self:normal .self
+{
+	text-align: right;
+}
+</LocalCSS>
+          <FullCSS>
+self:normal .self
+{
+	background-image: none;
+	background-position: 0% 0%;
+	background-size: auto;
+	background-repeat: repeat repeat;
+	background-origin: padding-box;
+	background-clip: border-box;
+	background-color: rgba(0%,0%,0%,0);
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	border-image-source: none;
+	border-image-slice: 100% 100% 100% 100% fill;
+	border-image-width: 1 1 1 1;
+	border-image-outset: 0 0 0 0;
+	border-image-repeat: stretch stretch;
+	outline-width: 0pt;
+	outline-style: none;
+	outline-color: invert;
+	outline-offset: 0pt;
+	font-family: -fm-font-family(verdana,sans-serif,Verdana;sans-serif);
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: normal;
+	font-variant: normal;
+	font-size: 11pt;
+	color: rgba(0%,0%,0%,1);
+	direction: ltr;
+	line-height: 1line;
+	block-progression: tb;
+	text-align: right;
+	text-transform: none;
+	text-indent: 0pt;
+	box-shadow: none;
+	box-sizing: content-box;
+	vertical-align: baseline;
+	-fm-digit-set: roman;
+	-fm-space-before: 0line;
+	-fm-space-after: 0line;
+	-fm-tab-stops: ;
+	-fm-strikethrough: false;
+	-fm-underline: none;
+	-fm-glyph-variant: ;
+	-fm-paragraph-margin-left: 0pt;
+	-fm-paragraph-margin-right: 0pt;
+	-fm-character-direction: ;
+	-fm-use-default-appearance: false;
+	-fm-override-with-classic: false;
+	-fm-baseline-shift: 0pt;
+	-fm-fill-effect: 0;
+	-fm-highlight-color: rgba(0%,0%,0%,0);
+	-fm-text-vertical-align: top;
+	-fm-tategaki: false;
+	-fm-rotation: 0;
+	-fm-borders-between-reps: false;
+	-fm-borders-baseline: false;
+	-fm-texty-field: false;
+	-fm-box-shadow-persist: none;
+}
+self:normal .inner_border
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	width: auto;
+	height: auto;
+	top: auto;
+	right: auto;
+	bottom: auto;
+	left: auto;
+	position: static;
+	box-shadow: none;
+	box-sizing: content-box;
+}
+self:normal .text
+{
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	height: 100%;
+	box-sizing: border-box;
+}
+self:normal .baseline
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+}
+</FullCSS>
+          <ThemeName>com.filemaker.theme.custom.E1351EFD_0067_4E44_A8BC_3E7A959006D9</ThemeName>
+        </Styles>
+        <CharacterStyleVector>
+          <Style>
+            <Data>textField</Data>
+            <CharacterStyle mask="32695">
+              <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+              <Font-size>11</Font-size>
+              <Face>0</Face>
+              <Color>#000000</Color>
+            </CharacterStyle>
+          </Style>
+        </CharacterStyleVector>
+        <ParagraphStyleVector>
+          <Style>
+            <Data>textField</Data>
+            <ParagraphStyle mask="0">
+</ParagraphStyle>
+          </Style>
+        </ParagraphStyleVector>
+      </TextObj>
+    </Object>
+    <Object type="Field" key="28" LabelKey="29" flags="0" rotation="0">
+      <Bounds top="514.0000000" left="407.0000000" bottom="546.0000000" right="660.0000000"/>
+      <FieldObj numOfReps="1" flags="32" inputMode="0" keyboardType="1" displayType="2" quickFind="1" pictFormat="5">
+        <Name>EverythingBagel::textField</Name>
+        <ValueList>HardcodedValueList</ValueList>
+        <ExtendedAttributes fontHeight="12" graphicFormat="5">
+          <NumFormat flags="2304" charStyle="0" negativeStyle="0" currencySymbol="$" thousandsSep="44" decimalPoint="46" negativeColor="#DD000000" decimalDigits="2" trueString="Yes" falseString="No"/>
+          <DateFormat format="0" charStyle="0" monthStyle="1" dayStyle="1" separator="45">
+            <DateElement>6</DateElement>
+            <DateElement>1</DateElement>
+            <DateElement>8</DateElement>
+            <DateElement>0</DateElement>
+            <DateElementSep index="0"/>
+            <DateElementSep index="1"> </DateElementSep>
+            <DateElementSep index="2">, </DateElementSep>
+            <DateElementSep index="3"/>
+            <DateElementSep index="4"/>
+          </DateFormat>
+          <TimeFormat flags="143" charStyle="0" hourStyle="0" minsecStyle="1" separator="58" amString=" AM" pmString=" PM" ampmString=""/>
+          <CharacterStyle mask="32695">
+            <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+            <Font-size>11</Font-size>
+            <Face>0</Face>
+            <Color>#000000</Color>
+          </CharacterStyle>
+        </ExtendedAttributes>
+        <Styles>
+          <FullCSS>
+self:normal .self
+{
+	background-image: -webkit-gradient(linear,25% 0%,25% 100%, from(rgba(100%,100%,100%,1)), color-stop(0.05, rgba(96.8627%,96.8627%,96.8627%,1)), color-stop(0.95, rgba(89.8039%,89.8039%,89.8039%,1)), to(rgba(93.7255%,93.7255%,93.7255%,1)));
+	background-position: 0% 0%;
+	background-size: auto;
+	background-repeat: repeat repeat;
+	background-origin: padding-box;
+	background-clip: border-box;
+	background-color: rgba(0%,0%,0%,0);
+	border-top-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-right-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-bottom-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-left-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-top-style: solid;
+	border-right-style: solid;
+	border-bottom-style: solid;
+	border-left-style: solid;
+	border-top-width: 1pt;
+	border-right-width: 1pt;
+	border-bottom-width: 1pt;
+	border-left-width: 1pt;
+	border-top-right-radius: 3pt 3pt;
+	border-bottom-right-radius: 3pt 3pt;
+	border-bottom-left-radius: 3pt 3pt;
+	border-top-left-radius: 3pt 3pt;
+	border-image-source: none;
+	border-image-slice: 100% 100% 100% 100% fill;
+	border-image-width: 1 1 1 1;
+	border-image-outset: 0 0 0 0;
+	border-image-repeat: stretch stretch;
+	outline-width: 0pt;
+	outline-style: none;
+	outline-color: invert;
+	outline-offset: 0pt;
+	font-family: -fm-font-family(verdana,sans-serif,Verdana;sans-serif);
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: normal;
+	font-variant: normal;
+	font-size: 11pt;
+	color: rgba(0%,0%,0%,1);
+	direction: ltr;
+	line-height: 1line;
+	block-progression: tb;
+	text-align: left;
+	text-transform: none;
+	text-indent: 0pt;
+	box-shadow: none;
+	box-sizing: content-box;
+	vertical-align: baseline;
+	-fm-digit-set: roman;
+	-fm-space-before: 0line;
+	-fm-space-after: 0line;
+	-fm-tab-stops: ;
+	-fm-strikethrough: false;
+	-fm-underline: none;
+	-fm-glyph-variant: ;
+	-fm-paragraph-margin-left: 0pt;
+	-fm-paragraph-margin-right: 0pt;
+	-fm-character-direction: ;
+	-fm-use-default-appearance: false;
+	-fm-override-with-classic: false;
+	-fm-baseline-shift: 0pt;
+	-fm-fill-effect: 0;
+	-fm-highlight-color: rgba(0%,0%,0%,0);
+	-fm-text-vertical-align: top;
+	-fm-tategaki: false;
+	-fm-rotation: 0;
+	-fm-borders-between-reps: false;
+	-fm-borders-baseline: false;
+	-fm-texty-field: false;
+	-fm-box-shadow-persist: none;
+}
+self:hover .self
+{
+	background-image: -webkit-gradient(linear,25% 0%,25% 100%, from(rgba(100%,100%,100%,1)), color-stop(0.05, rgba(96.8627%,96.8627%,96.8627%,1)), color-stop(0.95, rgba(92.549%,92.549%,92.549%,1)), to(rgba(93.7255%,93.7255%,93.7255%,1)));
+}
+self:pressed .self
+{
+	background-image: -webkit-gradient(linear,25% 0%,25% 100%, from(rgba(96.8627%,96.8627%,96.8627%,1)), color-stop(0.05, rgba(91.7647%,91.7647%,91.7647%,1)), color-stop(0.95, rgba(85.098%,85.098%,85.098%,1)), to(rgba(89.0196%,89.0196%,89.0196%,1)));
+}
+self:focus .self
+{
+	border-top-color: rgba(0%,0%,0%,1);
+	border-right-color: rgba(0%,0%,0%,1);
+	border-bottom-color: rgba(0%,0%,0%,1);
+	border-left-color: rgba(0%,0%,0%,1);
+	box-shadow: 0pt 0pt 2pt 1pt rgba(0%,43.9216%,81.1765%,1);
+}
+self:placeholder .self
+{
+	color: rgba(53.3333%,53.3333%,53.3333%,1);
+}
+self:normal .inner_border
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 2pt 2pt;
+	border-bottom-right-radius: 2pt 2pt;
+	border-bottom-left-radius: 2pt 2pt;
+	border-top-left-radius: 2pt 2pt;
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	width: auto;
+	height: auto;
+	top: auto;
+	right: auto;
+	bottom: auto;
+	left: auto;
+	position: static;
+	box-shadow: none;
+	box-sizing: content-box;
+}
+self:droptarget .inner_border
+{
+	box-shadow: inset 0pt 0pt 2pt 1pt rgba(0%,43.9216%,81.1765%,1);
+}
+self:normal .text
+{
+	margin-top: 0.25em;
+	margin-right: 0.5em;
+	margin-bottom: 0.17em;
+	margin-left: 0.5em;
+	top: 0pt;
+	right: 17pt;
+	bottom: 0pt;
+	left: 0pt;
+	position: absolute;
+	box-sizing: border-box;
+}
+self:normal .icon
+{
+	background-image: none;
+	background-color: rgba(0%,0%,0%,0);
+	border-top-right-radius: 2pt 2pt;
+	border-bottom-right-radius: 2pt 2pt;
+	border-image-source: none;
+	border-image-slice: 100% 100% 100% 100% fill;
+	border-image-width: 1 1 1 1;
+	border-image-outset: 0 0 0 0;
+	border-image-repeat: stretch stretch;
+	width: 17pt;
+	top: 0pt;
+	right: 0pt;
+	bottom: 0pt;
+	position: absolute;
+	box-shadow: none;
+	box-sizing: border-box;
+	-fm-icon: down-arrow;
+	-fm-icon-color: rgba(52.1569%,52.1569%,52.1569%,1);
+}
+self:normal .baseline
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 1pt;
+	border-left-width: 0pt;
+}
+</FullCSS>
+          <ThemeName>com.filemaker.theme.custom.E1351EFD_0067_4E44_A8BC_3E7A959006D9</ThemeName>
+        </Styles>
+        <DDRInfo>
+          <Field name="textField" id="6" repetition="1" maxRepetition="1" table="EverythingBagel"/>
+          <ValueList name="HardcodedValueList" id="1"/>
+        </DDRInfo>
+      </FieldObj>
+    </Object>
+    <Object type="Text" key="29" LabelKey="0" flags="0" rotation="0">
+      <Bounds top="517.0000000" left="339.0000000" bottom="533.0000000" right="396.0000000"/>
+      <TextObj flags="0">
+        <ExtendedAttributes fontHeight="13" graphicFormat="0">
+          <NumFormat flags="0" charStyle="0" negativeStyle="0" currencySymbol="" thousandsSep="0" decimalPoint="0" negativeColor="#0" decimalDigits="0" trueString="" falseString=""/>
+          <DateFormat format="0" charStyle="0" monthStyle="0" dayStyle="0" separator="0">
+            <DateElement>0</DateElement>
+            <DateElement>0</DateElement>
+            <DateElement>0</DateElement>
+            <DateElement>0</DateElement>
+            <DateElementSep index="0"/>
+            <DateElementSep index="1"/>
+            <DateElementSep index="2"/>
+            <DateElementSep index="3"/>
+            <DateElementSep index="4"/>
+          </DateFormat>
+          <TimeFormat flags="0" charStyle="0" hourStyle="0" minsecStyle="0" separator="0" amString="" pmString="" ampmString=""/>
+          <CharacterStyle mask="32695">
+            <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+            <Font-size>11</Font-size>
+            <Face>0</Face>
+            <Color>#000000</Color>
+          </CharacterStyle>
+        </ExtendedAttributes>
+        <Styles>
+          <LocalCSS>
+self:normal .self
+{
+	text-align: right;
+}
+</LocalCSS>
+          <FullCSS>
+self:normal .self
+{
+	background-image: none;
+	background-position: 0% 0%;
+	background-size: auto;
+	background-repeat: repeat repeat;
+	background-origin: padding-box;
+	background-clip: border-box;
+	background-color: rgba(0%,0%,0%,0);
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	border-image-source: none;
+	border-image-slice: 100% 100% 100% 100% fill;
+	border-image-width: 1 1 1 1;
+	border-image-outset: 0 0 0 0;
+	border-image-repeat: stretch stretch;
+	outline-width: 0pt;
+	outline-style: none;
+	outline-color: invert;
+	outline-offset: 0pt;
+	font-family: -fm-font-family(verdana,sans-serif,Verdana;sans-serif);
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: normal;
+	font-variant: normal;
+	font-size: 11pt;
+	color: rgba(0%,0%,0%,1);
+	direction: ltr;
+	line-height: 1line;
+	block-progression: tb;
+	text-align: right;
+	text-transform: none;
+	text-indent: 0pt;
+	box-shadow: none;
+	box-sizing: content-box;
+	vertical-align: baseline;
+	-fm-digit-set: roman;
+	-fm-space-before: 0line;
+	-fm-space-after: 0line;
+	-fm-tab-stops: ;
+	-fm-strikethrough: false;
+	-fm-underline: none;
+	-fm-glyph-variant: ;
+	-fm-paragraph-margin-left: 0pt;
+	-fm-paragraph-margin-right: 0pt;
+	-fm-character-direction: ;
+	-fm-use-default-appearance: false;
+	-fm-override-with-classic: false;
+	-fm-baseline-shift: 0pt;
+	-fm-fill-effect: 0;
+	-fm-highlight-color: rgba(0%,0%,0%,0);
+	-fm-text-vertical-align: top;
+	-fm-tategaki: false;
+	-fm-rotation: 0;
+	-fm-borders-between-reps: false;
+	-fm-borders-baseline: false;
+	-fm-texty-field: false;
+	-fm-box-shadow-persist: none;
+}
+self:normal .inner_border
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	width: auto;
+	height: auto;
+	top: auto;
+	right: auto;
+	bottom: auto;
+	left: auto;
+	position: static;
+	box-shadow: none;
+	box-sizing: content-box;
+}
+self:normal .text
+{
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	height: 100%;
+	box-sizing: border-box;
+}
+self:normal .baseline
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+}
+</FullCSS>
+          <ThemeName>com.filemaker.theme.custom.E1351EFD_0067_4E44_A8BC_3E7A959006D9</ThemeName>
+        </Styles>
+        <CharacterStyleVector>
+          <Style>
+            <Data>textField</Data>
+            <CharacterStyle mask="32695">
+              <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+              <Font-size>11</Font-size>
+              <Face>0</Face>
+              <Color>#000000</Color>
+            </CharacterStyle>
+          </Style>
+        </CharacterStyleVector>
+        <ParagraphStyleVector>
+          <Style>
+            <Data>textField</Data>
+            <ParagraphStyle mask="0">
+</ParagraphStyle>
+          </Style>
+        </ParagraphStyleVector>
+      </TextObj>
+    </Object>
+    <Object type="Field" key="30" LabelKey="31" flags="4" rotation="0">
+      <Bounds top="553.0000000" left="407.0000000" bottom="585.0000000" right="660.0000000"/>
+      <FieldObj numOfReps="1" flags="32816" inputMode="0" keyboardType="1" displayType="0" quickFind="0" pictFormat="5">
+        <Name>EverythingBagel::textField</Name>
+        <ValueList>HardcodedValueList</ValueList>
+        <ExtendedAttributes fontHeight="12" graphicFormat="5">
+          <NumFormat flags="2304" charStyle="0" negativeStyle="0" currencySymbol="$" thousandsSep="44" decimalPoint="46" negativeColor="#DD000000" decimalDigits="2" trueString="Yes" falseString="No"/>
+          <DateFormat format="0" charStyle="0" monthStyle="1" dayStyle="1" separator="45">
+            <DateElement>6</DateElement>
+            <DateElement>1</DateElement>
+            <DateElement>8</DateElement>
+            <DateElement>0</DateElement>
+            <DateElementSep index="0"/>
+            <DateElementSep index="1"> </DateElementSep>
+            <DateElementSep index="2">, </DateElementSep>
+            <DateElementSep index="3"/>
+            <DateElementSep index="4"/>
+          </DateFormat>
+          <TimeFormat flags="143" charStyle="0" hourStyle="0" minsecStyle="1" separator="58" amString=" AM" pmString=" PM" ampmString=""/>
+          <CharacterStyle mask="32695">
+            <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+            <Font-size>11</Font-size>
+            <Face>0</Face>
+            <Color>#000000</Color>
+          </CharacterStyle>
+        </ExtendedAttributes>
+        <Styles>
+          <FullCSS>
+self:normal .self
+{
+	background-image: -webkit-gradient(linear,25% 0%,25% 100%, from(rgba(94.5098%,94.5098%,94.5098%,1)), color-stop(0.05, rgba(94.5098%,94.5098%,94.5098%,1)), color-stop(0.95, rgba(96.8627%,96.8627%,96.8627%,1)), to(rgba(100%,100%,100%,1)));
+	background-position: 0% 0%;
+	background-size: auto;
+	background-repeat: repeat repeat;
+	background-origin: padding-box;
+	background-clip: border-box;
+	background-color: rgba(0%,0%,0%,0);
+	border-top-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-right-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-bottom-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-left-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-top-style: solid;
+	border-right-style: solid;
+	border-bottom-style: solid;
+	border-left-style: solid;
+	border-top-width: 1pt;
+	border-right-width: 1pt;
+	border-bottom-width: 1pt;
+	border-left-width: 1pt;
+	border-top-right-radius: 3pt 3pt;
+	border-bottom-right-radius: 3pt 3pt;
+	border-bottom-left-radius: 3pt 3pt;
+	border-top-left-radius: 3pt 3pt;
+	border-image-source: none;
+	border-image-slice: 100% 100% 100% 100% fill;
+	border-image-width: 1 1 1 1;
+	border-image-outset: 0 0 0 0;
+	border-image-repeat: stretch stretch;
+	outline-width: 0pt;
+	outline-style: none;
+	outline-color: invert;
+	outline-offset: 0pt;
+	font-family: -fm-font-family(verdana,sans-serif,Verdana;sans-serif);
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: normal;
+	font-variant: normal;
+	font-size: 11pt;
+	color: rgba(0%,0%,0%,1);
+	direction: ltr;
+	line-height: 1line;
+	block-progression: tb;
+	text-align: left;
+	text-transform: none;
+	text-indent: 0pt;
+	box-shadow: none;
+	box-sizing: content-box;
+	vertical-align: baseline;
+	-fm-digit-set: roman;
+	-fm-space-before: 0line;
+	-fm-space-after: 0line;
+	-fm-tab-stops: ;
+	-fm-strikethrough: false;
+	-fm-underline: none;
+	-fm-glyph-variant: ;
+	-fm-paragraph-margin-left: 0pt;
+	-fm-paragraph-margin-right: 0pt;
+	-fm-character-direction: ;
+	-fm-use-default-appearance: false;
+	-fm-override-with-classic: false;
+	-fm-baseline-shift: 0pt;
+	-fm-fill-effect: 0;
+	-fm-highlight-color: rgba(0%,0%,0%,0);
+	-fm-text-vertical-align: top;
+	-fm-tategaki: false;
+	-fm-rotation: 0;
+	-fm-borders-between-reps: false;
+	-fm-borders-baseline: false;
+	-fm-texty-field: false;
+	-fm-box-shadow-persist: none;
+}
+self:focus .self
+{
+	border-top-color: rgba(0%,0%,0%,1);
+	border-right-color: rgba(0%,0%,0%,1);
+	border-bottom-color: rgba(0%,0%,0%,1);
+	border-left-color: rgba(0%,0%,0%,1);
+	box-shadow: 0pt 0pt 2pt 1pt rgba(0%,43.9216%,81.1765%,1);
+}
+self:placeholder .self
+{
+	color: rgba(53.3333%,53.3333%,53.3333%,1);
+}
+self:normal .inner_border
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 2pt 2pt;
+	border-bottom-right-radius: 2pt 2pt;
+	border-bottom-left-radius: 2pt 2pt;
+	border-top-left-radius: 2pt 2pt;
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	width: auto;
+	height: auto;
+	top: auto;
+	right: auto;
+	bottom: auto;
+	left: auto;
+	position: static;
+	box-shadow: inset 1pt 1pt 3pt 0pt rgba(0%,0%,0%,0.1);
+	box-sizing: content-box;
+}
+self:droptarget .inner_border
+{
+	box-shadow: inset 0pt 0pt 2pt 1pt rgba(0%,43.9216%,81.1765%,1);
+}
+self:normal .text
+{
+	margin-top: 0.25em;
+	margin-right: 0.5em;
+	margin-bottom: 0.17em;
+	margin-left: 0.5em;
+	height: auto;
+	top: 0pt;
+	right: 0pt;
+	bottom: 0pt;
+	left: 0pt;
+	position: absolute;
+	box-sizing: border-box;
+}
+self:normal .baseline
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 1pt;
+	border-left-width: 0pt;
+}
+self:normal .repeat_border
+{
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-bottom-style: none;
+	border-bottom-width: 0pt;
+}
+</FullCSS>
+          <ThemeName>com.filemaker.theme.custom.E1351EFD_0067_4E44_A8BC_3E7A959006D9</ThemeName>
+        </Styles>
+        <DDRInfo>
+          <Field name="textField" id="6" repetition="1" maxRepetition="1" table="EverythingBagel"/>
+          <ValueList name="HardcodedValueList" id="1"/>
+        </DDRInfo>
+      </FieldObj>
+      <CanEntryCalc>
+        <Calculation><![CDATA[False]]></Calculation>
+      </CanEntryCalc>
+      <HideCondition findMode="False">
+        <Calculation><![CDATA[Exact ( Get ( WindowMode ) ; 1 )
+// Hide when in find mode]]></Calculation>
+      </HideCondition>
+    </Object>
+    <Object type="Text" key="31" LabelKey="0" flags="0" rotation="0">
+      <Bounds top="556.0000000" left="339.0000000" bottom="572.0000000" right="396.0000000"/>
+      <TextObj flags="0">
+        <ExtendedAttributes fontHeight="13" graphicFormat="0">
+          <NumFormat flags="0" charStyle="0" negativeStyle="0" currencySymbol="" thousandsSep="0" decimalPoint="0" negativeColor="#0" decimalDigits="0" trueString="" falseString=""/>
+          <DateFormat format="0" charStyle="0" monthStyle="0" dayStyle="0" separator="0">
+            <DateElement>0</DateElement>
+            <DateElement>0</DateElement>
+            <DateElement>0</DateElement>
+            <DateElement>0</DateElement>
+            <DateElementSep index="0"/>
+            <DateElementSep index="1"/>
+            <DateElementSep index="2"/>
+            <DateElementSep index="3"/>
+            <DateElementSep index="4"/>
+          </DateFormat>
+          <TimeFormat flags="0" charStyle="0" hourStyle="0" minsecStyle="0" separator="0" amString="" pmString="" ampmString=""/>
+          <CharacterStyle mask="32695">
+            <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+            <Font-size>11</Font-size>
+            <Face>0</Face>
+            <Color>#000000</Color>
+          </CharacterStyle>
+        </ExtendedAttributes>
+        <Styles>
+          <LocalCSS>
+self:normal .self
+{
+	text-align: right;
+}
+</LocalCSS>
+          <FullCSS>
+self:normal .self
+{
+	background-image: none;
+	background-position: 0% 0%;
+	background-size: auto;
+	background-repeat: repeat repeat;
+	background-origin: padding-box;
+	background-clip: border-box;
+	background-color: rgba(0%,0%,0%,0);
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	border-image-source: none;
+	border-image-slice: 100% 100% 100% 100% fill;
+	border-image-width: 1 1 1 1;
+	border-image-outset: 0 0 0 0;
+	border-image-repeat: stretch stretch;
+	outline-width: 0pt;
+	outline-style: none;
+	outline-color: invert;
+	outline-offset: 0pt;
+	font-family: -fm-font-family(verdana,sans-serif,Verdana;sans-serif);
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: normal;
+	font-variant: normal;
+	font-size: 11pt;
+	color: rgba(0%,0%,0%,1);
+	direction: ltr;
+	line-height: 1line;
+	block-progression: tb;
+	text-align: right;
+	text-transform: none;
+	text-indent: 0pt;
+	box-shadow: none;
+	box-sizing: content-box;
+	vertical-align: baseline;
+	-fm-digit-set: roman;
+	-fm-space-before: 0line;
+	-fm-space-after: 0line;
+	-fm-tab-stops: ;
+	-fm-strikethrough: false;
+	-fm-underline: none;
+	-fm-glyph-variant: ;
+	-fm-paragraph-margin-left: 0pt;
+	-fm-paragraph-margin-right: 0pt;
+	-fm-character-direction: ;
+	-fm-use-default-appearance: false;
+	-fm-override-with-classic: false;
+	-fm-baseline-shift: 0pt;
+	-fm-fill-effect: 0;
+	-fm-highlight-color: rgba(0%,0%,0%,0);
+	-fm-text-vertical-align: top;
+	-fm-tategaki: false;
+	-fm-rotation: 0;
+	-fm-borders-between-reps: false;
+	-fm-borders-baseline: false;
+	-fm-texty-field: false;
+	-fm-box-shadow-persist: none;
+}
+self:normal .inner_border
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	width: auto;
+	height: auto;
+	top: auto;
+	right: auto;
+	bottom: auto;
+	left: auto;
+	position: static;
+	box-shadow: none;
+	box-sizing: content-box;
+}
+self:normal .text
+{
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	height: 100%;
+	box-sizing: border-box;
+}
+self:normal .baseline
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+}
+</FullCSS>
+          <ThemeName>com.filemaker.theme.custom.E1351EFD_0067_4E44_A8BC_3E7A959006D9</ThemeName>
+        </Styles>
+        <CharacterStyleVector>
+          <Style>
+            <Data>textField</Data>
+            <CharacterStyle mask="32695">
+              <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+              <Font-size>11</Font-size>
+              <Face>0</Face>
+              <Color>#000000</Color>
+            </CharacterStyle>
+          </Style>
+        </CharacterStyleVector>
+        <ParagraphStyleVector>
+          <Style>
+            <Data>textField</Data>
+            <ParagraphStyle mask="0">
+</ParagraphStyle>
+          </Style>
+        </ParagraphStyleVector>
+      </TextObj>
+    </Object>
+    <Object type="Field" key="33" LabelKey="34" flags="0" rotation="0">
+      <Bounds top="592.0000000" left="407.0000000" bottom="624.0000000" right="660.0000000"/>
+      <FieldObj numOfReps="1" flags="32" inputMode="0" keyboardType="1" displayType="3" quickFind="1" pictFormat="5">
+        <Name>EverythingBagel::textField</Name>
+        <ValueList>HardcodedValueList</ValueList>
+        <ExtendedAttributes fontHeight="12" graphicFormat="5">
+          <NumFormat flags="2304" charStyle="0" negativeStyle="0" currencySymbol="$" thousandsSep="44" decimalPoint="46" negativeColor="#DD000000" decimalDigits="2" trueString="Yes" falseString="No"/>
+          <DateFormat format="0" charStyle="0" monthStyle="1" dayStyle="1" separator="45">
+            <DateElement>6</DateElement>
+            <DateElement>1</DateElement>
+            <DateElement>8</DateElement>
+            <DateElement>0</DateElement>
+            <DateElementSep index="0"/>
+            <DateElementSep index="1"> </DateElementSep>
+            <DateElementSep index="2">, </DateElementSep>
+            <DateElementSep index="3"/>
+            <DateElementSep index="4"/>
+          </DateFormat>
+          <TimeFormat flags="143" charStyle="0" hourStyle="0" minsecStyle="1" separator="58" amString=" AM" pmString=" PM" ampmString=""/>
+          <CharacterStyle mask="32695">
+            <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+            <Font-size>11</Font-size>
+            <Face>0</Face>
+            <Color>#000000</Color>
+          </CharacterStyle>
+        </ExtendedAttributes>
+        <Styles>
+          <FullCSS>
+self:normal .self
+{
+	background-image: none;
+	background-position: 0% 0%;
+	background-size: auto;
+	background-repeat: repeat repeat;
+	background-origin: padding-box;
+	background-clip: border-box;
+	background-color: rgba(0%,0%,0%,0);
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	border-image-source: none;
+	border-image-slice: 100% 100% 100% 100% fill;
+	border-image-width: 1 1 1 1;
+	border-image-outset: 0 0 0 0;
+	border-image-repeat: stretch stretch;
+	outline-width: 0pt;
+	outline-style: none;
+	outline-color: invert;
+	outline-offset: 0pt;
+	font-family: -fm-font-family(verdana,sans-serif,Verdana;sans-serif);
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: normal;
+	font-variant: normal;
+	font-size: 11pt;
+	color: rgba(0%,0%,0%,1);
+	direction: ltr;
+	line-height: 1.2line;
+	block-progression: tb;
+	text-align: left;
+	text-transform: none;
+	text-indent: 0pt;
+	box-shadow: none;
+	box-sizing: content-box;
+	vertical-align: baseline;
+	-fm-digit-set: roman;
+	-fm-space-before: 0line;
+	-fm-space-after: 0line;
+	-fm-tab-stops: ;
+	-fm-strikethrough: false;
+	-fm-underline: none;
+	-fm-glyph-variant: ;
+	-fm-paragraph-margin-left: 0pt;
+	-fm-paragraph-margin-right: 0pt;
+	-fm-character-direction: ;
+	-fm-use-default-appearance: false;
+	-fm-override-with-classic: false;
+	-fm-baseline-shift: 0pt;
+	-fm-fill-effect: 0;
+	-fm-highlight-color: rgba(0%,0%,0%,0);
+	-fm-text-vertical-align: top;
+	-fm-tategaki: false;
+	-fm-rotation: 0;
+	-fm-borders-between-reps: false;
+	-fm-borders-baseline: false;
+	-fm-texty-field: false;
+	-fm-box-shadow-persist: none;
+}
+self:normal .inner_border
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	width: auto;
+	height: auto;
+	top: auto;
+	right: auto;
+	bottom: auto;
+	left: auto;
+	position: static;
+	box-shadow: none;
+	box-sizing: content-box;
+}
+self:droptarget .inner_border
+{
+	box-shadow: inset 0pt 0pt 2pt 1pt rgba(0%,43.9216%,81.1765%,1);
+}
+self:normal .text
+{
+	margin-left: 0.33em;
+	top: 0pt;
+	right: 0pt;
+	bottom: 0pt;
+	left: 1em;
+	position: absolute;
+	box-sizing: border-box;
+}
+self:normal .icon
+{
+	background-image: -webkit-gradient(linear,25% 0%,25% 100%, from(rgba(94.5098%,94.5098%,94.5098%,1)), to(rgba(100%,100%,100%,1)));
+	background-position: 0% 0%;
+	background-size: auto;
+	background-repeat: repeat repeat;
+	background-origin: padding-box;
+	background-clip: border-box;
+	background-color: rgba(0%,0%,0%,0);
+	border-top-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-right-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-bottom-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-left-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-top-style: solid;
+	border-right-style: solid;
+	border-bottom-style: solid;
+	border-left-style: solid;
+	border-top-width: 1pt;
+	border-right-width: 1pt;
+	border-bottom-width: 1pt;
+	border-left-width: 1pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	border-image-source: none;
+	border-image-slice: 100% 100% 100% 100% fill;
+	border-image-width: 1 1 1 1;
+	border-image-outset: 0 0 0 0;
+	border-image-repeat: stretch stretch;
+	padding-top: 0.08em;
+	padding-right: 0.08em;
+	padding-bottom: 0.08em;
+	padding-left: 0.08em;
+	width: 1em;
+	height: 1em;
+	top: 0.1em;
+	bottom: 0pt;
+	left: 0pt;
+	position: absolute;
+	box-shadow: inset 1pt 1pt 3pt 0pt rgba(0%,0%,0%,0.2);
+	box-sizing: border-box;
+	-fm-use-default-appearance: false;
+	-fm-icon: none;
+	-fm-icon-color: rgba(0%,0%,0%,1);
+}
+self:focus .icon
+{
+	border-top-color: rgba(0%,0%,0%,1);
+	border-right-color: rgba(0%,0%,0%,1);
+	border-bottom-color: rgba(0%,0%,0%,1);
+	border-left-color: rgba(0%,0%,0%,1);
+	box-shadow: 0pt 0pt 2pt 1pt rgba(0%,43.9216%,81.1765%,1);
+}
+self:checked .icon
+{
+	-fm-icon: modern-check;
+	-fm-icon-color: rgba(14.902%,21.9608%,30.5882%,1);
+}
+self:normal .baseline
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 1pt;
+	border-left-width: 0pt;
+}
+</FullCSS>
+          <ThemeName>com.filemaker.theme.custom.E1351EFD_0067_4E44_A8BC_3E7A959006D9</ThemeName>
+        </Styles>
+        <DDRInfo>
+          <Field name="textField" id="6" repetition="1" maxRepetition="1" table="EverythingBagel"/>
+          <ValueList name="HardcodedValueList" id="1"/>
+        </DDRInfo>
+      </FieldObj>
+    </Object>
+    <Object type="Text" key="34" LabelKey="0" flags="0" rotation="0">
+      <Bounds top="595.0000000" left="339.0000000" bottom="611.0000000" right="395.4965820"/>
+      <TextObj flags="0">
+        <ExtendedAttributes fontHeight="13" graphicFormat="5">
+          <NumFormat flags="2304" charStyle="0" negativeStyle="0" currencySymbol="$" thousandsSep="44" decimalPoint="46" negativeColor="#DD000000" decimalDigits="2" trueString="Yes" falseString="No"/>
+          <DateFormat format="0" charStyle="0" monthStyle="1" dayStyle="1" separator="45">
+            <DateElement>6</DateElement>
+            <DateElement>1</DateElement>
+            <DateElement>8</DateElement>
+            <DateElement>0</DateElement>
+            <DateElementSep index="0"/>
+            <DateElementSep index="1"> </DateElementSep>
+            <DateElementSep index="2">, </DateElementSep>
+            <DateElementSep index="3"/>
+            <DateElementSep index="4"/>
+          </DateFormat>
+          <TimeFormat flags="143" charStyle="0" hourStyle="0" minsecStyle="1" separator="58" amString=" AM" pmString=" PM" ampmString=""/>
+          <CharacterStyle mask="32695">
+            <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+            <Font-size>11</Font-size>
+            <Face>0</Face>
+            <Color>#000000</Color>
+          </CharacterStyle>
+        </ExtendedAttributes>
+        <Styles>
+          <LocalCSS>
+self:normal .self
+{
+	text-align: right;
+}
+</LocalCSS>
+          <FullCSS>
+self:normal .self
+{
+	background-image: none;
+	background-position: 0% 0%;
+	background-size: auto;
+	background-repeat: repeat repeat;
+	background-origin: padding-box;
+	background-clip: border-box;
+	background-color: rgba(0%,0%,0%,0);
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	border-image-source: none;
+	border-image-slice: 100% 100% 100% 100% fill;
+	border-image-width: 1 1 1 1;
+	border-image-outset: 0 0 0 0;
+	border-image-repeat: stretch stretch;
+	outline-width: 0pt;
+	outline-style: none;
+	outline-color: invert;
+	outline-offset: 0pt;
+	font-family: -fm-font-family(verdana,sans-serif,Verdana;sans-serif);
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: normal;
+	font-variant: normal;
+	font-size: 11pt;
+	color: rgba(0%,0%,0%,1);
+	direction: ltr;
+	line-height: 1line;
+	block-progression: tb;
+	text-align: right;
+	text-transform: none;
+	text-indent: 0pt;
+	box-shadow: none;
+	box-sizing: content-box;
+	vertical-align: baseline;
+	-fm-digit-set: roman;
+	-fm-space-before: 0line;
+	-fm-space-after: 0line;
+	-fm-tab-stops: ;
+	-fm-strikethrough: false;
+	-fm-underline: none;
+	-fm-glyph-variant: ;
+	-fm-paragraph-margin-left: 0pt;
+	-fm-paragraph-margin-right: 0pt;
+	-fm-character-direction: ;
+	-fm-use-default-appearance: false;
+	-fm-override-with-classic: false;
+	-fm-baseline-shift: 0pt;
+	-fm-fill-effect: 0;
+	-fm-highlight-color: rgba(0%,0%,0%,0);
+	-fm-text-vertical-align: top;
+	-fm-tategaki: false;
+	-fm-rotation: 0;
+	-fm-borders-between-reps: false;
+	-fm-borders-baseline: false;
+	-fm-texty-field: false;
+	-fm-box-shadow-persist: none;
+}
+self:normal .inner_border
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	width: auto;
+	height: auto;
+	top: auto;
+	right: auto;
+	bottom: auto;
+	left: auto;
+	position: static;
+	box-shadow: none;
+	box-sizing: content-box;
+}
+self:normal .text
+{
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	height: 100%;
+	box-sizing: border-box;
+}
+self:normal .baseline
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+}
+</FullCSS>
+          <ThemeName>com.filemaker.theme.custom.E1351EFD_0067_4E44_A8BC_3E7A959006D9</ThemeName>
+        </Styles>
+        <CharacterStyleVector>
+          <Style>
+            <Data>textField</Data>
+            <CharacterStyle mask="32695">
+              <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+              <Font-size>11</Font-size>
+              <Face>0</Face>
+              <Color>#000000</Color>
+            </CharacterStyle>
+          </Style>
+        </CharacterStyleVector>
+        <ParagraphStyleVector>
+          <Style>
+            <Data>textField</Data>
+            <ParagraphStyle mask="0">
+</ParagraphStyle>
+          </Style>
+        </ParagraphStyleVector>
+      </TextObj>
+    </Object>
+    <Object type="Field" key="35" LabelKey="36" flags="0" rotation="0">
+      <Bounds top="631.0000000" left="407.0000000" bottom="663.0000000" right="660.0000000"/>
+      <FieldObj numOfReps="1" flags="32" inputMode="0" keyboardType="1" displayType="4" quickFind="1" pictFormat="5">
+        <Name>EverythingBagel::textField</Name>
+        <ValueList>HardcodedValueList</ValueList>
+        <ExtendedAttributes fontHeight="12" graphicFormat="5">
+          <NumFormat flags="2304" charStyle="0" negativeStyle="0" currencySymbol="$" thousandsSep="44" decimalPoint="46" negativeColor="#DD000000" decimalDigits="2" trueString="Yes" falseString="No"/>
+          <DateFormat format="0" charStyle="0" monthStyle="1" dayStyle="1" separator="45">
+            <DateElement>6</DateElement>
+            <DateElement>1</DateElement>
+            <DateElement>8</DateElement>
+            <DateElement>0</DateElement>
+            <DateElementSep index="0"/>
+            <DateElementSep index="1"> </DateElementSep>
+            <DateElementSep index="2">, </DateElementSep>
+            <DateElementSep index="3"/>
+            <DateElementSep index="4"/>
+          </DateFormat>
+          <TimeFormat flags="143" charStyle="0" hourStyle="0" minsecStyle="1" separator="58" amString=" AM" pmString=" PM" ampmString=""/>
+          <CharacterStyle mask="32695">
+            <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+            <Font-size>11</Font-size>
+            <Face>0</Face>
+            <Color>#000000</Color>
+          </CharacterStyle>
+        </ExtendedAttributes>
+        <Styles>
+          <FullCSS>
+self:normal .self
+{
+	background-image: none;
+	background-position: 0% 0%;
+	background-size: auto;
+	background-repeat: repeat repeat;
+	background-origin: padding-box;
+	background-clip: border-box;
+	background-color: rgba(0%,0%,0%,0);
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	border-image-source: none;
+	border-image-slice: 100% 100% 100% 100% fill;
+	border-image-width: 1 1 1 1;
+	border-image-outset: 0 0 0 0;
+	border-image-repeat: stretch stretch;
+	outline-width: 0pt;
+	outline-style: none;
+	outline-color: invert;
+	outline-offset: 0pt;
+	font-family: -fm-font-family(verdana,sans-serif,Verdana;sans-serif);
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: normal;
+	font-variant: normal;
+	font-size: 11pt;
+	color: rgba(0%,0%,0%,1);
+	direction: ltr;
+	line-height: 1.2line;
+	block-progression: tb;
+	text-align: left;
+	text-transform: none;
+	text-indent: 0pt;
+	box-shadow: none;
+	box-sizing: content-box;
+	vertical-align: baseline;
+	-fm-digit-set: roman;
+	-fm-space-before: 0line;
+	-fm-space-after: 0line;
+	-fm-tab-stops: ;
+	-fm-strikethrough: false;
+	-fm-underline: none;
+	-fm-glyph-variant: ;
+	-fm-paragraph-margin-left: 0pt;
+	-fm-paragraph-margin-right: 0pt;
+	-fm-character-direction: ;
+	-fm-use-default-appearance: false;
+	-fm-override-with-classic: false;
+	-fm-baseline-shift: 0pt;
+	-fm-fill-effect: 0;
+	-fm-highlight-color: rgba(0%,0%,0%,0);
+	-fm-text-vertical-align: top;
+	-fm-tategaki: false;
+	-fm-rotation: 0;
+	-fm-borders-between-reps: false;
+	-fm-borders-baseline: false;
+	-fm-texty-field: false;
+	-fm-box-shadow-persist: none;
+}
+self:normal .inner_border
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	width: auto;
+	height: auto;
+	top: auto;
+	right: auto;
+	bottom: auto;
+	left: auto;
+	position: static;
+	box-shadow: none;
+	box-sizing: content-box;
+}
+self:droptarget .inner_border
+{
+	box-shadow: inset 0pt 0pt 2pt 1pt rgba(0%,43.9216%,81.1765%,1);
+}
+self:normal .text
+{
+	margin-left: 0.33em;
+	top: 0pt;
+	right: 0pt;
+	bottom: 0pt;
+	left: 1em;
+	position: absolute;
+	box-sizing: border-box;
+}
+self:normal .icon
+{
+	background-image: -webkit-gradient(linear,25% 0%,25% 100%, from(rgba(94.5098%,94.5098%,94.5098%,1)), to(rgba(100%,100%,100%,1)));
+	background-position: 0% 0%;
+	background-size: auto;
+	background-repeat: repeat repeat;
+	background-origin: padding-box;
+	background-clip: border-box;
+	background-color: rgba(0%,0%,0%,0);
+	border-top-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-right-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-bottom-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-left-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-top-style: solid;
+	border-right-style: solid;
+	border-bottom-style: solid;
+	border-left-style: solid;
+	border-top-width: 1pt;
+	border-right-width: 1pt;
+	border-bottom-width: 1pt;
+	border-left-width: 1pt;
+	border-top-right-radius: 50% 50%;
+	border-bottom-right-radius: 50% 50%;
+	border-bottom-left-radius: 50% 50%;
+	border-top-left-radius: 50% 50%;
+	border-image-source: none;
+	border-image-slice: 100% 100% 100% 100% fill;
+	border-image-width: 1 1 1 1;
+	border-image-outset: 0 0 0 0;
+	border-image-repeat: stretch stretch;
+	padding-top: 0.17em;
+	padding-right: 0.17em;
+	padding-bottom: 0.17em;
+	padding-left: 0.17em;
+	width: 1em;
+	height: 1em;
+	top: 0.1em;
+	bottom: 0pt;
+	left: 0pt;
+	position: absolute;
+	box-shadow: inset 1pt 1pt 3pt 0pt rgba(0%,0%,0%,0.2);
+	box-sizing: border-box;
+	-fm-use-default-appearance: false;
+	-fm-icon: none;
+	-fm-icon-color: rgba(0%,0%,0%,1);
+}
+self:focus .icon
+{
+	border-top-color: rgba(0%,0%,0%,1);
+	border-right-color: rgba(0%,0%,0%,1);
+	border-bottom-color: rgba(0%,0%,0%,1);
+	border-left-color: rgba(0%,0%,0%,1);
+	box-shadow: 0pt 0pt 2pt 1pt rgba(0%,43.9216%,81.1765%,1);
+}
+self:checked .icon
+{
+	-fm-icon: radio;
+	-fm-icon-color: rgba(14.902%,21.9608%,30.5882%,1);
+}
+self:normal .baseline
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 1pt;
+	border-left-width: 0pt;
+}
+</FullCSS>
+          <ThemeName>com.filemaker.theme.custom.E1351EFD_0067_4E44_A8BC_3E7A959006D9</ThemeName>
+        </Styles>
+        <DDRInfo>
+          <Field name="textField" id="6" repetition="1" maxRepetition="1" table="EverythingBagel"/>
+          <ValueList name="HardcodedValueList" id="1"/>
+        </DDRInfo>
+      </FieldObj>
+    </Object>
+    <Object type="Text" key="36" LabelKey="0" flags="0" rotation="0">
+      <Bounds top="634.0000000" left="339.0000000" bottom="650.0000000" right="395.4965820"/>
+      <TextObj flags="0">
+        <ExtendedAttributes fontHeight="13" graphicFormat="5">
+          <NumFormat flags="2304" charStyle="0" negativeStyle="0" currencySymbol="$" thousandsSep="44" decimalPoint="46" negativeColor="#DD000000" decimalDigits="2" trueString="Yes" falseString="No"/>
+          <DateFormat format="0" charStyle="0" monthStyle="1" dayStyle="1" separator="45">
+            <DateElement>6</DateElement>
+            <DateElement>1</DateElement>
+            <DateElement>8</DateElement>
+            <DateElement>0</DateElement>
+            <DateElementSep index="0"/>
+            <DateElementSep index="1"> </DateElementSep>
+            <DateElementSep index="2">, </DateElementSep>
+            <DateElementSep index="3"/>
+            <DateElementSep index="4"/>
+          </DateFormat>
+          <TimeFormat flags="143" charStyle="0" hourStyle="0" minsecStyle="1" separator="58" amString=" AM" pmString=" PM" ampmString=""/>
+          <CharacterStyle mask="32695">
+            <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+            <Font-size>11</Font-size>
+            <Face>0</Face>
+            <Color>#000000</Color>
+          </CharacterStyle>
+        </ExtendedAttributes>
+        <Styles>
+          <LocalCSS>
+self:normal .self
+{
+	text-align: right;
+}
+</LocalCSS>
+          <FullCSS>
+self:normal .self
+{
+	background-image: none;
+	background-position: 0% 0%;
+	background-size: auto;
+	background-repeat: repeat repeat;
+	background-origin: padding-box;
+	background-clip: border-box;
+	background-color: rgba(0%,0%,0%,0);
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	border-image-source: none;
+	border-image-slice: 100% 100% 100% 100% fill;
+	border-image-width: 1 1 1 1;
+	border-image-outset: 0 0 0 0;
+	border-image-repeat: stretch stretch;
+	outline-width: 0pt;
+	outline-style: none;
+	outline-color: invert;
+	outline-offset: 0pt;
+	font-family: -fm-font-family(verdana,sans-serif,Verdana;sans-serif);
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: normal;
+	font-variant: normal;
+	font-size: 11pt;
+	color: rgba(0%,0%,0%,1);
+	direction: ltr;
+	line-height: 1line;
+	block-progression: tb;
+	text-align: right;
+	text-transform: none;
+	text-indent: 0pt;
+	box-shadow: none;
+	box-sizing: content-box;
+	vertical-align: baseline;
+	-fm-digit-set: roman;
+	-fm-space-before: 0line;
+	-fm-space-after: 0line;
+	-fm-tab-stops: ;
+	-fm-strikethrough: false;
+	-fm-underline: none;
+	-fm-glyph-variant: ;
+	-fm-paragraph-margin-left: 0pt;
+	-fm-paragraph-margin-right: 0pt;
+	-fm-character-direction: ;
+	-fm-use-default-appearance: false;
+	-fm-override-with-classic: false;
+	-fm-baseline-shift: 0pt;
+	-fm-fill-effect: 0;
+	-fm-highlight-color: rgba(0%,0%,0%,0);
+	-fm-text-vertical-align: top;
+	-fm-tategaki: false;
+	-fm-rotation: 0;
+	-fm-borders-between-reps: false;
+	-fm-borders-baseline: false;
+	-fm-texty-field: false;
+	-fm-box-shadow-persist: none;
+}
+self:normal .inner_border
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	width: auto;
+	height: auto;
+	top: auto;
+	right: auto;
+	bottom: auto;
+	left: auto;
+	position: static;
+	box-shadow: none;
+	box-sizing: content-box;
+}
+self:normal .text
+{
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	height: 100%;
+	box-sizing: border-box;
+}
+self:normal .baseline
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+}
+</FullCSS>
+          <ThemeName>com.filemaker.theme.custom.E1351EFD_0067_4E44_A8BC_3E7A959006D9</ThemeName>
+        </Styles>
+        <CharacterStyleVector>
+          <Style>
+            <Data>textField</Data>
+            <CharacterStyle mask="32695">
+              <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+              <Font-size>11</Font-size>
+              <Face>0</Face>
+              <Color>#000000</Color>
+            </CharacterStyle>
+          </Style>
+        </CharacterStyleVector>
+        <ParagraphStyleVector>
+          <Style>
+            <Data>textField</Data>
+            <ParagraphStyle mask="0">
+</ParagraphStyle>
+          </Style>
+        </ParagraphStyleVector>
+      </TextObj>
+    </Object>
+    <Object type="Field" key="37" LabelKey="38" flags="0" rotation="0">
+      <Bounds top="670.0000000" left="407.0000000" bottom="702.0000000" right="660.0000000"/>
+      <FieldObj numOfReps="1" flags="525344" inputMode="0" keyboardType="1" displayType="6" quickFind="1" pictFormat="5">
+        <Name>EverythingBagel::textField</Name>
+        <ValueList>HardcodedValueList</ValueList>
+        <ExtendedAttributes fontHeight="12" graphicFormat="5">
+          <NumFormat flags="2304" charStyle="0" negativeStyle="0" currencySymbol="$" thousandsSep="44" decimalPoint="46" negativeColor="#DD000000" decimalDigits="2" trueString="Yes" falseString="No"/>
+          <DateFormat format="0" charStyle="0" monthStyle="1" dayStyle="1" separator="45">
+            <DateElement>6</DateElement>
+            <DateElement>1</DateElement>
+            <DateElement>8</DateElement>
+            <DateElement>0</DateElement>
+            <DateElementSep index="0"/>
+            <DateElementSep index="1"> </DateElementSep>
+            <DateElementSep index="2">, </DateElementSep>
+            <DateElementSep index="3"/>
+            <DateElementSep index="4"/>
+          </DateFormat>
+          <TimeFormat flags="143" charStyle="0" hourStyle="0" minsecStyle="1" separator="58" amString=" AM" pmString=" PM" ampmString=""/>
+          <CharacterStyle mask="32695">
+            <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+            <Font-size>11</Font-size>
+            <Face>0</Face>
+            <Color>#000000</Color>
+          </CharacterStyle>
+        </ExtendedAttributes>
+        <Styles>
+          <FullCSS>
+self:normal .self
+{
+	background-image: -webkit-gradient(linear,25% 0%,25% 100%, from(rgba(94.5098%,94.5098%,94.5098%,1)), color-stop(0.05, rgba(94.5098%,94.5098%,94.5098%,1)), color-stop(0.95, rgba(96.8627%,96.8627%,96.8627%,1)), to(rgba(100%,100%,100%,1)));
+	background-position: 0% 0%;
+	background-size: auto;
+	background-repeat: repeat repeat;
+	background-origin: padding-box;
+	background-clip: border-box;
+	background-color: rgba(0%,0%,0%,0);
+	border-top-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-right-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-bottom-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-left-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-top-style: solid;
+	border-right-style: solid;
+	border-bottom-style: solid;
+	border-left-style: solid;
+	border-top-width: 1pt;
+	border-right-width: 1pt;
+	border-bottom-width: 1pt;
+	border-left-width: 1pt;
+	border-top-right-radius: 3pt 3pt;
+	border-bottom-right-radius: 3pt 3pt;
+	border-bottom-left-radius: 3pt 3pt;
+	border-top-left-radius: 3pt 3pt;
+	border-image-source: none;
+	border-image-slice: 100% 100% 100% 100% fill;
+	border-image-width: 1 1 1 1;
+	border-image-outset: 0 0 0 0;
+	border-image-repeat: stretch stretch;
+	outline-width: 0pt;
+	outline-style: none;
+	outline-color: invert;
+	outline-offset: 0pt;
+	font-family: -fm-font-family(verdana,sans-serif,Verdana;sans-serif);
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: normal;
+	font-variant: normal;
+	font-size: 11pt;
+	color: rgba(0%,0%,0%,1);
+	direction: ltr;
+	line-height: 1line;
+	block-progression: tb;
+	text-align: left;
+	text-transform: none;
+	text-indent: 0pt;
+	box-shadow: none;
+	box-sizing: content-box;
+	vertical-align: baseline;
+	-fm-digit-set: roman;
+	-fm-space-before: 0line;
+	-fm-space-after: 0line;
+	-fm-tab-stops: ;
+	-fm-strikethrough: false;
+	-fm-underline: none;
+	-fm-glyph-variant: ;
+	-fm-paragraph-margin-left: 0pt;
+	-fm-paragraph-margin-right: 0pt;
+	-fm-character-direction: ;
+	-fm-use-default-appearance: false;
+	-fm-override-with-classic: false;
+	-fm-baseline-shift: 0pt;
+	-fm-fill-effect: 0;
+	-fm-highlight-color: rgba(0%,0%,0%,0);
+	-fm-text-vertical-align: top;
+	-fm-tategaki: false;
+	-fm-rotation: 0;
+	-fm-borders-between-reps: false;
+	-fm-borders-baseline: false;
+	-fm-texty-field: false;
+	-fm-box-shadow-persist: none;
+}
+self:focus .self
+{
+	border-top-color: rgba(0%,0%,0%,1);
+	border-right-color: rgba(0%,0%,0%,1);
+	border-bottom-color: rgba(0%,0%,0%,1);
+	border-left-color: rgba(0%,0%,0%,1);
+	box-shadow: 0pt 0pt 2pt 1pt rgba(0%,43.9216%,81.1765%,1);
+}
+self:placeholder .self
+{
+	color: rgba(53.3333%,53.3333%,53.3333%,1);
+}
+self:normal .inner_border
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 2pt 2pt;
+	border-bottom-right-radius: 2pt 2pt;
+	border-bottom-left-radius: 2pt 2pt;
+	border-top-left-radius: 2pt 2pt;
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	width: auto;
+	height: auto;
+	top: auto;
+	right: auto;
+	bottom: auto;
+	left: auto;
+	position: static;
+	box-shadow: inset 1pt 1pt 3pt 0pt rgba(0%,0%,0%,0.1);
+	box-sizing: content-box;
+}
+self:droptarget .inner_border
+{
+	box-shadow: inset 0pt 0pt 2pt 1pt rgba(0%,43.9216%,81.1765%,1);
+}
+self:normal .text
+{
+	margin-top: 0.25em;
+	margin-right: 0.5em;
+	margin-bottom: 0.17em;
+	margin-left: 0.5em;
+	top: 0pt;
+	right: 17pt;
+	bottom: 0pt;
+	left: 0pt;
+	position: absolute;
+	box-sizing: border-box;
+}
+self:normal .icon
+{
+	background-image: -webkit-gradient(linear,left top,left bottom, from(rgba(100%,100%,100%,1)), color-stop(0.05, rgba(96.8627%,96.8627%,96.8627%,1)), color-stop(0.95, rgba(89.8039%,89.8039%,89.8039%,1)), to(rgba(93.7255%,93.7255%,93.7255%,1)));
+	background-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-left-style: solid;
+	border-left-width: 1pt;
+	border-top-right-radius: 2pt 2pt;
+	border-bottom-right-radius: 2pt 2pt;
+	border-image-source: none;
+	border-image-slice: 100% 100% 100% 100% fill;
+	border-image-width: 1 1 1 1;
+	border-image-outset: 0 0 0 0;
+	border-image-repeat: stretch stretch;
+	width: 17pt;
+	top: 0pt;
+	right: 0pt;
+	bottom: 0pt;
+	position: absolute;
+	box-shadow: none;
+	box-sizing: border-box;
+	-fm-icon: calendar;
+	-fm-icon-color: rgba(52.1569%,52.1569%,52.1569%,1);
+}
+self:hover .icon
+{
+	background-image: -webkit-gradient(linear,left top,left bottom, from(rgba(100%,100%,100%,1)), color-stop(0.05, rgba(96.8627%,96.8627%,96.8627%,1)), color-stop(0.95, rgba(92.549%,92.549%,92.549%,1)), to(rgba(93.7255%,93.7255%,93.7255%,1)));
+}
+self:pressed .icon
+{
+	background-image: -webkit-gradient(linear,left top,left bottom, from(rgba(96.8627%,96.8627%,96.8627%,1)), color-stop(0.05, rgba(91.7647%,91.7647%,91.7647%,1)), color-stop(0.95, rgba(85.098%,85.098%,85.098%,1)), to(rgba(89.0196%,89.0196%,89.0196%,1)));
+}
+self:focus .icon
+{
+	border-left-color: rgba(0%,0%,0%,1);
+}
+self:normal .baseline
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 1pt;
+	border-left-width: 0pt;
+}
+</FullCSS>
+          <ThemeName>com.filemaker.theme.custom.E1351EFD_0067_4E44_A8BC_3E7A959006D9</ThemeName>
+        </Styles>
+        <DDRInfo>
+          <Field name="textField" id="6" repetition="1" maxRepetition="1" table="EverythingBagel"/>
+          <ValueList name="HardcodedValueList" id="1"/>
+        </DDRInfo>
+      </FieldObj>
+    </Object>
+    <Object type="Text" key="38" LabelKey="0" flags="0" rotation="0">
+      <Bounds top="673.0000000" left="339.0000000" bottom="689.0000000" right="395.4965820"/>
+      <TextObj flags="0">
+        <ExtendedAttributes fontHeight="13" graphicFormat="5">
+          <NumFormat flags="2304" charStyle="0" negativeStyle="0" currencySymbol="$" thousandsSep="44" decimalPoint="46" negativeColor="#DD000000" decimalDigits="2" trueString="Yes" falseString="No"/>
+          <DateFormat format="0" charStyle="0" monthStyle="1" dayStyle="1" separator="45">
+            <DateElement>6</DateElement>
+            <DateElement>1</DateElement>
+            <DateElement>8</DateElement>
+            <DateElement>0</DateElement>
+            <DateElementSep index="0"/>
+            <DateElementSep index="1"> </DateElementSep>
+            <DateElementSep index="2">, </DateElementSep>
+            <DateElementSep index="3"/>
+            <DateElementSep index="4"/>
+          </DateFormat>
+          <TimeFormat flags="143" charStyle="0" hourStyle="0" minsecStyle="1" separator="58" amString=" AM" pmString=" PM" ampmString=""/>
+          <CharacterStyle mask="32695">
+            <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+            <Font-size>11</Font-size>
+            <Face>0</Face>
+            <Color>#000000</Color>
+          </CharacterStyle>
+        </ExtendedAttributes>
+        <Styles>
+          <LocalCSS>
+self:normal .self
+{
+	text-align: right;
+}
+</LocalCSS>
+          <FullCSS>
+self:normal .self
+{
+	background-image: none;
+	background-position: 0% 0%;
+	background-size: auto;
+	background-repeat: repeat repeat;
+	background-origin: padding-box;
+	background-clip: border-box;
+	background-color: rgba(0%,0%,0%,0);
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	border-image-source: none;
+	border-image-slice: 100% 100% 100% 100% fill;
+	border-image-width: 1 1 1 1;
+	border-image-outset: 0 0 0 0;
+	border-image-repeat: stretch stretch;
+	outline-width: 0pt;
+	outline-style: none;
+	outline-color: invert;
+	outline-offset: 0pt;
+	font-family: -fm-font-family(verdana,sans-serif,Verdana;sans-serif);
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: normal;
+	font-variant: normal;
+	font-size: 11pt;
+	color: rgba(0%,0%,0%,1);
+	direction: ltr;
+	line-height: 1line;
+	block-progression: tb;
+	text-align: right;
+	text-transform: none;
+	text-indent: 0pt;
+	box-shadow: none;
+	box-sizing: content-box;
+	vertical-align: baseline;
+	-fm-digit-set: roman;
+	-fm-space-before: 0line;
+	-fm-space-after: 0line;
+	-fm-tab-stops: ;
+	-fm-strikethrough: false;
+	-fm-underline: none;
+	-fm-glyph-variant: ;
+	-fm-paragraph-margin-left: 0pt;
+	-fm-paragraph-margin-right: 0pt;
+	-fm-character-direction: ;
+	-fm-use-default-appearance: false;
+	-fm-override-with-classic: false;
+	-fm-baseline-shift: 0pt;
+	-fm-fill-effect: 0;
+	-fm-highlight-color: rgba(0%,0%,0%,0);
+	-fm-text-vertical-align: top;
+	-fm-tategaki: false;
+	-fm-rotation: 0;
+	-fm-borders-between-reps: false;
+	-fm-borders-baseline: false;
+	-fm-texty-field: false;
+	-fm-box-shadow-persist: none;
+}
+self:normal .inner_border
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	width: auto;
+	height: auto;
+	top: auto;
+	right: auto;
+	bottom: auto;
+	left: auto;
+	position: static;
+	box-shadow: none;
+	box-sizing: content-box;
+}
+self:normal .text
+{
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	height: 100%;
+	box-sizing: border-box;
+}
+self:normal .baseline
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+}
+</FullCSS>
+          <ThemeName>com.filemaker.theme.custom.E1351EFD_0067_4E44_A8BC_3E7A959006D9</ThemeName>
+        </Styles>
+        <CharacterStyleVector>
+          <Style>
+            <Data>textField</Data>
+            <CharacterStyle mask="32695">
+              <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+              <Font-size>11</Font-size>
+              <Face>0</Face>
+              <Color>#000000</Color>
+            </CharacterStyle>
+          </Style>
+        </CharacterStyleVector>
+        <ParagraphStyleVector>
+          <Style>
+            <Data>textField</Data>
+            <ParagraphStyle mask="0">
+</ParagraphStyle>
+          </Style>
+        </ParagraphStyleVector>
+      </TextObj>
+    </Object>
+    <Object type="Field" key="39" LabelKey="40" flags="0" rotation="0">
+      <Bounds top="709.0000000" left="407.0000000" bottom="741.0000000" right="660.0000000"/>
+      <FieldObj numOfReps="1" flags="2138146" inputMode="130" keyboardType="1" displayType="7" quickFind="0" pictFormat="5">
+        <Name>EverythingBagel::textField</Name>
+        <ValueList>HardcodedValueList</ValueList>
+        <ExtendedAttributes fontHeight="12" graphicFormat="5">
+          <NumFormat flags="2049" charStyle="0" negativeStyle="0" currencySymbol="$" thousandsSep="44" decimalPoint="46" negativeColor="#DD000000" decimalDigits="2" trueString="Yes" falseString="No"/>
+          <DateFormat format="0" charStyle="0" monthStyle="1" dayStyle="1" separator="45">
+            <DateElement>6</DateElement>
+            <DateElement>1</DateElement>
+            <DateElement>8</DateElement>
+            <DateElement>0</DateElement>
+            <DateElementSep index="0"/>
+            <DateElementSep index="1"> </DateElementSep>
+            <DateElementSep index="2">, </DateElementSep>
+            <DateElementSep index="3"/>
+            <DateElementSep index="4"/>
+          </DateFormat>
+          <TimeFormat flags="143" charStyle="0" hourStyle="0" minsecStyle="1" separator="58" amString=" AM" pmString=" PM" ampmString=""/>
+          <CharacterStyle mask="32695">
+            <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+            <Font-size>11</Font-size>
+            <Face>0</Face>
+            <Color>#000000</Color>
+          </CharacterStyle>
+        </ExtendedAttributes>
+        <Styles>
+          <FullCSS>
+self:normal .self
+{
+	background-image: -webkit-gradient(linear,25% 0%,25% 100%, from(rgba(94.5098%,94.5098%,94.5098%,1)), color-stop(0.05, rgba(94.5098%,94.5098%,94.5098%,1)), color-stop(0.95, rgba(96.8627%,96.8627%,96.8627%,1)), to(rgba(100%,100%,100%,1)));
+	background-position: 0% 0%;
+	background-size: auto;
+	background-repeat: repeat repeat;
+	background-origin: padding-box;
+	background-clip: border-box;
+	background-color: rgba(0%,0%,0%,0);
+	border-top-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-right-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-bottom-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-left-color: rgba(69.4118%,69.4118%,69.4118%,1);
+	border-top-style: solid;
+	border-right-style: solid;
+	border-bottom-style: solid;
+	border-left-style: solid;
+	border-top-width: 1pt;
+	border-right-width: 1pt;
+	border-bottom-width: 1pt;
+	border-left-width: 1pt;
+	border-top-right-radius: 3pt 3pt;
+	border-bottom-right-radius: 3pt 3pt;
+	border-bottom-left-radius: 3pt 3pt;
+	border-top-left-radius: 3pt 3pt;
+	border-image-source: none;
+	border-image-slice: 100% 100% 100% 100% fill;
+	border-image-width: 1 1 1 1;
+	border-image-outset: 0 0 0 0;
+	border-image-repeat: stretch stretch;
+	outline-width: 0pt;
+	outline-style: none;
+	outline-color: invert;
+	outline-offset: 0pt;
+	font-family: -fm-font-family(verdana,sans-serif,Verdana;sans-serif);
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: normal;
+	font-variant: normal;
+	font-size: 11pt;
+	color: rgba(0%,0%,0%,1);
+	direction: ltr;
+	line-height: 1line;
+	block-progression: tb;
+	text-align: left;
+	text-transform: none;
+	text-indent: 0pt;
+	box-shadow: none;
+	box-sizing: content-box;
+	vertical-align: baseline;
+	-fm-digit-set: roman;
+	-fm-space-before: 0line;
+	-fm-space-after: 0line;
+	-fm-tab-stops: ;
+	-fm-strikethrough: false;
+	-fm-underline: none;
+	-fm-glyph-variant: ;
+	-fm-paragraph-margin-left: 0pt;
+	-fm-paragraph-margin-right: 0pt;
+	-fm-character-direction: ;
+	-fm-use-default-appearance: false;
+	-fm-override-with-classic: false;
+	-fm-baseline-shift: 0pt;
+	-fm-fill-effect: 0;
+	-fm-highlight-color: rgba(0%,0%,0%,0);
+	-fm-text-vertical-align: top;
+	-fm-tategaki: false;
+	-fm-rotation: 0;
+	-fm-borders-between-reps: false;
+	-fm-borders-baseline: false;
+	-fm-texty-field: false;
+	-fm-box-shadow-persist: none;
+}
+self:focus .self
+{
+	border-top-color: rgba(0%,0%,0%,1);
+	border-right-color: rgba(0%,0%,0%,1);
+	border-bottom-color: rgba(0%,0%,0%,1);
+	border-left-color: rgba(0%,0%,0%,1);
+	box-shadow: 0pt 0pt 2pt 1pt rgba(0%,43.9216%,81.1765%,1);
+}
+self:placeholder .self
+{
+	color: rgba(53.3333%,53.3333%,53.3333%,1);
+}
+self:normal .inner_border
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 2pt 2pt;
+	border-bottom-right-radius: 2pt 2pt;
+	border-bottom-left-radius: 2pt 2pt;
+	border-top-left-radius: 2pt 2pt;
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	width: auto;
+	height: auto;
+	top: auto;
+	right: auto;
+	bottom: auto;
+	left: auto;
+	position: static;
+	box-shadow: inset 1pt 1pt 3pt 0pt rgba(0%,0%,0%,0.1);
+	box-sizing: content-box;
+}
+self:droptarget .inner_border
+{
+	box-shadow: inset 0pt 0pt 2pt 1pt rgba(0%,43.9216%,81.1765%,1);
+}
+self:normal .text
+{
+	margin-top: 0.25em;
+	margin-right: 0.5em;
+	margin-bottom: 0.17em;
+	margin-left: 0.5em;
+	height: auto;
+	top: 0pt;
+	right: 0pt;
+	bottom: 0pt;
+	left: 0pt;
+	position: absolute;
+	box-sizing: border-box;
+}
+self:normal .baseline
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 1pt;
+	border-left-width: 0pt;
+}
+self:normal .repeat_border
+{
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-bottom-style: none;
+	border-bottom-width: 0pt;
+}
+</FullCSS>
+          <ThemeName>com.filemaker.theme.custom.E1351EFD_0067_4E44_A8BC_3E7A959006D9</ThemeName>
+        </Styles>
+        <DDRInfo>
+          <Field name="textField" id="6" repetition="1" maxRepetition="1" table="EverythingBagel"/>
+          <ValueList name="HardcodedValueList" id="1"/>
+        </DDRInfo>
+      </FieldObj>
+    </Object>
+    <Object type="Text" key="40" LabelKey="0" flags="0" rotation="0">
+      <Bounds top="712.0000000" left="339.0000000" bottom="728.0000000" right="395.4965820"/>
+      <TextObj flags="0">
+        <ExtendedAttributes fontHeight="13" graphicFormat="5">
+          <NumFormat flags="2304" charStyle="0" negativeStyle="0" currencySymbol="$" thousandsSep="44" decimalPoint="46" negativeColor="#DD000000" decimalDigits="2" trueString="Yes" falseString="No"/>
+          <DateFormat format="0" charStyle="0" monthStyle="1" dayStyle="1" separator="45">
+            <DateElement>6</DateElement>
+            <DateElement>1</DateElement>
+            <DateElement>8</DateElement>
+            <DateElement>0</DateElement>
+            <DateElementSep index="0"/>
+            <DateElementSep index="1"> </DateElementSep>
+            <DateElementSep index="2">, </DateElementSep>
+            <DateElementSep index="3"/>
+            <DateElementSep index="4"/>
+          </DateFormat>
+          <TimeFormat flags="143" charStyle="0" hourStyle="0" minsecStyle="1" separator="58" amString=" AM" pmString=" PM" ampmString=""/>
+          <CharacterStyle mask="32695">
+            <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+            <Font-size>11</Font-size>
+            <Face>0</Face>
+            <Color>#000000</Color>
+          </CharacterStyle>
+        </ExtendedAttributes>
+        <Styles>
+          <LocalCSS>
+self:normal .self
+{
+	text-align: right;
+}
+</LocalCSS>
+          <FullCSS>
+self:normal .self
+{
+	background-image: none;
+	background-position: 0% 0%;
+	background-size: auto;
+	background-repeat: repeat repeat;
+	background-origin: padding-box;
+	background-clip: border-box;
+	background-color: rgba(0%,0%,0%,0);
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	border-image-source: none;
+	border-image-slice: 100% 100% 100% 100% fill;
+	border-image-width: 1 1 1 1;
+	border-image-outset: 0 0 0 0;
+	border-image-repeat: stretch stretch;
+	outline-width: 0pt;
+	outline-style: none;
+	outline-color: invert;
+	outline-offset: 0pt;
+	font-family: -fm-font-family(verdana,sans-serif,Verdana;sans-serif);
+	font-weight: normal;
+	font-stretch: normal;
+	font-style: normal;
+	font-variant: normal;
+	font-size: 11pt;
+	color: rgba(0%,0%,0%,1);
+	direction: ltr;
+	line-height: 1line;
+	block-progression: tb;
+	text-align: right;
+	text-transform: none;
+	text-indent: 0pt;
+	box-shadow: none;
+	box-sizing: content-box;
+	vertical-align: baseline;
+	-fm-digit-set: roman;
+	-fm-space-before: 0line;
+	-fm-space-after: 0line;
+	-fm-tab-stops: ;
+	-fm-strikethrough: false;
+	-fm-underline: none;
+	-fm-glyph-variant: ;
+	-fm-paragraph-margin-left: 0pt;
+	-fm-paragraph-margin-right: 0pt;
+	-fm-character-direction: ;
+	-fm-use-default-appearance: false;
+	-fm-override-with-classic: false;
+	-fm-baseline-shift: 0pt;
+	-fm-fill-effect: 0;
+	-fm-highlight-color: rgba(0%,0%,0%,0);
+	-fm-text-vertical-align: top;
+	-fm-tategaki: false;
+	-fm-rotation: 0;
+	-fm-borders-between-reps: false;
+	-fm-borders-baseline: false;
+	-fm-texty-field: false;
+	-fm-box-shadow-persist: none;
+}
+self:normal .inner_border
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+	border-top-right-radius: 0pt 0pt;
+	border-bottom-right-radius: 0pt 0pt;
+	border-bottom-left-radius: 0pt 0pt;
+	border-top-left-radius: 0pt 0pt;
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	width: auto;
+	height: auto;
+	top: auto;
+	right: auto;
+	bottom: auto;
+	left: auto;
+	position: static;
+	box-shadow: none;
+	box-sizing: content-box;
+}
+self:normal .text
+{
+	padding-top: 0pt;
+	padding-right: 0pt;
+	padding-bottom: 0pt;
+	padding-left: 0pt;
+	margin-top: 0pt;
+	margin-right: 0pt;
+	margin-bottom: 0pt;
+	margin-left: 0pt;
+	height: 100%;
+	box-sizing: border-box;
+}
+self:normal .baseline
+{
+	border-top-color: rgba(0%,0%,0%,0);
+	border-right-color: rgba(0%,0%,0%,0);
+	border-bottom-color: rgba(0%,0%,0%,0);
+	border-left-color: rgba(0%,0%,0%,0);
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0pt;
+	border-right-width: 0pt;
+	border-bottom-width: 0pt;
+	border-left-width: 0pt;
+}
+</FullCSS>
+          <ThemeName>com.filemaker.theme.custom.E1351EFD_0067_4E44_A8BC_3E7A959006D9</ThemeName>
+        </Styles>
+        <CharacterStyleVector>
+          <Style>
+            <Data>textField</Data>
+            <CharacterStyle mask="32695">
+              <Font-family codeSet="Roman" fontId="6" postScript="Verdana,sans-serif">verdana,sans-serif</Font-family>
+              <Font-size>11</Font-size>
+              <Face>0</Face>
+              <Color>#000000</Color>
+            </CharacterStyle>
+          </Style>
+        </CharacterStyleVector>
+        <ParagraphStyleVector>
+          <Style>
+            <Data>textField</Data>
+            <ParagraphStyle mask="0">
+</ParagraphStyle>
+          </Style>
+        </ParagraphStyleVector>
+      </TextObj>
+    </Object>
+  </Layout>
+</fmxmlsnippet>

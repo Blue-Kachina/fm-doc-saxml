@@ -14,7 +14,7 @@ This file goes below the surface of each unit: what the code does today (with fi
 
 ## Status
 
-F0 done (fixtures in `samples/by_type/`, v0 contract fixture frozen in `tests/fixtures/contract_v0/`). **C1 done 2026-10-21**: C1a–C1c in commit `db69023`, C1d–C1e uncommitted (1,093 passed, 13 skipped). Next: C2a and C3. H is pinned to fm-saxml **0.6.2** (bumped and pushed 2026-10-21; download, build, adapter, `trace.py build` and its adapter tests all passed). **Before H bumps its pin to 0.7.0, it needs the references.json change in C1a.** The Claude Doc's v2 tab records the C1 progress and corrects its "nothing reads these files" line. Nothing else started. Research done 2026-10-21 (three read-only surveys of this repo, agentic-fm and the harness adapter). Revised the same day for the tentative parent update. The revision added a read of `afm/.cursor/skills/menu-lookup/SKILL.md`.
+F0 done (fixtures in `samples/by_type/`, v0 contract fixture frozen in `tests/fixtures/contract_v0/`). **C1 done 2026-10-21**: C1a–C1c in commit `db69023`, C1d–C1e uncommitted (1,093 passed, 13 skipped). Next: C2a and C3. H is pinned to fm-saxml **0.6.2** (bumped and pushed 2026-10-21; download, build, adapter, `trace.py build` and its adapter tests all passed). **Before H bumps its pin to 0.7.0, it needs the references.json change in C1a.** The Claude Doc's v2 tab marks the contract item done (C1a–C1e) and corrects its "nothing reads these files" line. Nothing else started. Research done 2026-10-21 (three read-only surveys of this repo, agentic-fm and the harness adapter). Revised the same day for the tentative parent update. The revision added a read of `afm/.cursor/skills/menu-lookup/SKILL.md`.
 
 ---
 
@@ -140,9 +140,19 @@ Done when the fixtures are committed and `uv run pytest` still passes: 1,045 pas
 
 #### C1a. Shape decisions and consumer check (session 1, mostly writing)
 
-- [ ] Grep H and `afm/` for any read of `entities.json`, `references.json`, `backlinks.json` and `external-references.json`. The breaking changes below assume there are none.
-- [ ] Decide the contract's scope. **Proposal:** one contract version shared by `entities.json`, `references.json`, `backlinks.json` and `external-references.json`. `model.json` stays internal and keeps its own `SCHEMA_VERSION`.
-- [ ] Decide the envelope. **Proposal:** every contract file becomes an object:
+**Done 2026-10-21.** The decisions are below each item.
+
+- [x] Grep H and `afm/` for any read of `entities.json`, `references.json`, `backlinks.json` and `external-references.json`. The breaking changes below assume there are none.
+    - **agentic-fm reads none of them.** Its only `*.json` reads are the plug-in's `preferences.json`.
+    - **H reads three of them, so the assumption was wrong:**
+        - `entities.json`: the top level must be an object. It reads 10 named collections (`check_input`, `REQUIRED_KEYS`) plus `privilegeSets`, and ignores unknown top-level keys. **The envelope keys don't break it.**
+        - `references.json`: `check_input` requires a bare list ("top level is not a list"), and `build_references` / `build_privileges` iterate it. **Wrapping it breaks H: it refuses to convert.**
+        - `external-references.json`: it reads `dataSources[]` and `source.fileMakerVersion`. **Both are kept.** It doesn't read `source.fileName`, and H's fixtures already blank that path by hand.
+        - It doesn't read `backlinks.json`.
+    - **Mitigation:** H pins fm-saxml by version and hash (`get_fm_saxml.py` `VERSION`, `FM_SAXML_TESTED`; 0.6.1 at the time, 0.6.2 since 2026-10-21). Nothing breaks until someone bumps that pin. **The bump to 0.7.0 needs a two-line change in H**: read `refs["references"]` when the top level is an object. C1d's upgrade chain makes the same change on the reader side.
+- [x] Decide the contract's scope. **Proposal:** one contract version shared by `entities.json`, `references.json`, `backlinks.json` and `external-references.json`. `model.json` stays internal and keeps its own `SCHEMA_VERSION`.
+    - **Decided: one version (Q3).** It lives in `contract.py` as `CONTRACT_VERSION = (1, 0)`.
+- [x] Decide the envelope. **Proposal:** every contract file becomes an object:
   ```json
   { "schemaVersion": "1.0", "generator": {"name": "fm-saxml-converter", "version": "0.7.0"},
     "source": {"fmpFileName": "...", "fileUuid": "...", "fileMakerVersion": "...", "saxmlVersion": "2.3.0.0"},

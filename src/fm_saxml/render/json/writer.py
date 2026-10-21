@@ -6,7 +6,8 @@ from pathlib import Path
 
 import orjson
 
-from ...contract import envelope
+from ...contract import CONTRACT_VERSION, GENERATOR_NAME, ROOT_CATALOG, envelope, format_version
+from ... import __version__
 from ...model.document_model import DocumentModel, EntityMaps
 from ...normalize.ids import data_source_doc_id
 from ...utils.file_writer import write_bytes
@@ -108,3 +109,44 @@ def write_split_json(model: DocumentModel, output_dir: Path) -> None:
     })
     _write(output_dir / "backlinks.json", {**envelope(model), "backlinks": model.backlinks})
     write_external_references_json(model, output_dir)
+
+
+def build_root_catalog(kind: str, solution: str, files: list[tuple[DocumentModel, str, str]],
+                       pairings=None) -> dict:
+    """docs.json: ``files`` is ``[(model, folder, name)]``; ``pairings`` a batch's ``BatchLinks.pairings``."""
+    out = {
+        "schemaVersion": format_version(CONTRACT_VERSION),
+        "generator": {"name": GENERATOR_NAME, "version": __version__},
+        "kind": kind,
+        "solution": solution,
+        "files": [
+            {
+                "name": name,
+                "folder": folder,
+                "fmpFileName": m.source.fmp_file_name,
+                "fileUuid": m.source.file_uuid,
+                "scope": m.source.scope,
+                "fileMakerVersion": m.source.file_maker_version,
+                "saxmlVersion": m.source.saxml_version,
+            }
+            for m, folder, name in files
+        ],
+        "pairings": [],
+        "synthesizedManifest": False,  # M1/M2: set when fm-saxml makes up a missing Summary.xml
+    }
+    by_folder = {folder: m for m, folder, _ in files}
+    for p in pairings or []:
+        ds = next((d for d in by_folder[p.source].external_data_sources if d.name == p.data_source), None)
+        out["pairings"].append({
+            "folder": p.source,
+            "dataSource": p.data_source,
+            "dataSourceUuid": ds.uuid if ds else None,
+            "targetFolder": p.target,
+            "match": p.match,
+            "reason": p.reason,
+        })
+    return out
+
+
+def write_root_catalog(output_dir: Path, catalog: dict) -> None:
+    _write(output_dir / ROOT_CATALOG, catalog)

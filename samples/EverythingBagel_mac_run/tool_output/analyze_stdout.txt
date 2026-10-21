@@ -1,0 +1,39 @@
+  ==> Analyzing solution: EverythingBagel
+    Loaded: 8 fields, 3 TOs, 4 scripts, 2 layouts, 1 relationships, 2 value lists
+  Loading script files......
+    0.001s (4 items)
+  Detecting multi-file references......
+    0.003s
+  Classifying layouts (button analysis)......
+    0.001s
+  Analyzing data model......
+    0.000s
+  Detecting naming conventions......
+    0.002s
+  Analyzing scripts......
+    0.000s (4 items)
+  Analyzing custom functions......
+    0.000s
+  Analyzing layouts......
+    0.000s (2 items)
+  Analyzing integrations......
+    0.000s
+  Computing health metrics......
+    0.000s
+
+==> Analysis complete. (0.008s)
+  Phase timing:
+    index_loading................. 0.000s
+    script_cache.................. 0.001s
+    multi_file.................... 0.003s
+    layout_classification......... 0.001s
+    data_model.................... 0.000s
+    naming........................ 0.002s
+    scripts....................... 0.000s
+    custom_functions.............. 0.000s
+    layouts....................... 0.000s
+    integrations.................. 0.000s
+    health........................ 0.000s
+  JSON: /Users/francoisdube/Documents/Projets DIS/IDI2/TQ - Team Quality/Exploration/test_custom-harness-2/tools/agentic-fm/agent/sandbox/EverythingBagel - solution-profile.json
+  Markdown: /Users/francoisdube/Documents/Projets DIS/IDI2/TQ - Team Quality/Exploration/test_custom-harness-2/tools/agentic-fm/agent/sandbox/EverythingBagel - solution-profile.md
+  HTML: /Users/francoisdube/Documents/Projets DIS/IDI2/TQ - Team Quality/Exploration/test_custom-harness-2/tools/agentic-fm/agent/sandbox/EverythingBagel - solution-profile.html

@@ -1,0 +1,25 @@
+  ⚠️  WARNING: no layout summaries found at context/EverythingBagel/layouts/.
+      Layout placements, button scripts and script TRIGGERS are therefore MISSING from the xref index.
+      Dead-object results will contain false positives (trigger-only / layout-only objects look orphaned).
+      Generate them first:
+        python3 agent/scripts/layout_to_summary.py --solution "EverythingBagel"
+      then rebuild the xref index.
+==> Building xref.index for: EverythingBagel
+  Fields: 8, TOs: 3, Scripts: 4, CFs: 1
+  Parsing field calculations...
+    0 references found
+  Parsing relationships...
+    2 references found
+  Parsing scripts...
+    1 references found
+  Parsing layout summaries...
+    0 references found
+  Parsing file-level triggers...
+    0 references found
+  Parsing custom functions...
+    0 references found
+  Parsing value lists...
+    0 references found
+
+==> Done! 3 total references
+  Output: /Users/francoisdube/Documents/Projets DIS/IDI2/TQ - Team Quality/Exploration/test_custom-harness-2/tools/agentic-fm/agent/context/EverythingBagel/xref.index

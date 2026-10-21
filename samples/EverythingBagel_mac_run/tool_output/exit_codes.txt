@@ -1,0 +1,7 @@
+build rc=0
+dead fields rc=0
+dead scripts rc=0
+dead custom_functions rc=0
+dead layouts rc=0
+dead value_lists rc=0
+analyze rc=0

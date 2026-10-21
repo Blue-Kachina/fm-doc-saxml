@@ -1,0 +1,16 @@
+⚠️  WARNING: xref.index contains NO layout references — 'scripts' dead results are UNRELIABLE.
+    Layout placements, button scripts and script triggers are missing, so trigger-only / layout-only objects will be falsely flagged as dead.
+    Regenerate layout summaries and rebuild before trusting this output:
+      python3 agent/scripts/layout_to_summary.py --solution "EverythingBagel"
+      python3 agent/scripts/trace.py build -s "EverythingBagel"
+
+=== Potentially unused scripts (EverythingBagel) ===
+
+HIGH CONFIDENCE — no references found anywhere (2):
+  Just Beep
+  OneOfEverything
+
+MODULE — installed tool objects, invoked externally — NOT dead (1):
+  Explode XML — agentic-fm
+
+Summary: 2 high, 0 medium unused + 1 module (live) out of 4 total scripts
