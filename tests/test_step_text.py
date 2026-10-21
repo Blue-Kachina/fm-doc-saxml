@@ -1,5 +1,6 @@
 """Full script step text (model/step_text.py), structured step params, and the variable index."""
 
+import re
 from pathlib import Path
 
 from lxml import etree
@@ -209,3 +210,12 @@ def test_diff_sees_changes_past_the_preview_width(tmp_path):
     m_old, m_new = _run_pipeline(old), _run_pipeline(new)
     sig = lambda m: [_step_signature(s) for s in m.entities.script_steps.values() if s.name == "Set Field"]
     assert sig(m_old) != sig(m_new)
+
+
+def test_home_page_scrub_notice_shows_value_count(tmp_path):
+    # Regression: the notice used `scrub_notice.values`, which Jinja resolved to dict.values (a bound method).
+    out = _build(tmp_path)
+    home = (out / "index.md").read_text(encoding="utf-8")
+    assert "**Scrubbed (level" in home
+    assert "built-in method" not in home
+    assert re.search(r"\.\*\* \d+ value\(s\) were replaced in \d+ place\(s\)", home)

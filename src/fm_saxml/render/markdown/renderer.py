@@ -200,7 +200,7 @@ def _scrub_notice(model: DocumentModel) -> dict[str, Any] | None:
     steps = {f.location for f in redacted if f.location.startswith("Script ") and " › Step " in f.location}
     return {
         "applied": True, "level": sc.level,
-        "values": sum(sc.counts.values()), "places": len(redacted), "steps": len(steps),
+        "value_count": sum(sc.counts.values()), "places": len(redacted), "steps": len(steps),
         "scripts": len({loc.split(" › ", 1)[0] for loc in steps}),
     }
 
