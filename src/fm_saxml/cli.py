@@ -851,7 +851,8 @@ def validate(
 
 @app.command("rename-check")
 def rename_check(
-    input_xml: Annotated[Path, typer.Argument(help="FileMaker SaveAsXML file, or a model.json from 'fm-saxml parse'")],
+    input_xml: Annotated[Path, typer.Argument(
+        help="FileMaker SaveAsXML file, a model.json from 'fm-saxml parse', or one file's docs folder from 'fm-saxml build'")],
     names: Annotated[Optional[list[str]], typer.Argument(
         help="What you want to rename: 'Table::Field', a script, layout, table occurrence, value list or object name")] = None,
     plan: Annotated[Optional[Path], typer.Option(
@@ -869,7 +870,7 @@ def rename_check(
     from rich.markup import escape
 
     input_xml = _normalize_path(input_xml)
-    _validate_input(input_xml)
+    _validate_input(input_xml, allow_dir=True)
     try:
         kind = normalize_kind(kind)
         wanted = [(n, None, kind) for n in names or []] + (read_plan(_normalize_path(plan)) if plan else [])
@@ -879,8 +880,12 @@ def rename_check(
         raise _fail("Give one or more names to check, or --plan with a CSV of renames.",
                     "Example: fm-saxml rename-check Export.xml \"Invoices::Total\" \"Post Invoice\"")
 
-    scrubber = _make_scrubber(disable_scrubbing, scrub_level, None, None)
-    model = _load_model_for_diff(input_xml, label="the", scrubber=scrubber)
+    if input_xml.is_dir():
+        scrubber = None  # the docs were scrubbed (or not) when they were built
+        model = _load_docs_model(input_xml)
+    else:
+        scrubber = _make_scrubber(disable_scrubbing, scrub_level, None, None)
+        model = _load_model_for_diff(input_xml, label="the", scrubber=scrubber)
     if not model.indirection and _model_older_than(model, (0, 5)):
         # A model.json saved before by-name analysis existed: everything it needs is in the model
         from .analyze.indirection import analyze_indirection
@@ -982,6 +987,25 @@ def diff(
     if strict and result.has_changes:
         err_console.print("[red]--strict: differences were found[/red]")
         raise typer.Exit(1)
+
+
+def _load_docs_model(path: Path):
+    """A DocumentModel rebuilt from one file's docs folder (its contract JSON files)."""
+    from .api import BatchDocs, DocsNotFoundError, load
+    from .contract_migrations import ContractVersionError
+
+    try:
+        docs = load(path)
+    except (DocsNotFoundError, ContractVersionError) as exc:
+        raise _fail(str(exc))
+    if isinstance(docs, BatchDocs):
+        raise _fail(f"{path} holds several files' docs ({', '.join(docs)}).",
+                    f"Pass one file's folder instead, e.g. {path / next(iter(docs.catalog.files)).folder if docs.catalog else path}")
+    console.print(f"[dim]Loading the docs in {path}...[/dim]")
+    try:
+        return docs.to_document_model()
+    except (DocsNotFoundError, ContractVersionError, ValueError) as exc:
+        raise _fail(str(exc))
 
 
 def _load_model_for_diff(path: Path, *, label: str, scrubber=None):

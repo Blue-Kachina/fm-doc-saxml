@@ -14,7 +14,7 @@ This file goes below the surface of each unit: what the code does today (with fi
 
 ## Status
 
-F0 done (fixtures in `samples/by_type/`, v0 contract fixture frozen in `tests/fixtures/contract_v0/`). **C1 done 2026-10-21**: C1a–C1c in commit `db69023`, C1d–C1e uncommitted (1,093 passed, 13 skipped). Next: C2a and C3. H is pinned to fm-saxml **0.6.2** (bumped and pushed 2026-10-21; download, build, adapter, `trace.py build` and its adapter tests all passed). **Before H bumps its pin to 0.7.0, it needs the references.json change in C1a.** The Claude Doc's v2 tab marks the contract item done (C1a–C1e) and corrects its "nothing reads these files" line. Nothing else started. Research done 2026-10-21 (three read-only surveys of this repo, agentic-fm and the harness adapter). Revised the same day for the tentative parent update. The revision added a read of `afm/.cursor/skills/menu-lookup/SKILL.md`.
+F0 done (fixtures in `samples/by_type/`, v0 contract fixture frozen in `tests/fixtures/contract_v0/`). **C1 done 2026-10-21**: C1a–C1c in commit `db69023`, C1d–C1e uncommitted (1,093 passed, 13 skipped). **C2 and C3 done 2026-10-21** (uncommitted; 1,127 passed, 13 skipped). Next: M1–M3, G3, G5, G4a, D1 (the rest of the 0.7.0 cut). H is pinned to fm-saxml **0.6.2** (bumped and pushed 2026-10-21; download, build, adapter, `trace.py build` and its adapter tests all passed). **Before H bumps its pin to 0.7.0, it needs the references.json change in C1a.** The Claude Doc's v2 tab marks the contract item done (C1a–C1e) and corrects its "nothing reads these files" line. Nothing else started. Research done 2026-10-21 (three read-only surveys of this repo, agentic-fm and the harness adapter). Revised the same day for the tentative parent update. The revision added a read of `afm/.cursor/skills/menu-lookup/SKILL.md`. **Q1 answered 2026-10-21:** a colleague ran agentic-fm's real Explode XML path on a Mac (committed as `samples/EverythingBagel_mac_run/`, `3c3c4a8`). Section 1a has what it showed, and it also answers Q12, Q14 and Q15 and most of Q16.
 
 ---
 
@@ -56,14 +56,39 @@ The published units are mostly right, but six findings change their size or shap
 | 5 | **The SaXML export has everything the gap units ask for** (theme CSS and metadata, menu and catalog UUIDs, layout `LocalCSS`, step subtrees). It's the model that drops them. | All gaps are extractor and model work, with no workarounds. |
 | 6 | **Under the harness today, agentic-fm's readers have no input at all.** H writes `.index` files and sanitized scripts, but not the `xml_parsed/{scripts,layouts,themes,custom_menus,custom_menu_sets,external_data_sources}` folders they read. This includes the `menu-lookup` skill, which lists and reads `xml_parsed/custom_menus/` and `custom_menu_sets/`. | Phase 2's golden fixtures can't come from the harness. They need the real exploder run once (Open question Q1), and it must happen before the exploder path is deleted on both platforms. |
 
+## 1a. What the Mac exploder run showed (Q1, 2026-10-21)
+
+**The run.** `samples/EverythingBagel_mac_run/`, see its `NOTES.md`.
+- Tools: FileMaker Pro 26.0.3, fm-xml-export-exploder 0.6.1, agentic-fm upstream `b2669b6`, all default flags.
+- The colleague pasted agentic-fm's "Get agentic-fm path" and "Explode XML" scripts into a copy of EverythingBagel.fmp12 and ran Explode XML. That's the real Save a Copy as XML → `/explode` → fmparse.sh → fmcontext.sh path. trace.py and analyze.py ran afterwards, and every command exited 0.
+- His `saxml/EverythingBagel.xml` is the same file as ours except for two differences:
+    - it holds the two pasted scripts (ids 3 and 4)
+    - **`Has_DDR_INFO="False"`**
+
+I built it with fm-saxml and diffed entities.json against our build.
+
+| # | Finding | Effect on the plan |
+|---|---|---|
+| 7 | **Scripted exports have no DDR info.** The Explode XML script's Save a Copy as XML writes `Has_DDR_INFO="False"`; ours, from the Tools menu, is `True`. That removes the `DDR_INFO` block (262 `DDRREF`, 52 `ChunkList`). The build still succeeds with the same entity counts and 95 of 96 references, but it loses:<br>- every step's `fmText` (pages fall back to our own step text, which reads differently)<br>- every calc's `chunkRefs` (references fall back to parsing the text, `normalize/calc_refs.py:71`)<br>- the popover title calc (layout object 25)<br>- TO `Empty`'s external base table name, id and UUID, so external-references loses that table | Phase 3's export script must turn DDR info on. The step has an option for it: "Include details for analysis tools" in the dialog, `include_details` in its JSON options (Q17, answered). New unit **D1**: a no-DDR fixture, a warning when `Has_DDR_INFO="False"`, and a coverage check that names what's missing. |
+| 8 | **Menu UUIDs: the clipboard and SaXML match** (menu, menu item, both catalogs, set). | Q12 answered. G3a's UUIDs are safe to hand to a paste. |
+| 9 | **The clipboard (paste) form isn't the SaXML form.** A copied menu comes wrapped in its catalog (`CustomMenuCatalog` with SortOrder, CustomOrderList and the catalog UUID) plus a `PasteIndexList`. Its action step is in snippet form (`StepText`, no hash), and the item `hash` differs. | Q16 mostly answered: the paste needs the catalog wrapper. Raw SaXML menu XML (G3b) is a **base for conversion**, not paste-ready, like steps for `fm_xml_to_snippet.py`. The SaXML → clipboard conversion is `[afm]` work; G3b serves the raw element plus the catalog UUID. |
+| 10 | **The exploder's menu files have no catalog UUIDs and drop item UUIDs and step bodies.** `custom_menus/…/Custom Custom Menu - ID 25.xml` keeps only the menu `<UUID>`; its `Beep` step is an empty `<Step>`. | `menu-lookup` today can't report the two catalog UUIDs its SKILL.md promises. G3a is a strict improvement, not just a port. |
+| 11 | **The exploder strips step `<UUID>`, `<OwnerID>` and `@index`**, keeping `@hash` (default mode, not `--lossless`). Exploded scripts have no `DDRREF` either. | Q11 narrowed: `saxml_read` has only ever seen stripped steps. G1's raw XML still carries them. Either confirm `saxml_read` ignores them, or let `raw_xml` return the stripped form (G1). |
+| 12 | **Layout objects have no `@key`.** In the exploded layout, `key=` appears only on the 4 library references; objects carry `id`. | Confirms G4a's note: `layout_to_summary.py:514` reads nothing today. Its port must use `id`. |
+| 13 | **Display styles and bounds.** `Display @Style` 0 Edit Box, 1 Drop-down List, 2 Pop-up Menu, 3 Checkbox Set, 4 Radio Button Set, 6 Drop-down Calendar, 7 Concealed Edit Box (5 not seen). The clipboard's `displayType` uses the same numbers. Bounds are **points**, identical in SaXML and the clipboard. | Q14 and Q15 answered. G4a can write the name map and the contract text. |
+| 14 | **The exploder path is weak where we compare against it.** `trace.py build` found 3 references (our build: 95). fmcontext.sh writes an empty `custom_functions.index` (it reads `custom_function_stubs/`, which 0.6.1 doesn't create) and blank value list names (wrong XPath). No layout summaries are generated by default, so every field and both layouts come out "unused". | Phase 2's golden comparison must check that **ours covers theirs**, not that the two are equal, and record each of these as a known exploder defect, not a regression. |
+| 15 | **The exploder keeps whole themes** (CSS, Metadata, Image; 94 KB for `Vibrant Custom`) and whole layouts (`LocalCSS`, `Display`, `StyledText`, `IconData`). | `extract_theme.py` reads the full `<Theme>`, so G2's span answer (G2-D1 (b)) is enough for it. G4b's comparison can now run: `layout_to_summary.py` against `xml_parsed/layouts/`, locally. |
+
+The no-DDR build also trips the scrub guard on `Scripts/OneOfEverything.md:49`, not just entities.json, because the fallback step text quotes the parameter differently. It's the same cause as B1; its test list gains this case.
+
 ## 2. Units at a glance
 
 | ID | Published unit | Verdict | Sessions |
 |---|---|---|---|
 | F0 | *(new)* Fixtures | Add. Every unit below needs a committed sample with themes, menus and sets, styled layouts, data sources and real step shapes. | 1 |
 | C1 | Publish the model as a versioned contract | Keep. Split into 4 parts: complete the files, wrap them, add versions and migrations, then document. **Done 2026-10-21.** | 4 |
-| C2 | Python reader API | Keep. Depends on C1. | 2 |
-| C3 | Agree on the output location | Keep. Needs a root catalog JSON that doesn't exist yet. | 1 |
+| C2 | Python reader API | Keep. Depends on C1. **Done 2026-10-21.** | 2 |
+| C3 | Agree on the output location | Keep. Needs a root catalog JSON that doesn't exist yet. **Done 2026-10-21** (macOS run pending CI). | 1 |
 | M1 | Specify a synthesized `Summary.xml` | Reshape. Write a spec with a provenance flag, and decide whether the FileMaker export script writes the manifest itself (Q4). | 1 (with M2) |
 | M2 | Generate `Summary.xml` when missing | Reshape. Build it in memory only and never write it into the input folder. | (with M1) |
 | M3 | Use the synthesized manifest for pairing | Shrink to a test. Pairing already ignores the manifest. | ½ |
@@ -73,6 +98,7 @@ The published units are mostly right, but six findings change their size or shap
 | G3 | Custom menu and menu set UUIDs | **Changed by the update.** The consumer is now `menu-lookup`, not `install_menus.py`. It needs UUIDs on the pages, catalog UUIDs, and raw menu XML. Split it: G3a (UUIDs, model and pages), G3b (raw menu XML through G0). Contingent on the owner's open point 1. | 1 + ½ |
 | G4 | Layout object geometry and styles | Keep. The gap is larger than the published text suggests. Split it. | 2 |
 | G5 | External data source details | Shrink. The model is already complete; the only gap is in entities.json (done in C1). | ½ |
+| D1 | *(new, from Q1)* Exports without DDR info | Add. Scripted exports have no `DDR_INFO`. Fixture, warning, and a coverage line for what's lost. | ½ |
 
 ---
 
@@ -97,7 +123,7 @@ The published units are mostly right, but six findings change their size or shap
 | Themes | Yes | Two custom themes:<br>- `Vibrant Custom` (`defaultTheme="True"`, `baseName="com.filemaker.theme.vibrant"`)<br>- `Apex Blue Copy` (`baseName="com.filemaker.theme.apex_blue"`)<br>Each is used by one layout. Custom themes *do* carry their base on `<Theme>`. |
 | Layout `LocalCSS` | Yes | 16 objects |
 | Layout objects | Yes | Portal, button bar, 2 popovers, 4 buttons, 5 `IconData`, 26 `findMode` |
-| Field display styles | Yes, but **numeric** | `Display Style="0|1|2|6"`, not `dropDown`/`popUp`. G4a needs a number → name map (Q15). |
+| Field display styles | Yes, but **numeric** | `Display Style="0|1|2|6"`, not `dropDown`/`popUp`. G4a needs a number → name map (Q15, answered in 1a #13; styles 3, 4 and 7 are only in `EverythingBagel_mac_run/display_styles/`). |
 | Custom menus | Yes | 25 menus (24 bracketed standard copies plus `Custom Custom Menu`) |
 | Menu set | Yes | `Custom Menu Set` id 2 with `<UUID>` |
 | File default menu set | Yes | Catalog-level `CustomMenuSetReference` → `[Standard FileMaker Menus]` |
@@ -253,11 +279,13 @@ Done when the fixtures are committed and `uv run pytest` still passes: 1,045 pas
 
 ### C2. Python reader API
 
-**Today.** `fm_saxml/__init__.py` holds only `__version__`. `model/__init__.__all__` re-exports 20 classes but leaves out `LayoutObjectEntity`, `AccountEntity`, `VariableEntity`, `ExternalTarget` and `IndirectionSite`. The pipeline lives in private `cli._run_pipeline` / `_analyze`. The distribution is `fm-saxml-converter`, the import name is `fm_saxml`, Python 3.11 or later.
+**Before C2 (2026-10-21).** `fm_saxml/__init__.py` held only `__version__`. `model/__init__.__all__` re-exported 20 classes but left out `LayoutObjectEntity`, `AccountEntity`, `VariableEntity`, `ExternalTarget` and `IndirectionSite`. The pipeline lives in private `cli._run_pipeline` / `_analyze`. The distribution is `fm-saxml-converter`, the import name is `fm_saxml`, Python 3.11 or later.
 
 #### C2a. API shape and single-file loading (session 1)
 
-- [ ] Write `fm_saxml/api.py` and re-export it from `fm_saxml/__init__.py`:
+**Done 2026-10-21** (`src/fm_saxml/api.py`, tests in `tests/test_reader_api.py`).
+
+- [x] Write `fm_saxml/api.py` and re-export it from `fm_saxml/__init__.py`:
   ```python
   docs = fm_saxml.load(docs_dir)          # -> SolutionDocs (one file) or BatchDocs (a batch root)
   docs.source, docs.schema_version
@@ -266,26 +294,49 @@ Done when the fixtures are committed and `uv run pytest` still passes: 1,045 pas
   docs.refs_from(doc_id) / docs.refs_to(doc_id)
   docs.find("script", "foo")              # case-insensitive name lookup, returns all matches
   ```
-- [ ] Run C1d's upgrade chain on load and raise `ContractVersionError` / `DocsNotFoundError` with paths in the message.
-- [ ] Performance:
+    - Also: `docs.get(doc_id)`, `docs.collection(kind)`, `docs.backlinks`, `docs.external`, `docs.name`, `docs.catalog` (its docs.json), and `docs.to_document_model()` (the converter's model, rebuilt without warnings, scrub summary or coverage).
+    - `find()` matches `name`, plus a field's `Table::Field` and a theme's `displayName`. A kind can be a docId prefix (`script`, `to`), a collection (`scripts`) or a plain word (`tableOccurrence`, `object`).
+    - `fm_saxml` exports `load`, `find_docs`, `SolutionDocs`, `BatchDocs`, `ResolvedRef`, `DocsNotFoundError` and `ContractVersionError`.
+- [x] Run C1d's upgrade chain on load and raise `ContractVersionError` / `DocsNotFoundError` with paths in the message. `load()` reads pre-contract docs too (`tests/fixtures/contract_v0/` loads, with `source` taken from external-references).
+- [x] Performance:
     - Measure `model_validate` over NEXUS/DGC entities.json.
     - If it takes more than ~2 s, load collections lazily: validate on first access to `docs.entities.<collection>`.
     - Record the numbers here.
-- [ ] Complete `model.__all__` and mark the public surface in `docs/contract.md`.
+
+    | Export | entities.json: parse + validate | references.json |
+    |---|---|---|
+    | NEXUS (13.7 MB entities) | 0.04 s + 0.04 s | 0.03 s |
+    | DGC_UAT (162.7 MB entities) | 0.50 s + 0.60 s | 0.39 s |
+
+    - Under 2 s, so collections aren't lazy. Each **file** is read on first use instead (`cached_property`): opening a batch and touching one file's entities reads nothing else.
+    - `scriptSteps` (0.52 s) and `layoutObjects` (0.24 s) are most of DGC's validation time.
+- [x] Complete `model.__all__` and mark the public surface in `docs/contract.md`. `model.__all__` now lists 54 classes (every entity class, `ReferenceRecord`, `ExternalTarget`, `IndirectionSite`, `EntityMaps`, …). `docs/contract.md` has "Reading from Python" with the public surface.
 
 #### C2b. Batch loading and consumer ergonomics (session 2)
 
-- [ ] `load(batch_root)` reads the root catalog from C3 and returns `BatchDocs` keyed by file name, plus `.resolve(scoped_doc_id)` across files. This covers the `<fileUuid>/`, `file:`, `ds:` and `xfile:` forms.
-- [ ] Decide whether `diff`, `rename-check` and `render` move to `load()` as well, as dogfooding. Recommendation: yes for `rename-check`, later for the rest.
-- [ ] Dependency weight. agentic-fm will `pip install fm-saxml-converter`, which pulls lxml, typer, rich, jinja2 and orjson. Decide whether that's acceptable or whether to make a `[cli]` extra (Q7).
+**Done 2026-10-21.**
 
-**Unknowns.** agentic-fm's Python floor and how it pins this package. Whether lazy validation is needed.
+- [x] `load(batch_root)` reads the root catalog from C3 and returns `BatchDocs` keyed by file name, plus `.resolve(scoped_doc_id)` across files. This covers the `<fileUuid>/`, `file:`, `ds:` and `xfile:` forms.
+    - `BatchDocs` is a read-only mapping. Lookups ignore case and accept `Name`, `Name.fmp12` or the folder.
+    - `resolve()` returns `ResolvedRef(file, doc_id, entity)`: `entity` is None when the file is there but the docId isn't, and the whole result is None when the file isn't in the batch. An unscoped docId raises `ValueError`.
+    - `ds:` scopes resolve through docs.json's new `pairings` (the build's own data-source pairing, with the data source UUID). A batch built before docs.json falls back to pairing by path, as the build does.
+    - **The `ds:` scopes in the files themselves are still not rewritten** (decided in C1a); `resolve()` is how a reader follows them.
+- [x] Decide whether `diff`, `rename-check` and `render` move to `load()` as well, as dogfooding. Recommendation: yes for `rename-check`, later for the rest.
+    - **Decided as recommended.** `rename-check` accepts one file's docs folder (`cli._load_docs_model` → `load().to_document_model()`); a batch root is refused with the folder to use. On NEXUS its report is identical to the XML run's (18 names, 76 by-name places). `diff` and `render` stay on XML / model.json for now.
+- [x] Dependency weight. agentic-fm will `pip install fm-saxml-converter`, which pulls lxml, typer, rich, jinja2 and orjson. Decide whether that's acceptable or whether to make a `[cli]` extra (Q7).
+    - **Decided: no `[cli]` extra for 0.7.0.** An extra would break `pipx install fm-saxml-converter` (and H's README command), which needs the CLI deps.
+    - What matters at run time is import cost, and that's fixed: `import fm_saxml` takes about 160 ms and loads none of lxml, typer, rich, jinja2 or slugify. A test guards it. The reader had been loading the parser through `normalize/__init__.py`; it now imports `normalize.ids` and `safe_slug` only where used.
+    - Revisit only if install size inside agentic-fm becomes a problem (Q7 stays open for the harness owner).
+
+**Unknowns.** agentic-fm's Python floor and how it pins this package. (Lazy validation: not needed, see C2a.)
 
 ---
 
 ### C3. Output location
 
-**Today.**
+**Done 2026-10-21** (tests in `tests/test_output_location.py`; documented in `docs/contract.md` "docs.json" and "Where docs live").
+
+**Before C3.**
 - `build` writes to `--out`, or else `<stem>_docs` / `<folder>_docs` next to the input (`cli.py:263-265, 324`).
 - A batch writes `<root>/<safe_slug(file)>/` per file, and reserves `reports` and `_viewer` (`cli.py:388-470`).
 - `--force` **wipes** the whole folder (`cli.py:1085-1150`).
@@ -294,25 +345,36 @@ Done when the fixtures are committed and `uv run pytest` still passes: 1,045 pas
 - A `.fm-saxml` marker file is written to the output root, but it carries no data.
 - A batch root has no JSON listing its files.
 
-- [ ] **Root catalog.** Write `docs.json` at every output root:
+- [x] **Root catalog.** Write `docs.json` at every output root:
     - single file: `{schemaVersion, kind: "single", file: {...}}`
     - batch: `{schemaVersion, kind: "batch", files: [{name, fmpFileName, fileUuid, folder, saxmlVersion}], synthesizedManifest: bool}`
 
   It replaces scanning subfolders or parsing `_viewer/manifest.js`. Fold the `.fm-saxml` marker into it, or keep both (decision).
-- [ ] **Config key.** Use one environment variable, `FM_SAXML_DOCS_ROOT`, plus `--docs-root`. If it's set, `build` without `--out` writes to `<root>/<solution-slug>/`. Here "solution" means the batch folder name for a folder, or the file stem.
+    - **Built with one shape for both kinds:** `{schemaVersion, generator, kind, solution, files: [...], pairings: [...], synthesizedManifest}`. A single build has one entry in `files` with `folder: ""`, so readers don't branch on `file` vs `files`. Each file also carries `scope` and `fileMakerVersion`. `pairings` is new (batch only, used by `resolve()`; also covers half of G5's `pairedFile`).
+    - Part of contract 1.0: `DocsCatalog` model, `docs.schema.json`, golden copy. `build` and `render` write it; `--no-include-json` leaves it out.
+    - **Decided: keep both.** `.fm-saxml` stays the "safe to overwrite" marker the overwrite prompt checks; `docs.json` is data. Older output has only the marker.
+- [x] **Config key.** Use one environment variable, `FM_SAXML_DOCS_ROOT`, plus `--docs-root`. If it's set, `build` without `--out` writes to `<root>/<solution-slug>/`. Here "solution" means the batch folder name for a folder, or the file stem.
     - The FileMaker export script (Phase 3) writes into timestamped folders, so the output path must **not** follow the input folder. It must be stable per solution.
-- [ ] **Lookup function.** Add `fm_saxml.find_docs(solution: str, root: Path | None = None) -> Path`:
+    - **Changed, because of that point:** for one file, the solution is the FileMaker file name **read from the export** (`File` attribute), not the input file's stem. A timestamped `Invoices 2026-10-21 1530.xml` still goes to `<root>/Invoices` (tested).
+    - For a folder of exports it's still the folder's name. **A timestamped export folder needs `--solution <name>`** (new option, also used for docs.json's `solution`). Phase 3's `/convert` should pass it.
+    - Precedence: `--out`, then `--docs-root` / `FM_SAXML_DOCS_ROOT`, then `<input>_docs`.
+- [x] **Lookup function.** Add `fm_saxml.find_docs(solution: str, root: Path | None = None) -> Path`:
     - case-insensitive, slug-aware
     - also matches a file name inside a batch's `docs.json`
     - with no match, the error lists the solutions it found
-- [ ] **Safe rewrite.** Repeated `/convert` calls will rebuild in place while readers may be open.
+    - Match order: folder name or slug, then docs.json `solution`, then a file listed in any docs.json (a batch member returns its own folder). Several matches at one step raise `DocsNotFoundError` instead of guessing.
+- [x] **Safe rewrite.** Repeated `/convert` calls will rebuild in place while readers may be open.
     - Build into `<out>.tmp-<pid>`, then swap.
     - On Windows, `os.replace` on a directory with open handles fails, so either rename the old folder aside first and retry, or document the limit (test on Windows).
-- [ ] State in the README and the contract that converted output is local and never committed. Agentic-fm's `.gitignore` is an `[afm]` follow-up.
+    - **Both:** `cli._staged_output` builds into `<out>.tmp-<pid>`, renames the old folder to `<out>.old-<pid>` (retrying 15 × 0.2 s), moves the new one in, then deletes the old one. A failed build deletes the staging folder and leaves the old docs alone.
+    - **Tested on Windows:** with a file held open inside the old docs, the swap is refused. The build stops with "Could not replace …", keeps the old docs, and says where the new ones are. Readers that load and close (like `load()`) don't block it. Documented in docs/contract.md.
+    - Applies to `build` (single and batch). `render` still clears its folder in place.
+- [x] State in the README and the contract that converted output is local and never committed. Agentic-fm's `.gitignore` is an `[afm]` follow-up.
 
 - [ ] *(new)* Test `find_docs`, the root catalog and the safe rewrite on macOS as well as Windows. The update's Phase 3 runs `/convert` on both, and on the Mac it replaces the exploder outright.
+    - Tests written and passing on Windows. The open-file test expects the swap to succeed on macOS/Linux. CI runs the suite on `macos-latest` and `ubuntu-latest`, so **tick this after the first green CI run on the push.**
 
-**Unknowns.** Whether agentic-fm wants to keep `exports/<name>_docs` or adopt `FM_SAXML_DOCS_ROOT` (Q8). Windows directory swap with open handles.
+**Unknowns.** Whether agentic-fm wants to keep `exports/<name>_docs` or adopt `FM_SAXML_DOCS_ROOT` (Q8). Either works: agentic-fm can point `FM_SAXML_DOCS_ROOT` at its `exports/` folder, with `--solution` keeping names stable.
 
 ---
 
@@ -436,6 +498,8 @@ Decision G1-D1, where the scrubbed bytes come from:
 - [ ] Spans per script (one `StepsForScripts/Script` element) **and** per step. The script span feeds `fm_xml_to_snippet.py` directly; the step spans allow partial pastes.
 - [ ] Test: for F0, `raw_xml("script:…")` parses, contains every `Step` in order, and holds no secret seeded in a step calc.
 - [ ] Hand-off check with agentic-fm: run `fm_xml_to_snippet.py` on a raw script from F0 and DGC_UAT. Real steps carry `UUID`/`DDRREF`/`OwnerID` children that its fixtures leave out (Q11).
+    - The exploder strips `<UUID>`, `<OwnerID>` and `@index` and keeps `@hash` (1a #11). So the Mac run's `xml_parsed/scripts/EverythingBagel/OneOfEverything - ID 1.xml` is the exact input `saxml_read` gets today. Compare `fm_xml_to_snippet.py` on that file and on our raw slice; the two outputs should match.
+    - If they don't, add `raw_xml(doc_id, form="exploder")`, which drops those three, rather than patch agentic-fm.
 
 ---
 
@@ -512,13 +576,16 @@ The UUID list is nearly the same, so G3a's model work stands. What's new is the 
     - The page's own UUID goes in front matter only if the scrubber leaves it alone. UUIDs aren't secrets, but confirm `_guard_output` doesn't treat them as such.
 - [ ] Item count from the model (`len(items)`). Check that it equals `MenuItemList @membercount` on F0.
 - [ ] Test on F0 (it needs a non-empty menu set; see F0). Assert the four UUIDs on the page and in entities.json for `Custom Custom Menu` and `Custom Menu Set`.
-- [ ] Verify with a person on FileMaker that the clipboard `FMObjectTransfer` UUIDs equal the SaXML ones (Q12). This matters more now. `menu-lookup` hands these UUIDs to a paste, and a wrong UUID makes FileMaker "silently ignore" it (SKILL.md).
+- [x] Verify with a person on FileMaker that the clipboard `FMObjectTransfer` UUIDs equal the SaXML ones (Q12). **They match** for the menu, its item, both catalogs and the set (Mac run, `clipboard/`). The exploder's menu files lack the catalog UUIDs entirely (1a #10), so this unit gives `menu-lookup` data it never had.
 - [x] Verify whether the `[Standard FileMaker Menus]` UUID is a constant across files (Q13): it isn't. Read it per file.
 
 #### G3b. Raw menu XML (half a session, after G0) *(new)*
 
 - [ ] G0 spans on `CustomMenu` and `CustomMenuSet` elements, so `docs.raw_xml("customMenu:…")` returns the base XML that `menu-lookup` edits.
-- [ ] Decide the shape (Q16). Is a menu's own `<CustomMenu>` element enough, or must the paste carry the `<CustomMenuCatalog>` wrapper with its UUID? SKILL.md points at `agent/docs/CUSTOM_MENUS.md` for the paste shape. Read that before building.
+- [x] Decide the shape (Q16). **The paste needs the catalog wrapper** (1a #9). FileMaker's clipboard copy is `CustomMenuCatalog` (SortOrder, CustomOrderList, catalog UUID) → `CustomMenu`, plus a `PasteIndexList`. Its action steps are in snippet form, not SaXML form. So:
+    - `raw_xml("customMenu:…")` returns the SaXML `<CustomMenu>` element. The catalog UUID comes from G3a.
+    - Converting that into the clipboard form is `[afm]` work, next to `fm_xml_to_snippet.py`. The Mac run's `clipboard/Custom Custom Menu.clipboard.xml` is its target fixture.
+    - Still read `afm/agent/docs/CUSTOM_MENUS.md` before the `[afm]` converter, in case it documents more.
 - [ ] Scrubbing: menu item titles and install conditions are calcs. The raw XML must come from the same scrubbed source as G1 (G1-D1).
 - [ ] Until G3b ships, `menu-lookup`'s rewrite can tell the developer to copy the menu from FileMaker and read it with `clipboard.py read`, the path the skill already uses for new menus. Note this for the Phase 5 rewrite.
 
@@ -553,15 +620,17 @@ The UUID list is nearly the same, so G3a's model work stands. What's new is the 
 - [ ] Fix the dropped part `options`.
 - [ ] Add layout `width`, `grid_style`, `client_type` and `options`, plus part `definition_kind`.
 - [ ] Add object `display_style` (dropDown/popUp/…), `hide_in_find`, `options` (raw bitfield int plus decoded flags where known), `label_text` (StyledText button labels) and `icon_type` (type only; the SVG stays in raw XML).
-- [ ] Bounds: confirm the unit (Q14). DGC_UAT has values like `top="2754"`, and our docstrings say both "pixel" and "points". Document it in the contract.
-- [ ] `@key` vs `id`: `layout_to_summary.py:514` reads `@key`, but SaXML objects carry `id`. Note it for the Phase 2 port. No model change.
+    - `display_style` map (Q15, 1a #13): 0 `editBox`, 1 `dropDownList`, 2 `popUpMenu`, 3 `checkboxSet`, 4 `radioButtonSet`, 6 `dropDownCalendar`, 7 `concealedEditBox`. Keep the raw number too; 5 and anything unknown pass through as the number.
+    - Fixture: `samples/EverythingBagel_mac_run/display_styles/EverythingBagel_styles.saxml.xml` has styles 3, 4, 6 and 7. F0 has only 0, 1, 2 and 6.
+- [x] Bounds: confirm the unit (Q14). **Points.** SaXML and the XML2 clipboard give identical bounds (1a #13). Our docstrings that say "pixel" get fixed in this session, and the contract says points.
+- [ ] `@key` vs `id`: `layout_to_summary.py:514` reads `@key`, but SaXML objects carry `id`. **Confirmed by the Mac run**: exploded layout objects have no `@key` (1a #12). Note it for the Phase 2 port. No model change.
 
 #### G4b. Styles and raw layout XML (session 2)
 
 - [ ] Add `local_css: {name, display_name, css}` on objects and parts.
 - [ ] Decide whether to also parse the visuals agentic-fm derives (colour, radius, font) into fields, or leave that to the port (decision G4-D1). Recommendation: keep `css` raw, and let a helper in the reader API parse it so the logic lives in one place.
 - [ ] G0 spans on layouts and layout objects, so layout-design can fetch real layout XML through `raw_xml`.
-- [ ] Field-by-field comparison: run `layout_to_summary.py` on F0 through the exploder (Q1) and diff its output against what the model now holds. Every remaining gap is either fixed here or noted as "not needed" with a reason. That table also answers Phase 2's "port or retire" question.
+- [ ] Field-by-field comparison: run `layout_to_summary.py` on F0 through the exploder (Q1) and diff its output against what the model now holds. The Mac run didn't generate layout summaries (not on the default path), but its `xml_parsed/layouts/` is the input: run `layout_to_summary.py` on it locally. Every remaining gap is either fixed here or noted as "not needed" with a reason. That table also answers Phase 2's "port or retire" question.
 
 ---
 
@@ -579,18 +648,28 @@ The UUID list is nearly the same, so G3a's model work stands. What's new is the 
 
 ---
 
+### D1. Exports without DDR info (half a session) *(new, from Q1)*
+
+**Why.** The export the roadmap depends on, agentic-fm's scripted Save a Copy as XML, writes `Has_DDR_INFO="False"` (1a #7). Nothing in fm-saxml says so today. The output just reads a little differently and quietly loses the popover title, the external base table and FileMaker's own step text.
+
+- [ ] Fixture: `samples/EverythingBagel_mac_run/saxml/EverythingBagel.xml` is a committed no-DDR twin of `by_type/whole/`. Test that both builds have the same entity docIds (apart from the two pasted scripts), and that references differ only in the external base table.
+- [ ] Read `@Has_DDR_INFO` into `SourceInfo`, and put it in the contract's `source` (a 1.x minor field).
+- [ ] When it's `False`, add one model warning that names what's missing, and a line on the coverage report and index.md.
+- [ ] Check whether the external base table can come from somewhere other than `DDR_INFO` (the `Empty` TO's `BaseTableReference`, or the paired file in a batch). If it can, use it.
+- [ ] `[fm]` note for Phase 3: the export script turns on the step's analysis-tools option, `include_details` (Q17). A colleague's rewrite of the export script already sets it. Once it runs, check its export says `Has_DDR_INFO="True"` and has a `DDR_INFO` block.
+
 ## 4. Order and dependencies
 
 ```
 F0 ─┬─ C1a → C1b → C1c → C1d → C1e ─┬─ C2a → C2b
     │                               └─ C3 (docs.json needs the envelope)
     ├─ M1+M2 → M3                         (independent; can run any time)
-    ├─ G5 (with C1b) · G3a                (small; after C1b)
+    ├─ G5 (with C1b) · G3a · D1           (small; after C1b)
     └─ G0 spike → G0 → G1 · G2 · G3b · G4b (G4a can start after F0)
 ```
 
 Suggested release cut:
-- **0.7.0 = contract 1.0**: F0, C1, C2a, C3, M1–M3, G3a, G5, G4a.
+- **0.7.0 = contract 1.0**: F0, C1, C2a, C3, M1–M3, G3a, G5, G4a, D1.
 - **0.8.0 = raw XML**: G0, G1, G2, G3b, G4b, C2b.
 
 H (the harness adapter) moves to 0.7.0 only with its references.json fix. Otherwise it stays on 0.6.2 until Phase 2 retires it.
@@ -605,30 +684,31 @@ Phase 2 no longer ports `install_menus.py` or the web viewer, so 0.7.0 unblocks 
 
 **Gate added by the update.** Phase 2's "Delete the exploder path" now removes `xml_parsed/` on the Mac too. Before it lands:
 - 0.8.0 must have shipped, or every kept reader must have a working fallback.
-- Q1's real exploder run must be done.
+- ~~Q1's real exploder run must be done.~~ Done 2026-10-21 (`samples/EverythingBagel_mac_run/`).
 
-About 18–21 agent sessions in total (G3b adds half a session).
+About 19–22 agent sessions in total (G3b and D1 add half a session each).
 
 ## 5. Open questions
 
 | # | Question | Blocks | Who |
 |---|---|---|---|
-| Q1 | Can someone run fm-xml-export-exploder on a Mac against F0's export, so we have real `xml_parsed/` output (file shape, `@key`, kept `UUID`/`hash`/`DDRREF`, and the `custom_menus/` files `menu-lookup` reads)? **Do it before the exploder path is deleted**: the update removes it on the Mac too. | G4b comparison, G3b shape, Phase 2 golden fixtures | colleague with a Mac |
+| Q1 | ~~Can someone run fm-xml-export-exploder on a Mac against F0's export?~~ **Done:** `samples/EverythingBagel_mac_run/` (`3c3c4a8`). Findings in section 1a. | — | answered 2026-10-21 |
 | Q2 | ~~Do H or agentic-fm parse `entities.json`/`references.json` anywhere today?~~ **H does; agentic-fm doesn't.** Only the references.json wrap breaks H, and only after its pin bump. See C1a. | — | answered 2026-10-21 |
 | Q3 | ~~One contract version for all four files, or one each?~~ **One** (`contract.CONTRACT_VERSION`). | — | decided 2026-10-21 |
 | Q4 | Should the FileMaker export script write a Summary.xml (host, time, file list)? | M1 scope, Phase 3 `[fm]` | harness owner |
 | Q5 | Can tables, TOs, value lists or custom functions have duplicate names in a real export? Today they silently overwrite. | C1a docId rules | check FileMaker |
 | Q6 | ~~Drop `generatedAt` from contract files to make them byte-reproducible?~~ **Yes, dropped.** A test builds F0 twice and compares the bytes. | — | decided 2026-10-21 |
-| Q7 | Is the full CLI dependency set acceptable inside agentic-fm, or do we add a `[cli]` extra? | C2b | harness owner |
-| Q8 | `FM_SAXML_DOCS_ROOT` or agentic-fm's `exports/<name>_docs`? | C3 | harness owner |
+| Q7 | Is the full CLI dependency set acceptable inside agentic-fm, or do we add a `[cli]` extra? **Our answer for 0.7.0: no extra** (it would break `pipx install`); importing the reader loads none of the CLI deps (C2b). Harness owner to confirm install size is fine. | — | harness owner |
+| Q8 | `FM_SAXML_DOCS_ROOT` or agentic-fm's `exports/<name>_docs`? Both work: `FM_SAXML_DOCS_ROOT=<agentic-fm>/exports` gives `exports/<name>` (no `_docs` suffix), and `--out exports/<name>_docs` keeps today's exact path. | Phase 3 `/convert` | harness owner |
 | Q9 | Are byte spans reliable on UTF-16 and CR-heavy exports, and what do they cost on 218 MB? | G0 | spike |
 | Q10 | Store the export root as an absolute path in docs, or make the reader pass it? | G0 | us |
-| Q11 | Does `saxml_read` handle real steps with `UUID`/`DDRREF`/`OwnerID` children? | G1 hand-off | afm test |
-| Q12 | Are the clipboard `FMObjectTransfer` menu UUIDs the same as SaXML's? If not, `menu-lookup` would hand pastes UUIDs that FileMaker ignores. | G3a value | person on FileMaker |
+| Q11 | Does `saxml_read` handle real steps with `UUID`/`DDRREF`/`OwnerID` children? **Narrowed:** the exploder strips `UUID`, `OwnerID` and `@index`, so it has never seen them (1a #11). Test with the Mac run's exploded script vs our raw slice. | G1 hand-off | afm test |
+| Q12 | ~~Are the clipboard `FMObjectTransfer` menu UUIDs the same as SaXML's?~~ **Yes**, for menu, item, both catalogs and set (1a #8). | — | answered 2026-10-21 |
 | Q13 | ~~Is the `[Standard FileMaker Menus]` set UUID a constant?~~ **No:** it's `2C8E1610-…` in by_type/EverythingBagel and `129DFB31-…` in DGC_UAT. It's per file, so it must be read from the model. | — | answered 2026-10-21 |
-| Q15 | What does each `Display @Style` number mean (0, 1, 2, 6 seen)? agentic-fm expects names (`dropDown`, `popUp`). | G4a | FileMaker test layout: one field per style |
-| Q14 | Bounds unit (points vs pixels). | G4a contract text | FileMaker docs or a test layout |
-| Q16 | *(new)* What XML does a menu paste need: the `<CustomMenu>` element alone, or wrapped in `<CustomMenuCatalog>` with its UUID? (See `afm/agent/docs/CUSTOM_MENUS.md`.) | G3b | read CUSTOM_MENUS.md, then a paste test |
+| Q15 | ~~What does each `Display @Style` number mean?~~ **0 Edit Box, 1 Drop-down List, 2 Pop-up Menu, 3 Checkbox Set, 4 Radio Button Set, 6 Drop-down Calendar, 7 Concealed Edit Box**; 5 not seen (1a #13). | — | answered 2026-10-21 |
+| Q14 | ~~Bounds unit (points vs pixels).~~ **Points**, the same in SaXML and the clipboard (1a #13). | — | answered 2026-10-21 |
+| Q16 | What XML does a menu paste need? **Mostly answered:** the catalog wrapper plus a `PasteIndexList`, with steps in snippet form (1a #9). SaXML → clipboard conversion is `[afm]` work. Still read `afm/agent/docs/CUSTOM_MENUS.md` before writing that converter. | `[afm]` menu converter | afm |
+| Q17 | ~~What is the Save a Copy as XML script step's option that sets `Has_DDR_INFO="True"`~~ **`include_details`**, in the step's JSON options ("Specify JSON options", then `[ "include_details" ; True ; JSONBoolean ]`). Seen in a copied step from FileMaker 26 on Windows (2026-10-21). A colleague's rewrite of the export script uses it. agentic-fm's Explode XML step has no JSON options at all, which is why its export lacks DDR info. **Still open:** confirm an export made with it has `Has_DDR_INFO="True"`, and whether FileMaker 21–25 and the Mac offer it. | D1, Phase 3 `[fm]` export script | person on FileMaker |
 | OP1 | *(new; the parent update's open point 1)* Do menu UUIDs stay in v1, or does `menu-lookup` answer only from what the pages hold? | G3a, G3b, Q12, Q16 | owner (Matt) |
 | G1-D1 | Where scrubbed raw XML comes from (on-demand rewrite, scrubbed copy, or inline). It now also feeds G3b. | G1, G3b | us + harness owner |
 

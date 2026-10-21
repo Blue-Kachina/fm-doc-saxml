@@ -1,0 +1,222 @@
+{
+  "$defs": {
+    "CatalogFile": {
+      "description": "One FileMaker file whose docs are under this output root.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "folder": {
+          "title": "Folder",
+          "type": "string"
+        },
+        "fmpFileName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fmpfilename"
+        },
+        "fileUuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fileuuid"
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scope"
+        },
+        "fileMakerVersion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Filemakerversion"
+        },
+        "saxmlVersion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Saxmlversion"
+        }
+      },
+      "required": [
+        "name",
+        "folder"
+      ],
+      "title": "CatalogFile",
+      "type": "object"
+    },
+    "CatalogPairing": {
+      "description": "A FileMaker data source of one file, and the file of this batch it names (if found).",
+      "properties": {
+        "folder": {
+          "title": "Folder",
+          "type": "string"
+        },
+        "dataSource": {
+          "title": "Datasource",
+          "type": "string"
+        },
+        "dataSourceUuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Datasourceuuid"
+        },
+        "targetFolder": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Targetfolder"
+        },
+        "match": {
+          "default": "",
+          "title": "Match",
+          "type": "string"
+        },
+        "reason": {
+          "default": "",
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "folder",
+        "dataSource"
+      ],
+      "title": "CatalogPairing",
+      "type": "object"
+    },
+    "Generator": {
+      "description": "What wrote the file. ``None`` on a file upgraded from before the contract existed.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Generator",
+      "type": "object"
+    }
+  },
+  "description": "docs.json at an output root: one file's docs (\"single\") or a multi-file build (\"batch\").",
+  "properties": {
+    "schemaVersion": {
+      "title": "Schemaversion",
+      "type": "string"
+    },
+    "generator": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Generator"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "kind": {
+      "enum": [
+        "single",
+        "batch"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "solution": {
+      "title": "Solution",
+      "type": "string"
+    },
+    "files": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CatalogFile"
+      },
+      "title": "Files",
+      "type": "array"
+    },
+    "pairings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CatalogPairing"
+      },
+      "title": "Pairings",
+      "type": "array"
+    },
+    "synthesizedManifest": {
+      "default": false,
+      "title": "Synthesizedmanifest",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "kind",
+    "solution"
+  ],
+  "title": "DocsCatalog",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fm-saxml/contract/schema-1.0/docs.schema.json"
+}

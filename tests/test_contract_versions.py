@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 from fm_saxml.cli import _run_pipeline
-from fm_saxml.contract import CONTRACT_FILES, CONTRACT_VERSION
+from fm_saxml.contract import CONTRACT_FILES, CONTRACT_VERSION, ROOT_CATALOG
 from fm_saxml.contract_migrations import (
     ContractVersionError, file_version, read_contract_file, upgrade,
 )
@@ -22,7 +22,7 @@ from fm_saxml.contract_models import (
     DOC_MODELS, ContractEnvelope, EntitiesDoc, SCHEMA_ROOT, json_schemas, schema_dir_name, write_schemas,
 )
 from fm_saxml.model.document_model import EntityMaps
-from fm_saxml.render.json.writer import write_split_json
+from fm_saxml.render.json.writer import build_root_catalog, write_root_catalog, write_split_json
 
 ROOT = Path(__file__).resolve().parent.parent
 BAGEL = ROOT / "samples" / "by_type" / "whole" / "EverythingBagel.xml"
@@ -36,8 +36,13 @@ def bagel_out(tmp_path_factory):
     if not BAGEL.exists():
         pytest.skip("samples/by_type fixture not present")
     out = tmp_path_factory.mktemp("bagel_contract")
-    write_split_json(_run_pipeline(BAGEL), out)
+    model = _run_pipeline(BAGEL)
+    write_split_json(model, out)
+    write_root_catalog(out, build_root_catalog("single", "EverythingBagel", [(model, "", model.solution.name)]))
     return out
+
+
+ALL_FILES = (ROOT_CATALOG, *CONTRACT_FILES)  # docs.json has its own model, outside DOC_MODELS
 
 
 def _load(path: Path):
@@ -154,7 +159,7 @@ def test_committed_json_schemas_are_current(request):
     )
 
 
-@pytest.mark.parametrize("name", CONTRACT_FILES)
+@pytest.mark.parametrize("name", ALL_FILES)
 def test_build_validates_against_committed_schema(bagel_out, name):
     jsonschema = pytest.importorskip("jsonschema")
     schema = _load(SCHEMAS / name.replace(".json", ".schema.json"))
@@ -183,7 +188,7 @@ def _comparable(data):
     return data
 
 
-@pytest.mark.parametrize("name", CONTRACT_FILES)
+@pytest.mark.parametrize("name", ALL_FILES)
 def test_contract_output_matches_golden(bagel_out, name, request):
     golden = GOLDEN / name
     if request.config.getoption("--update-golden"):

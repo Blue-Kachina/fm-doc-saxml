@@ -53,6 +53,7 @@ pip install -e ".[dev]"
 - `fm-saxml file.xml` is shorthand for `fm-saxml build file.xml`.
 - `--out` is optional. For `build`, output defaults to `<input name>_docs` next to the input file; for `render` (which starts from a `model.json`), it defaults to `./saxml2doc`.
 - If the output directory already exists and is non-empty, you'll be prompted to overwrite or cancel (with an extra warning if the folder wasn't created by `fm-saxml`). Pass `--force`/`-f` or `--yes`/`-y` to skip the prompt in non-interactive contexts.
+- `build` writes into `<out>.tmp-<pid>` and swaps it in when done, so a failed build keeps the old docs and readers never see a half-written folder. On Windows a file held open inside the old folder blocks the swap: the build stops with an error and leaves the new docs in `<out>.tmp-<pid>`. See [Rebuilding while readers are open](docs/contract.md#rebuilding-while-readers-are-open).
 - Errors are shown as a single readable line. Set `FM_SAXML_DEBUG=1` to get the full traceback.
 - Paths are platform-flexible — Windows drive letters and UNC paths, macOS, and Linux paths all work. `~` and environment variables (`$HOME`, `%USERPROFILE%`) are expanded automatically.
 - `validate` exits non-zero if there are critical issues. `UNUSED_FIELD_CANDIDATE` warnings don't count as critical.
@@ -62,8 +63,10 @@ pip install -e ".[dev]"
 | Flag | Command | Purpose |
 |---|---|---|
 | `--out <path>` / `-o` | `build`, `render` | Output folder (see defaults above) |
+| `--docs-root <folder>` | `build` | Without `--out`: write to `<folder>/<solution>`. Also read from `FM_SAXML_DOCS_ROOT`. See [Where docs live](docs/contract.md#where-docs-live) |
+| `--solution <name>` | `build` | The solution's name in the docs root and `docs.json` (default: the FileMaker file name, or the folder name for a multi-file export) |
 | `--model-out <path>` | `build` | Also write the intermediate `model.json` alongside the Markdown output |
-| `--include-json` / `--no-include-json` | `build`, `render` | Write the JSON contract files (`entities.json`, `references.json`, `backlinks.json`, `external-references.json`; see [docs/contract.md](docs/contract.md)) into the output dir (default: on) |
+| `--include-json` / `--no-include-json` | `build`, `render` | Write the JSON contract files (`docs.json`, `entities.json`, `references.json`, `backlinks.json`, `external-references.json`; see [docs/contract.md](docs/contract.md)) into the output dir (default: on) |
 | `--strict` | `build` | Exit non-zero if any reference is left `unresolved` after resolution |
 | `--force` / `-f`, `--yes` / `-y` | `build`, `render` | Skip the overwrite-confirmation prompt |
 | `--open` | `build` | Open the output folder when finished |
@@ -101,7 +104,8 @@ The report also lists any element or attribute the converter has no rule for ("U
 ```text
 saxml2doc/
 ├─ index.md
-├─ entities.json       (JSON contract: docs/contract.md)
+├─ docs.json           (JSON contract: docs/contract.md)
+├─ entities.json
 ├─ references.json
 ├─ backlinks.json
 ├─ external-references.json

@@ -98,6 +98,20 @@ fm-saxml <export file or folder>
 
 The docs are written to `<input name>_docs` next to the input. Use `--out <folder>` (or `-o`) to put them somewhere else. If the output folder already has files in it, you'll be asked before they're overwritten; `--force` (or `-f`) skips the question.
 
+Converted docs are local output: build them from your own export and don't commit them. To keep every solution in one place, set `FM_SAXML_DOCS_ROOT` (or pass `--docs-root`): each build then goes to `<docs root>/<solution>`, where tools find it with `fm_saxml.find_docs("<solution>")`. A rebuild swaps the new docs in only once they're complete.
+
+### Reading the docs from Python
+
+```python
+import fm_saxml
+
+docs = fm_saxml.load("Invoices_docs")
+docs.find("script", "post invoice")
+docs.refs_to("field:Invoices::Total")
+```
+
+See [JSON contract](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/contract.md#reading-from-python) for the rest.
+
 ### Multi-file solutions
 
 FileMaker Pro 26 can Save a Copy as XML for several files at once. Point `fm-saxml` at the folder it wrote:
@@ -120,7 +134,7 @@ Each file gets its own subfolder, and references from one file into another beco
 | `inspect <file or folder>` | Print entity counts and warnings without writing anything |
 | `validate <file or folder>` | Exit non-zero if the model has critical issues |
 | `diff <old> <new>` | Compare two exports and report what changed — see [Comparing exports](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/diff.md) |
-| `rename-check <file> <name>...` | What would break if you renamed a field, script, layout, object ...: every place that names it in text — see [Names written in text](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/indirection.md#rename-check) |
+| `rename-check <file or docs folder> <name>...` | What would break if you renamed a field, script, layout, object ...: every place that names it in text — see [Names written in text](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/indirection.md#rename-check) |
 | `scrub <file>` | Write a copy of the XML with secrets redacted — see [Scrubbing](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/scrubbing.md#scrubbing-the-xml-itself-scrub) |
 | `serve <docs folder>` | Serve a `--webmcp` build at `http://127.0.0.1:8765` so browser agents get its tools |
 | `doctor` | Print environment details for bug reports |
@@ -130,6 +144,7 @@ Each file gets its own subfolder, and references from one file into another beco
 | Option | What it does |
 |---|---|
 | `--out <path>` / `-o` | Write the output somewhere other than `<input name>_docs` |
+| `--docs-root <folder>` | Write to `<folder>/<solution>` instead (also `FM_SAXML_DOCS_ROOT`); `--solution` sets the name |
 | `--force` / `-f` (or `--yes` / `-y`) | Overwrite an existing output folder without asking |
 | `--open` | Open the output folder when finished |
 | `--html` | Also write an `index.html` for browsing the docs in a web browser — see [HTML viewer](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/html-viewer.md) |

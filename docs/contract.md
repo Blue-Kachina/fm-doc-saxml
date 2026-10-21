@@ -1,21 +1,24 @@
 # The JSON contract (schema 1.0)
 
-Every docs folder holds four JSON files that other tools may read. Their shape is versioned and documented here. Anything else fm-saxml writes (the Markdown pages, `model.json`, the viewer's data) may change in any release without notice.
+Every docs folder holds JSON files that other tools may read. Their shape is versioned and documented here. Anything else fm-saxml writes (the Markdown pages, `model.json`, the viewer's data) may change in any release without notice.
+
+From Python, read them with `fm_saxml.load()` instead of parsing them by hand (see Reading from Python).
 
 | File | Payload |
 |---|---|
+| `docs.json` | At the output root only: one file's docs or a multi-file build, and where each file's docs are |
 | `entities.json` | Every entity, by collection: `{docId: entity}` |
 | `references.json` | `references`: every reference from one entity to another |
 | `backlinks.json` | `backlinks`: `references.json` inverted, `{targetDocId: [backlink, ...]}` |
 | `external-references.json` | `dataSources`, `externalTableOccurrences`, and `references` into other files |
 
-`build` and `render` both write them. `--no-include-json` leaves them out. In a multi-file build, each file's folder has its own four.
+`build` and `render` both write them. `--no-include-json` leaves them out. In a multi-file build, each file's folder has its own four, and `docs.json` sits at the root.
 
-The JSON Schema of each file is in [`contract/schema-1.0/`](contract/schema-1.0/). It's generated from the Pydantic models in `src/fm_saxml/contract_models.py`, and a test fails when the two drift apart.
+The JSON Schema of each file, `docs.json` included, is in [`contract/schema-1.0/`](contract/schema-1.0/). It's generated from the Pydantic models in `src/fm_saxml/contract_models.py`, and a test fails when the two drift apart.
 
 ## Envelope
 
-Every file is a JSON object that starts with the same three keys:
+The four per-file files are JSON objects that start with the same three keys (`docs.json` has `schemaVersion` and `generator`; see below):
 
 ```json
 {
@@ -36,6 +39,82 @@ Every file is a JSON object that starts with the same three keys:
 - No file holds a timestamp. Building the same export twice with the same fm-saxml release gives byte-identical files.
 - `generator` is `null` in a file upgraded from before the contract existed (see Reading older files).
 - In `entities.json` the collections sit at the top level, next to these keys. No collection may be named `schemaVersion`, `generator` or `source`.
+
+## docs.json
+
+The catalog at the root of every output folder. Readers start here instead of scanning subfolders.
+
+```json
+{
+  "schemaVersion": "1.0",
+  "generator": {"name": "fm-saxml-converter", "version": "0.7.0"},
+  "kind": "batch",
+  "solution": "Accounting",
+  "files": [
+    {"name": "Invoices", "folder": "Invoices", "fmpFileName": "Invoices.fmp12", "fileUuid": "…",
+     "scope": "…", "fileMakerVersion": "26.0.3", "saxmlVersion": "2.3.0.0"}
+  ],
+  "pairings": [
+    {"folder": "Invoices", "dataSource": "Clients", "dataSourceUuid": "…",
+     "targetFolder": "Clients", "match": "path", "reason": ""}
+  ],
+  "synthesizedManifest": false
+}
+```
+
+- `kind` is `single` (one file's docs, in the root itself: its `folder` is `""`) or `batch` (each file in its own subfolder).
+- `solution` is the name `find_docs()` looks up: the FileMaker file name for one file, the input folder's name for a multi-file export, or `--solution`.
+- `pairings` (batch only) records which file each FileMaker data source was paired with, and how: `path` (the data source's path names the file), `name` (no path; matched by data source name), or `""` with a `reason`. `BatchDocs.resolve()` uses it for `ds:` scoped ids.
+- `synthesizedManifest` is true when fm-saxml made up a missing `Summary.xml`. It's always false today.
+
+## Where docs live
+
+Converted docs are **local output**: each developer builds them from their own export, and they're never committed. They hold the solution's code (scrubbed of secrets by default, but not of everything).
+
+- `build` writes to `--out`. Without it, `--docs-root <folder>` or the `FM_SAXML_DOCS_ROOT` environment variable files the build under `<docs root>/<solution>`, so a tool can find it by name. Without either, it writes `<input name>_docs` next to the input.
+- The solution name comes from the export (the FileMaker file name), not the input file's name. A timestamped export (`Invoices 2026-10-21 1530.xml`) still lands in `<docs root>/Invoices`. For a folder of exports it's the folder's name; pass `--solution` when that folder name changes between exports.
+- `fm_saxml.find_docs("Invoices")` returns the folder under `$FM_SAXML_DOCS_ROOT` (or `root=`). It ignores case and matches, in order: a folder name or its slug, a `docs.json` `solution`, then a FileMaker file listed in a `docs.json` (for a batch, that file's own folder). No match, or several at one step, raises `DocsNotFoundError` listing what it found.
+
+### Rebuilding while readers are open
+
+`build` writes into `<out>.tmp-<pid>` next to the output folder, then swaps it in: the old folder is renamed to `<out>.old-<pid>`, the new one takes its name, and the old one is deleted. A reader never sees a half-written folder. A failed build leaves the old docs untouched.
+
+On Windows a folder can't be renamed while a program has a file in it open. `build` retries for about 3 seconds, then stops with an error, keeping the old docs in place and the new ones in `<out>.tmp-<pid>`. Readers that load a file and close it (as `fm_saxml.load()` does) don't block it. macOS and Linux swap even with files open.
+
+`render` still clears and rewrites its output folder in place.
+
+## Reading from Python
+
+```python
+import fm_saxml
+
+docs = fm_saxml.load("exports/Invoices")            # SolutionDocs, or BatchDocs for a multi-file build
+docs.entities.scripts["script:Post Invoice"]         # typed entities: fm_saxml.model classes
+docs.find("field", "invoices::total")                # by name, ignoring case; every match
+docs.refs_from("script:Post Invoice")                # references it makes
+docs.refs_to("field:Invoices::Total")                # references to it from this file
+docs.get("layout:Invoice")                           # any entity by docId
+docs.source.file_uuid, docs.schema_version
+
+batch = fm_saxml.load("exports/Accounting")          # BatchDocs: a read-only mapping of file name -> SolutionDocs
+batch["Invoices"].entities.layouts
+batch.resolve("ds:EEC9827D-…/field:Clients::Name")   # ResolvedRef(file, doc_id, entity), or None
+
+fm_saxml.find_docs("Invoices")                       # the docs folder, under $FM_SAXML_DOCS_ROOT
+```
+
+Each file is read on first use, upgraded if an older fm-saxml wrote it, and validated. Loading `entities.json` and `references.json` for a 218 MB export takes about 1.5 seconds.
+
+**Public surface.** These names follow the contract's version policy:
+
+- `fm_saxml`: `load`, `find_docs`, `SolutionDocs`, `BatchDocs`, `ResolvedRef`, `DocsNotFoundError`, `ContractVersionError`
+- `fm_saxml.model`: every class in its `__all__` (the entity classes, `ReferenceRecord`, `ExternalTarget`, `IndirectionSite`, …). Their fields are the contract's keys.
+- `fm_saxml.contract_models`: one model per file (`EntitiesDoc`, `ReferencesDoc`, `BacklinksDoc`, `ExternalReferencesDoc`, `DocsCatalog`)
+- `fm_saxml.contract_migrations.read_contract_file(path)`
+
+Everything else in the package is internal.
+
+`fm-saxml rename-check` reads a docs folder the same way: `fm-saxml rename-check exports/Invoices "Invoices::Total"`.
 
 ## Versions
 

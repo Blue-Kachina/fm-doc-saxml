@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0",
+  "generator": {
+    "name": "fm-saxml-converter",
+    "version": "0.6.2"
+  },
+  "kind": "single",
+  "solution": "EverythingBagel",
+  "files": [
+    {
+      "name": "EverythingBagel",
+      "folder": "",
+      "fmpFileName": "EverythingBagel.fmp12",
+      "fileUuid": "400FEDB4-F509-8F4D-AF05-472A0DE02EAC",
+      "scope": "400FEDB4-F509-8F4D-AF05-472A0DE02EAC",
+      "fileMakerVersion": "26.0.3",
+      "saxmlVersion": "2.3.0.0"
+    }
+  ],
+  "pairings": [],
+  "synthesizedManifest": false
+}
