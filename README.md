@@ -149,6 +149,7 @@ Run `fm-saxml <command> --help` for every option. The [technical README](https:/
 | [Secret and personal-data scrubbing](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/scrubbing.md) | What is redacted, scrub levels, and the `scrub` command |
 | [Multi-file solutions](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/multi-file.md) | Building a folder of exports from FileMaker 26 |
 | [Comparing exports](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/diff.md) | The `diff` command |
+| [JSON contract](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/contract.md) | `entities.json`, `references.json`, `backlinks.json`, `external-references.json`: shapes, docIds, versions and JSON Schemas, for tools that read the docs |
 | [Names written in text](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/indirection.md) | `GetField`, `Set Field By Name`, `Perform Script` by name, `ExecuteSQL` ...: what breaks on rename, `Reports/indirection.md` and `rename-check` |
 | [Technical README](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/README_technical.md) | Pipeline, output layout, coverage report, development, FileMaker XML notes, known limitations |
 

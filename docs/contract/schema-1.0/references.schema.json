@@ -1,0 +1,373 @@
+{
+  "$defs": {
+    "ContractSource": {
+      "description": "The FileMaker file the docs describe. Never a path on the machine that built them.",
+      "properties": {
+        "fmpFileName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fmpfilename"
+        },
+        "fileUuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fileuuid"
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scope"
+        },
+        "fileMakerVersion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Filemakerversion"
+        },
+        "saxmlVersion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Saxmlversion"
+        }
+      },
+      "title": "ContractSource",
+      "type": "object"
+    },
+    "ExternalTarget": {
+      "description": "Everything known about a reference that points into another file.\n\nCaptured so a later multi-file run can resolve it against the sister\nfile's export: match ``uuid`` first, then ``fmp_id``, then ``name``\n(for fields: ``base_table`` + ``name``). ``data_source`` is the *name of\nthe external data source* in this file, which is a label, not necessarily\nthe target file's name — see ``DocumentModel.external_data_sources``.",
+      "properties": {
+        "targetDocId": {
+          "default": "",
+          "title": "Targetdocid",
+          "type": "string"
+        },
+        "scope": {
+          "default": "",
+          "title": "Scope",
+          "type": "string"
+        },
+        "scopedDocId": {
+          "default": "",
+          "title": "Scopeddocid",
+          "type": "string"
+        },
+        "dataSource": {
+          "title": "Datasource",
+          "type": "string"
+        },
+        "dataSourceId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Datasourceid"
+        },
+        "dataSourceUuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Datasourceuuid"
+        },
+        "targetType": {
+          "title": "Targettype",
+          "type": "string"
+        },
+        "name": {
+          "default": "",
+          "title": "Name",
+          "type": "string"
+        },
+        "fmpId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fmpid"
+        },
+        "uuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uuid"
+        },
+        "tableOccurrence": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tableoccurrence"
+        },
+        "baseTable": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Basetable"
+        },
+        "baseTableId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Basetableid"
+        },
+        "baseTableUuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Basetableuuid"
+        }
+      },
+      "required": [
+        "dataSource",
+        "targetType"
+      ],
+      "title": "ExternalTarget",
+      "type": "object"
+    },
+    "Generator": {
+      "description": "What wrote the file. ``None`` on a file upgraded from before the contract existed.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Generator",
+      "type": "object"
+    },
+    "ReferenceRecord": {
+      "properties": {
+        "sourceDocId": {
+          "title": "Sourcedocid",
+          "type": "string"
+        },
+        "sourceEntityType": {
+          "title": "Sourceentitytype",
+          "type": "string"
+        },
+        "targetDocId": {
+          "title": "Targetdocid",
+          "type": "string"
+        },
+        "targetEntityType": {
+          "title": "Targetentitytype",
+          "type": "string"
+        },
+        "relationshipType": {
+          "title": "Relationshiptype",
+          "type": "string"
+        },
+        "role": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Role"
+        },
+        "confidence": {
+          "default": "exact",
+          "enum": [
+            "exact",
+            "parsed",
+            "inferred",
+            "unresolved",
+            "external"
+          ],
+          "title": "Confidence",
+          "type": "string"
+        },
+        "rawText": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rawtext"
+        },
+        "externalTarget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "via": {
+          "anyOf": [
+            {
+              "const": "byName",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Via"
+        },
+        "siteDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sitedocid"
+        }
+      },
+      "required": [
+        "sourceDocId",
+        "sourceEntityType",
+        "targetDocId",
+        "targetEntityType",
+        "relationshipType"
+      ],
+      "title": "ReferenceRecord",
+      "type": "object"
+    }
+  },
+  "description": "references.json: every reference from one entity to another.",
+  "properties": {
+    "schemaVersion": {
+      "title": "Schemaversion",
+      "type": "string"
+    },
+    "generator": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Generator"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "source": {
+      "$ref": "#/$defs/ContractSource"
+    },
+    "references": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ReferenceRecord"
+      },
+      "title": "References",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schemaVersion"
+  ],
+  "title": "ReferencesDoc",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fm-saxml/contract/schema-1.0/references.schema.json"
+}

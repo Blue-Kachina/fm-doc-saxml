@@ -8,7 +8,7 @@ This file goes below the surface of each unit: what the code does today (with fi
 
 ## Status
 
-F0 done (fixtures in `samples/by_type/`, v0 contract fixture frozen in `tests/fixtures/contract_v0/`). **C1a–C1c done 2026-10-21** (uncommitted; 1,062 passed, 13 skipped). Next: C1d. **Before H bumps its pin past 0.6.x, it needs the references.json change in C1a.** Nothing else started. Research done 2026-10-21 (three read-only surveys of this repo, agentic-fm and the harness adapter).
+F0 done (fixtures in `samples/by_type/`, v0 contract fixture frozen in `tests/fixtures/contract_v0/`). **C1 done 2026-10-21**: C1a–C1c in commit `db69023`, C1d–C1e uncommitted (1,093 passed, 13 skipped). Next: C2a and C3. H is pinned to fm-saxml **0.6.2** (bumped and pushed 2026-10-21; download, build, adapter, `trace.py build` and its adapter tests all passed). **Before H bumps its pin to 0.7.0, it needs the references.json change in C1a.** The Claude Doc's v2 tab records the C1 progress and corrects its "nothing reads these files" line. Nothing else started. Research done 2026-10-21 (three read-only surveys of this repo, agentic-fm and the harness adapter).
 
 ---
 
@@ -18,7 +18,7 @@ The published units are mostly right, but six findings change their size or shap
 
 | # | Finding | Effect on the plan |
 |---|---|---|
-| 1 | **Nothing reads `entities.json` or `references.json` today.** `diff`, `rename-check` and `render` read `model.json`; webmcp, serve, coverage and batch linking use the in-memory model. | We can fix the JSON shape now with no migration pain inside this repo. Check H and agentic-fm before calling it free (C1a). |
+| 1 | **Nothing reads `entities.json` or `references.json` today.** `diff`, `rename-check` and `render` read `model.json`; webmcp, serve, coverage and batch linking use the in-memory model. | We can fix the JSON shape now with no migration pain inside this repo. **Checked in C1a:** agentic-fm reads none of them, but H reads entities, references and external-references. Only the references.json wrapper breaks H, and only once its pin moves to 0.7.0. |
 | 2 | **`entities.json` holds 11 of the model's 18 entity maps.** Missing: accounts, extendedPrivileges, customMenus, customMenuSets, themes, fileReferences, variables, plus externalDataSources, indirectionSites, fileOptions (`render/json/writer.py:89-101`). References point at docIds that the file doesn't contain. | The contract unit must first make the file complete. Two gap units (menus, data sources) are half-solved by that. |
 | 3 | **`references.json` is a bare JSON array** (`writer.py:108-111`). | It can't carry `schemaVersion`. Wrapping it is a breaking change, so it must happen in contract 1.0. |
 | 4 | **The manifest never takes part in pairing.** Cross-file pairing matches the data source's path against each export's root `File` name (`batch/links.py:157-202`). Summary.xml only feeds warnings, `--strict`, `validate` and two index rows. | "Use the synthesized manifest for pairing" becomes a test, not a change. A synthesized manifest built from the exports always agrees with itself, so its checks never fire. M1–M3 are reshaped below. |
@@ -30,7 +30,7 @@ The published units are mostly right, but six findings change their size or shap
 | ID | Published unit | Verdict | Sessions |
 |---|---|---|---|
 | F0 | *(new)* Fixtures | Add. Every unit below needs a committed sample with themes, menus and sets, styled layouts, data sources and real step shapes. | 1 |
-| C1 | Publish the model as a versioned contract | Keep. Split into 4 parts: complete the files, wrap them, add versions and migrations, then document. | 4 |
+| C1 | Publish the model as a versioned contract | Keep. Split into 4 parts: complete the files, wrap them, add versions and migrations, then document. **Done 2026-10-21.** | 4 |
 | C2 | Python reader API | Keep. Depends on C1. | 2 |
 | C3 | Agree on the output location | Keep. Needs a root catalog JSON that doesn't exist yet. | 1 |
 | M1 | Specify a synthesized `Summary.xml` | Reshape. Write a spec with a provenance flag, and decide whether the FileMaker export script writes the manifest itself (Q4). | 1 (with M2) |
@@ -84,7 +84,7 @@ Done when the fixtures are committed and `uv run pytest` still passes: 1,045 pas
 
 ### C1. Versioned contract
 
-**Today.**
+**Before C1 (baseline `be5d247`).** Kept for history; C1a–C1c changed all of this, and the line numbers are pre-change.
 - `write_split_json` (`render/json/writer.py:86-113`) writes `entities.json` (11 maps, `{docId: entity}`), `references.json` (a bare array of `ReferenceRecord`), `backlinks.json` and `external-references.json`.
 - The JSON files carry three unrelated versions:
     - `external-references.json` has `schemaVersion: "1.0.0"` (`writer.py:19`).
@@ -181,26 +181,42 @@ Done when the fixtures are committed and `uv run pytest` still passes: 1,045 pas
 
 #### C1d. Upgrade chain (session 4)
 
-- [ ] Add `contract_migrations.py`: an ordered registry `{(0, 0): upgrade_0_to_1, …}` that works on plain dicts in memory, chained, and returns the current major.
-- [ ] Rules:
+**Done 2026-10-21** (`contract_models.py`, `contract_migrations.py`, tests in `tests/test_contract_versions.py`).
+
+- [x] Add `contract_migrations.py`: an ordered registry `{(0, 0): upgrade_0_to_1, …}` that works on plain dicts in memory, chained, and returns the current major.
+    - The registry is keyed by major (`UPGRADES = {0: upgrade_0_to_1}`); a minor never needs an upgrade.
+    - `upgrade(file_name, data)` returns the dict at the current major. `read_contract_file(path)` parses, upgrades and validates, and returns the typed model.
+    - **"The 1.0 models" had to be written first:** `contract_models.py` has one Pydantic model per file (`EntitiesDoc`, `ReferencesDoc`, `BacklinksDoc`, `ExternalReferencesDoc`, plus the shared `ContractEnvelope`). `EntitiesDoc` extends `EntityMaps`, so new entity types reach it automatically. A test round-trips every file of a build through its model, so the models can't drift from the writer.
+- [x] Rules:
     - A file with no `schemaVersion` (a bare array, or entities without an envelope) counts as **0.0**.
+        - So does external-references.json with its old three-part `"1.0.0"`.
     - A minor difference reads as-is, and missing keys take Pydantic defaults.
-    - A newer major fails with `ContractVersionError("docs written by schema 2.x; this fm-saxml reads up to 1.x — upgrade fm-saxml")`.
-- [ ] Fixture test: load `tests/fixtures/contract_v0/` (from F0), upgrade it, and validate against the 1.0 models.
-- [ ] Fixture test: a synthetic `"schemaVersion": "1.9"` with an unknown key loads and ignores the key. A `"2.0"` fails with the message above.
+    - A newer major fails with `ContractVersionError("docs written by schema 2.x; this fm-saxml reads up to 1.x — upgrade fm-saxml")`. The message starts with the file's path.
+    - 0.0 → 1.0 adds the envelope with `generator: null`, wraps references and backlinks, and drops external-references' absolute `source.fileName`.
+- [x] Fixture test: load `tests/fixtures/contract_v0/` (from F0), upgrade it, and validate against the 1.0 models. All four files upgrade with no changes needed to the models.
+- [x] Fixture test: a synthetic `"schemaVersion": "1.9"` with an unknown key loads and ignores the key. A `"2.0"` fails with the message above.
 
 #### C1e. Contract document and golden test (with C1d or a 5th session)
 
-- [ ] Write `docs/contract.md`:
+**Done 2026-10-21.**
+
+- [x] Write `docs/contract.md`:
     - the collections, required keys per entity, and the docId rules (C1a)
     - the scoped-id forms and what `confidence` values mean
     - the version policy (what is minor and what is major)
-- [ ] Generate a JSON Schema per file from the Pydantic models (`model_json_schema`) into `docs/contract/schema-1.0/`. Add a test that fails when the committed schema is stale.
-- [ ] Golden test: build F0's sample twice and assert the JSON is byte-identical. Store a golden copy and diff against it, with an `--update-golden` flag.
+    - Also: reading older files, external-references resolution, and the steps for changing the contract. Linked from README's Documentation table. README_technical's output layout and `--include-json` row are updated.
+    - A test fails if the page stops mentioning a collection.
+- [x] Generate a JSON Schema per file from the Pydantic models (`model_json_schema`) into `docs/contract/schema-1.0/`. Add a test that fails when the committed schema is stale.
+    - The schemas are validation-mode (Draft 2020-12), so their `required` lists are the required keys.
+    - The F0 build validates against them with the `jsonschema` package, added as a **dev-only** dependency. The test skips if it's missing.
+- [x] Golden test: build F0's sample twice and assert the JSON is byte-identical. Store a golden copy and diff against it, with an `--update-golden` flag.
+    - Golden copy: `tests/fixtures/contract_golden/EverythingBagel/` (four files, 290 KB), built unscrubbed from `samples/by_type/whole/EverythingBagel.xml`.
+    - The comparison masks `generator.version`, so a release bump doesn't fail it. A mismatch prints a unified diff.
+    - `uv run pytest tests/test_contract_versions.py --update-golden` rewrites both the golden copy and the schemas (flag in `tests/conftest.py`).
 
 **Unknowns.** Whether H or agentic-fm parse these files today (C1a). Size growth on big files (C1b). Whether duplicate names occur in real exports (Q5).
 
-**Done when** a 1.0 build validates against the committed schema, the v0 fixture upgrades, and a 2.0 doc fails clearly.
+**Done when** a 1.0 build validates against the committed schema, the v0 fixture upgrades, and a 2.0 doc fails clearly. **Met 2026-10-21:** each condition is a test in `tests/test_contract_versions.py`.
 
 ---
 
@@ -492,7 +508,7 @@ Decision G1-D1, where the scrubbed bytes come from:
 
 **What we keep:** `ExternalDataSource{name, fmp_id, uuid, type, paths[]}` (`document_model.py:60-69`), with paths split per line or `<Location>` (fixed in fix_gaps2). That already covers everything `analyze.py` uses.
 
-- [ ] Add `externalDataSources` to entities.json (done in C1b; tick both).
+- [x] Add `externalDataSources` to entities.json (done in C1b; tick both). Keyed by `dataSource:<name>`.
 - [ ] Add `pairedFile` / `pairing.match` from batch linking to each data source in a batch build. agentic-fm's `data_source_map` recomputes this by path and base-table overlap (`:2097-2160`); we already compute it in `batch/links.py`.
 - [ ] Note for Phase 2: H's `data_sources.index` is never read by `analyze.py` (H:360-367). The port reads the model, so nothing to fix here.
 
@@ -509,6 +525,8 @@ F0 ─┬─ C1a → C1b → C1c → C1d → C1e ─┬─ C2a → C2b
 ```
 
 Suggested release cut: **0.7.0 = contract 1.0** (F0, C1, C2a, C3, M1–M3, G3, G5, G4a). **0.8.0 = raw XML** (G0, G1, G2, G4b, C2b). That makes Phase 2's ports of trace.py, menus and data sources possible after 0.7.0. The snippet, theme and layout-design ports need 0.8.0.
+
+H (the harness adapter) moves to 0.7.0 only with its references.json fix. Otherwise it stays on 0.6.2 until Phase 2 retires it.
 
 About 17–20 agent sessions in total.
 

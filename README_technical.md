@@ -63,7 +63,7 @@ pip install -e ".[dev]"
 |---|---|---|
 | `--out <path>` / `-o` | `build`, `render` | Output folder (see defaults above) |
 | `--model-out <path>` | `build` | Also write the intermediate `model.json` alongside the Markdown output |
-| `--include-json` / `--no-include-json` | `build` | Write `entities.json`/`references.json` into the output dir (default: on) |
+| `--include-json` / `--no-include-json` | `build`, `render` | Write the JSON contract files (`entities.json`, `references.json`, `backlinks.json`, `external-references.json`; see [docs/contract.md](docs/contract.md)) into the output dir (default: on) |
 | `--strict` | `build` | Exit non-zero if any reference is left `unresolved` after resolution |
 | `--force` / `-f`, `--yes` / `-y` | `build`, `render` | Skip the overwrite-confirmation prompt |
 | `--open` | `build` | Open the output folder when finished |
@@ -101,8 +101,10 @@ The report also lists any element or attribute the converter has no rule for ("U
 ```text
 saxml2doc/
 ├─ index.md
-├─ entities.json
+├─ entities.json       (JSON contract: docs/contract.md)
 ├─ references.json
+├─ backlinks.json
+├─ external-references.json
 ├─ Tables/
 ├─ Fields/
 │  └─ <TableName>/

@@ -1,0 +1,4252 @@
+{
+  "$defs": {
+    "AccountEntity": {
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "entityType": {
+          "default": "account",
+          "title": "Entitytype",
+          "type": "string"
+        },
+        "modified": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModificationInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "fmpId": {
+          "title": "Fmpid",
+          "type": "string"
+        },
+        "accountType": {
+          "default": "FileMaker",
+          "title": "Accounttype",
+          "type": "string"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "privilegeSetDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Privilegesetdocid"
+        },
+        "privilegeSetName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Privilegesetname"
+        },
+        "sourceXml": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceXmlInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "docId",
+        "name",
+        "fmpId"
+      ],
+      "title": "AccountEntity",
+      "type": "object"
+    },
+    "AutoEnterOptions": {
+      "properties": {
+        "type": {
+          "default": "none",
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        },
+        "calculation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Calculation"
+        },
+        "no_modify_auto_enter": {
+          "default": false,
+          "title": "No Modify Auto Enter",
+          "type": "boolean"
+        },
+        "overwriteExisting": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Overwriteexisting"
+        },
+        "serialIncrement": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Serialincrement"
+        },
+        "serialGenerate": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Serialgenerate"
+        },
+        "lookupTableOccurrence": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lookuptableoccurrence"
+        },
+        "lookupField": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lookupfield"
+        },
+        "lookupFieldDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lookupfielddocid"
+        },
+        "lookupExternal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "lookupContext": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lookupcontext"
+        },
+        "lookupDontCopyIfEmpty": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lookupdontcopyifempty"
+        },
+        "lookupNoMatch": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lookupnomatch"
+        },
+        "lookupNoMatchValue": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lookupnomatchvalue"
+        }
+      },
+      "title": "AutoEnterOptions",
+      "type": "object"
+    },
+    "CalcChunkRef": {
+      "description": "A field or custom function FileMaker itself resolved inside a calculation (a ChunkList token).",
+      "properties": {
+        "type": {
+          "title": "Type",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "table": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Table"
+        },
+        "fmpId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fmpid"
+        },
+        "uuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uuid"
+        }
+      },
+      "required": [
+        "type",
+        "name"
+      ],
+      "title": "CalcChunkRef",
+      "type": "object"
+    },
+    "ContractSource": {
+      "description": "The FileMaker file the docs describe. Never a path on the machine that built them.",
+      "properties": {
+        "fmpFileName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fmpfilename"
+        },
+        "fileUuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fileuuid"
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scope"
+        },
+        "fileMakerVersion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Filemakerversion"
+        },
+        "saxmlVersion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Saxmlversion"
+        }
+      },
+      "title": "ContractSource",
+      "type": "object"
+    },
+    "CustomFunctionEntity": {
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "entityType": {
+          "default": "customFunction",
+          "title": "Entitytype",
+          "type": "string"
+        },
+        "modified": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModificationInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "fmpId": {
+          "title": "Fmpid",
+          "type": "string"
+        },
+        "uuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uuid"
+        },
+        "parameters": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Parameters",
+          "type": "array"
+        },
+        "calculation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Calculation"
+        },
+        "calculations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EntityCalculation"
+          },
+          "title": "Calculations",
+          "type": "array"
+        },
+        "references": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "References",
+          "type": "array"
+        },
+        "nameRole": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Namerole"
+        },
+        "sourceXml": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceXmlInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "docId",
+        "name",
+        "fmpId"
+      ],
+      "title": "CustomFunctionEntity",
+      "type": "object"
+    },
+    "CustomMenuEntity": {
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "entityType": {
+          "default": "customMenu",
+          "title": "Entitytype",
+          "type": "string"
+        },
+        "modified": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModificationInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "fmpId": {
+          "title": "Fmpid",
+          "type": "string"
+        },
+        "baseMenuName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Basemenuname"
+        },
+        "installCondition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Installcondition"
+        },
+        "browseMode": {
+          "default": true,
+          "title": "Browsemode",
+          "type": "boolean"
+        },
+        "findMode": {
+          "default": true,
+          "title": "Findmode",
+          "type": "boolean"
+        },
+        "previewMode": {
+          "default": true,
+          "title": "Previewmode",
+          "type": "boolean"
+        },
+        "items": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/CustomMenuItem"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "calculations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EntityCalculation"
+          },
+          "title": "Calculations",
+          "type": "array"
+        },
+        "sourceXml": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceXmlInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "docId",
+        "name",
+        "fmpId"
+      ],
+      "title": "CustomMenuEntity",
+      "type": "object"
+    },
+    "CustomMenuItem": {
+      "description": "Embedded within CustomMenuEntity — not a standalone entity.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "actionType": {
+          "default": "",
+          "title": "Actiontype",
+          "type": "string"
+        },
+        "installCondition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Installcondition"
+        },
+        "scriptDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scriptdocid"
+        },
+        "scriptExternal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "submenuDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Submenudocid"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "CustomMenuItem",
+      "type": "object"
+    },
+    "CustomMenuSetEntity": {
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "entityType": {
+          "default": "customMenuSet",
+          "title": "Entitytype",
+          "type": "string"
+        },
+        "modified": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModificationInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "fmpId": {
+          "title": "Fmpid",
+          "type": "string"
+        },
+        "menuDocIds": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Menudocids",
+          "type": "array"
+        },
+        "sourceXml": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceXmlInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "docId",
+        "name",
+        "fmpId"
+      ],
+      "title": "CustomMenuSetEntity",
+      "type": "object"
+    },
+    "EntityCalculation": {
+      "description": "A calculation an entity owns: a field's formula, a layout object's hide condition, ...",
+      "properties": {
+        "role": {
+          "title": "Role",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "chunkRefs": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/CalcChunkRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Chunkrefs"
+        }
+      },
+      "required": [
+        "role",
+        "text"
+      ],
+      "title": "EntityCalculation",
+      "type": "object"
+    },
+    "ExtendedPrivilegeEntity": {
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "entityType": {
+          "default": "extPriv",
+          "title": "Entitytype",
+          "type": "string"
+        },
+        "modified": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModificationInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "fmpId": {
+          "title": "Fmpid",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "privilegeSetDocIds": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Privilegesetdocids",
+          "type": "array"
+        },
+        "sourceXml": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceXmlInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "docId",
+        "name",
+        "fmpId"
+      ],
+      "title": "ExtendedPrivilegeEntity",
+      "type": "object"
+    },
+    "ExternalDataSource": {
+      "description": "An entry of the file's External Data Sources catalog (other files it reaches into).",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "fmpId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fmpid"
+        },
+        "uuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uuid"
+        },
+        "type": {
+          "default": "FileMaker",
+          "title": "Type",
+          "type": "string"
+        },
+        "paths": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Paths",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ExternalDataSource",
+      "type": "object"
+    },
+    "ExternalTarget": {
+      "description": "Everything known about a reference that points into another file.\n\nCaptured so a later multi-file run can resolve it against the sister\nfile's export: match ``uuid`` first, then ``fmp_id``, then ``name``\n(for fields: ``base_table`` + ``name``). ``data_source`` is the *name of\nthe external data source* in this file, which is a label, not necessarily\nthe target file's name — see ``DocumentModel.external_data_sources``.",
+      "properties": {
+        "targetDocId": {
+          "default": "",
+          "title": "Targetdocid",
+          "type": "string"
+        },
+        "scope": {
+          "default": "",
+          "title": "Scope",
+          "type": "string"
+        },
+        "scopedDocId": {
+          "default": "",
+          "title": "Scopeddocid",
+          "type": "string"
+        },
+        "dataSource": {
+          "title": "Datasource",
+          "type": "string"
+        },
+        "dataSourceId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Datasourceid"
+        },
+        "dataSourceUuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Datasourceuuid"
+        },
+        "targetType": {
+          "title": "Targettype",
+          "type": "string"
+        },
+        "name": {
+          "default": "",
+          "title": "Name",
+          "type": "string"
+        },
+        "fmpId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fmpid"
+        },
+        "uuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uuid"
+        },
+        "tableOccurrence": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tableoccurrence"
+        },
+        "baseTable": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Basetable"
+        },
+        "baseTableId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Basetableid"
+        },
+        "baseTableUuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Basetableuuid"
+        }
+      },
+      "required": [
+        "dataSource",
+        "targetType"
+      ],
+      "title": "ExternalTarget",
+      "type": "object"
+    },
+    "FieldEntity": {
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "entityType": {
+          "default": "field",
+          "title": "Entitytype",
+          "type": "string"
+        },
+        "modified": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModificationInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "qualifiedName": {
+          "title": "Qualifiedname",
+          "type": "string"
+        },
+        "baseTableDocId": {
+          "title": "Basetabledocid",
+          "type": "string"
+        },
+        "dataType": {
+          "title": "Datatype",
+          "type": "string"
+        },
+        "fieldType": {
+          "title": "Fieldtype",
+          "type": "string"
+        },
+        "fmpId": {
+          "title": "Fmpid",
+          "type": "string"
+        },
+        "uuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uuid"
+        },
+        "comment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Comment"
+        },
+        "calculation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Calculation"
+        },
+        "autoEnter": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AutoEnterOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "validation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ValidationOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "storage": {
+          "$ref": "#/$defs/StorageOptions"
+        },
+        "summaryFieldDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Summaryfielddocid"
+        },
+        "annotation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Annotation"
+        },
+        "summaryOperation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Summaryoperation"
+        },
+        "summaryRestartEachGroup": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Summaryrestarteachgroup"
+        },
+        "summaryRepetitions": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Summaryrepetitions"
+        },
+        "alwaysEvaluate": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alwaysevaluate"
+        },
+        "calculations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EntityCalculation"
+          },
+          "title": "Calculations",
+          "type": "array"
+        },
+        "sourceXml": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceXmlInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "docId",
+        "name",
+        "qualifiedName",
+        "baseTableDocId",
+        "dataType",
+        "fieldType",
+        "fmpId"
+      ],
+      "title": "FieldEntity",
+      "type": "object"
+    },
+    "FileOptions": {
+      "description": "File > File Options: what runs and opens when the file does.",
+      "properties": {
+        "defaultLayout": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Defaultlayout"
+        },
+        "minimumVersion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimumversion"
+        },
+        "loginType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Logintype"
+        },
+        "loginAccount": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Loginaccount"
+        },
+        "encrypted": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Encrypted"
+        },
+        "allowSavePassword": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Allowsavepassword"
+        },
+        "requireMobilePassword": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Requiremobilepassword"
+        },
+        "showSignInFields": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Showsigninfields"
+        },
+        "hideFromClientSharing": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hidefromclientsharing"
+        },
+        "hideFromWebDirectSharing": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hidefromwebdirectsharing"
+        },
+        "useDefaultFields": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Usedefaultfields"
+        },
+        "defaultMenuSet": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Defaultmenuset"
+        },
+        "scriptTriggers": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ScriptTriggerInfo"
+          },
+          "title": "Scripttriggers",
+          "type": "array"
+        }
+      },
+      "title": "FileOptions",
+      "type": "object"
+    },
+    "FileReferenceEntity": {
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "entityType": {
+          "default": "fileRef",
+          "title": "Entitytype",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "fmpId": {
+          "title": "Fmpid",
+          "type": "string"
+        },
+        "refType": {
+          "default": "Local",
+          "title": "Reftype",
+          "type": "string"
+        },
+        "isSelf": {
+          "default": false,
+          "title": "Isself",
+          "type": "boolean"
+        },
+        "sourceXml": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceXmlInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "docId",
+        "name",
+        "fmpId"
+      ],
+      "title": "FileReferenceEntity",
+      "type": "object"
+    },
+    "Generator": {
+      "description": "What wrote the file. ``None`` on a file upgraded from before the contract existed.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Generator",
+      "type": "object"
+    },
+    "GraphNote": {
+      "description": "A text note on the relationship graph, and the table occurrences it lies over.",
+      "properties": {
+        "text": {
+          "default": "",
+          "title": "Text",
+          "type": "string"
+        },
+        "bounds": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GraphRect"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tableOccurrenceDocIds": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Tableoccurrencedocids",
+          "type": "array"
+        },
+        "belowDocIds": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Belowdocids",
+          "type": "array"
+        }
+      },
+      "title": "GraphNote",
+      "type": "object"
+    },
+    "GraphRect": {
+      "description": "A rectangle on the relationship graph (or a layout), in points.",
+      "properties": {
+        "top": {
+          "title": "Top",
+          "type": "number"
+        },
+        "left": {
+          "title": "Left",
+          "type": "number"
+        },
+        "bottom": {
+          "title": "Bottom",
+          "type": "number"
+        },
+        "right": {
+          "title": "Right",
+          "type": "number"
+        }
+      },
+      "required": [
+        "top",
+        "left",
+        "bottom",
+        "right"
+      ],
+      "title": "GraphRect",
+      "type": "object"
+    },
+    "IndirectCandidate": {
+      "description": "An entity a site may name, and why we think so.",
+      "properties": {
+        "targetDocId": {
+          "title": "Targetdocid",
+          "type": "string"
+        },
+        "targetEntityType": {
+          "title": "Targetentitytype",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "literal",
+            "capture",
+            "self",
+            "id",
+            "pattern"
+          ],
+          "title": "Origin",
+          "type": "string"
+        },
+        "confidence": {
+          "default": "parsed",
+          "enum": [
+            "parsed",
+            "inferred"
+          ],
+          "title": "Confidence",
+          "type": "string"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "targetDocId",
+        "targetEntityType",
+        "name",
+        "origin"
+      ],
+      "title": "IndirectCandidate",
+      "type": "object"
+    },
+    "IndirectionSite": {
+      "description": "One place a name is consumed: a sink function's argument or a by-name step target.",
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "sourceDocId": {
+          "title": "Sourcedocid",
+          "type": "string"
+        },
+        "sourceEntityType": {
+          "title": "Sourceentitytype",
+          "type": "string"
+        },
+        "scriptDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scriptdocid"
+        },
+        "step": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step"
+        },
+        "role": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Role"
+        },
+        "sink": {
+          "title": "Sink",
+          "type": "string"
+        },
+        "nameKind": {
+          "title": "Namekind",
+          "type": "string"
+        },
+        "expression": {
+          "title": "Expression",
+          "type": "string"
+        },
+        "class": {
+          "enum": [
+            "A",
+            "A'",
+            "B",
+            "C",
+            "D",
+            "E"
+          ],
+          "title": "Class",
+          "type": "string"
+        },
+        "names": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Names",
+          "type": "array"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "candidates": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/IndirectCandidate"
+          },
+          "title": "Candidates",
+          "type": "array"
+        }
+      },
+      "required": [
+        "docId",
+        "sourceDocId",
+        "sourceEntityType",
+        "sink",
+        "nameKind",
+        "expression",
+        "class"
+      ],
+      "title": "IndirectionSite",
+      "type": "object"
+    },
+    "LayoutEntity": {
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "entityType": {
+          "default": "layout",
+          "title": "Entitytype",
+          "type": "string"
+        },
+        "modified": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModificationInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "fmpId": {
+          "title": "Fmpid",
+          "type": "string"
+        },
+        "uuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uuid"
+        },
+        "baseTableOccurrenceDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Basetableoccurrencedocid"
+        },
+        "theme": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Theme"
+        },
+        "folderPath": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Folderpath"
+        },
+        "referencedFields": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Referencedfields",
+          "type": "array"
+        },
+        "layoutObjects": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Layoutobjects",
+          "type": "array"
+        },
+        "parts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/LayoutPart"
+          },
+          "title": "Parts",
+          "type": "array"
+        },
+        "menuSet": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Menuset"
+        },
+        "scriptTriggers": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ScriptTriggerInfo"
+          },
+          "title": "Scripttriggers",
+          "type": "array"
+        },
+        "calculations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EntityCalculation"
+          },
+          "title": "Calculations",
+          "type": "array"
+        },
+        "sourceXml": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceXmlInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "docId",
+        "name",
+        "fmpId"
+      ],
+      "title": "LayoutEntity",
+      "type": "object"
+    },
+    "LayoutObjectBounds": {
+      "description": "Pixel bounds of a layout object on the layout.",
+      "properties": {
+        "top": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top"
+        },
+        "left": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Left"
+        },
+        "bottom": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bottom"
+        },
+        "right": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Right"
+        }
+      },
+      "title": "LayoutObjectBounds",
+      "type": "object"
+    },
+    "LayoutObjectEntity": {
+      "description": "A single object placed on a layout — a field, button, text block, portal, etc.\n\nLayout objects are nested inside ``<Part><ObjectList>`` in the SaveAsXML\nformat. They carry the field placements that the layout displays, along\nwith text, buttons, and other on-layout content.",
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "entityType": {
+          "default": "layoutObject",
+          "title": "Entitytype",
+          "type": "string"
+        },
+        "layoutDocId": {
+          "title": "Layoutdocid",
+          "type": "string"
+        },
+        "part": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Part"
+        },
+        "objectId": {
+          "default": "",
+          "title": "Objectid",
+          "type": "string"
+        },
+        "objectType": {
+          "default": "",
+          "title": "Objecttype",
+          "type": "string"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Kind"
+        },
+        "name": {
+          "default": "",
+          "title": "Name",
+          "type": "string"
+        },
+        "uuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uuid"
+        },
+        "bounds": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LayoutObjectBounds"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "fieldDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fielddocid"
+        },
+        "tableOccurrenceDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tableoccurrencedocid"
+        },
+        "valueListDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valuelistdocid"
+        },
+        "externalTarget": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "buttonScriptDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Buttonscriptdocid"
+        },
+        "buttonScriptExternal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "buttonKind": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Buttonkind"
+        },
+        "buttonStep": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Buttonstep"
+        },
+        "parentObjectDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parentobjectdocid"
+        },
+        "portal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PortalOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "scriptTriggers": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ScriptTriggerInfo"
+          },
+          "title": "Scripttriggers",
+          "type": "array"
+        },
+        "calculations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EntityCalculation"
+          },
+          "title": "Calculations",
+          "type": "array"
+        },
+        "references": {
+          "default": [],
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "References",
+          "type": "array"
+        },
+        "rawText": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rawtext"
+        },
+        "sourceXml": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceXmlInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "docId",
+        "layoutDocId"
+      ],
+      "title": "LayoutObjectEntity",
+      "type": "object"
+    },
+    "LayoutPart": {
+      "description": "A layout part (Header, Body, Sub-summary, ...), top to bottom.",
+      "properties": {
+        "type": {
+          "title": "Type",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Height"
+        },
+        "breakFieldDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Breakfielddocid"
+        },
+        "objectCount": {
+          "default": 0,
+          "title": "Objectcount",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "LayoutPart",
+      "type": "object"
+    },
+    "ModificationInfo": {
+      "description": "Who last changed an item, and when (from the SaXML ``<UUID>`` stamp).",
+      "properties": {
+        "userName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Username"
+        },
+        "accountName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accountname"
+        },
+        "timestamp": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timestamp"
+        },
+        "modifications": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Modifications"
+        }
+      },
+      "title": "ModificationInfo",
+      "type": "object"
+    },
+    "PortalOptions": {
+      "description": "A portal's setup: which rows it shows and in what order (its filter is in the object's calculations).",
+      "properties": {
+        "initialRow": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Initialrow"
+        },
+        "rows": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rows"
+        },
+        "allowDeletion": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Allowdeletion"
+        },
+        "sort": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/SortField"
+          },
+          "title": "Sort",
+          "type": "array"
+        }
+      },
+      "title": "PortalOptions",
+      "type": "object"
+    },
+    "PrivilegeCategory": {
+      "description": "Records, Layouts, Value Lists or Scripts: a blanket setting, or a custom per-object list.",
+      "properties": {
+        "summary": {
+          "default": "",
+          "title": "Summary",
+          "type": "string"
+        },
+        "settings": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "Settings",
+          "type": "object"
+        },
+        "custom": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/PrivilegeItem"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Custom"
+        },
+        "allowCreate": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Allowcreate"
+        }
+      },
+      "title": "PrivilegeCategory",
+      "type": "object"
+    },
+    "PrivilegeFieldAccess": {
+      "description": "One field of a table row whose field access is \"Custom\".",
+      "properties": {
+        "label": {
+          "default": "",
+          "title": "Label",
+          "type": "string"
+        },
+        "targetDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Targetdocid"
+        },
+        "access": {
+          "default": "",
+          "title": "Access",
+          "type": "string"
+        }
+      },
+      "title": "PrivilegeFieldAccess",
+      "type": "object"
+    },
+    "PrivilegeItem": {
+      "description": "One row of a custom privilege list: a table, layout, value list or script and its access.",
+      "properties": {
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "targetDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Targetdocid"
+        },
+        "label": {
+          "default": "",
+          "title": "Label",
+          "type": "string"
+        },
+        "access": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "Access",
+          "type": "object"
+        },
+        "calculations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EntityCalculation"
+          },
+          "title": "Calculations",
+          "type": "array"
+        },
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "Attributes",
+          "type": "object"
+        },
+        "fieldAccess": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/PrivilegeFieldAccess"
+          },
+          "title": "Fieldaccess",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "PrivilegeItem",
+      "type": "object"
+    },
+    "PrivilegeSetEntity": {
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "entityType": {
+          "default": "privilegeSet",
+          "title": "Entitytype",
+          "type": "string"
+        },
+        "modified": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModificationInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "fmpId": {
+          "title": "Fmpid",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "builtIn": {
+          "default": false,
+          "title": "Builtin",
+          "type": "boolean"
+        },
+        "records": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PrivilegeCategory"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "layouts": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PrivilegeCategory"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "valueLists": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PrivilegeCategory"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "scripts": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PrivilegeCategory"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "other": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "Other",
+          "type": "object"
+        },
+        "sourceXml": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceXmlInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "docId",
+        "name",
+        "fmpId"
+      ],
+      "title": "PrivilegeSetEntity",
+      "type": "object"
+    },
+    "RelationshipEntity": {
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "entityType": {
+          "default": "relationship",
+          "title": "Entitytype",
+          "type": "string"
+        },
+        "modified": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModificationInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "fmpId": {
+          "title": "Fmpid",
+          "type": "string"
+        },
+        "leftTableOccurrenceDocId": {
+          "title": "Lefttableoccurrencedocid",
+          "type": "string"
+        },
+        "rightTableOccurrenceDocId": {
+          "title": "Righttableoccurrencedocid",
+          "type": "string"
+        },
+        "predicates": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RelationshipPredicate"
+          },
+          "title": "Predicates",
+          "type": "array"
+        },
+        "options": {
+          "$ref": "#/$defs/RelationshipOptions"
+        },
+        "sourceXml": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceXmlInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "docId",
+        "name",
+        "fmpId",
+        "leftTableOccurrenceDocId",
+        "rightTableOccurrenceDocId"
+      ],
+      "title": "RelationshipEntity",
+      "type": "object"
+    },
+    "RelationshipOptions": {
+      "properties": {
+        "allowCreateRelated": {
+          "default": false,
+          "title": "Allowcreaterelated",
+          "type": "boolean"
+        },
+        "deleteRelated": {
+          "default": false,
+          "title": "Deleterelated",
+          "type": "boolean"
+        },
+        "sortRelated": {
+          "default": false,
+          "title": "Sortrelated",
+          "type": "boolean"
+        },
+        "left": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RelationshipSide"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "right": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RelationshipSide"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "RelationshipOptions",
+      "type": "object"
+    },
+    "RelationshipPredicate": {
+      "properties": {
+        "leftFieldDocId": {
+          "title": "Leftfielddocid",
+          "type": "string"
+        },
+        "operator": {
+          "default": "=",
+          "title": "Operator",
+          "type": "string"
+        },
+        "rightFieldDocId": {
+          "title": "Rightfielddocid",
+          "type": "string"
+        },
+        "leftExternal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "rightExternal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "leftFieldDocId",
+        "rightFieldDocId"
+      ],
+      "title": "RelationshipPredicate",
+      "type": "object"
+    },
+    "RelationshipSide": {
+      "description": "Options about the records of one side's table occurrence.",
+      "properties": {
+        "allowCreate": {
+          "default": false,
+          "title": "Allowcreate",
+          "type": "boolean"
+        },
+        "delete": {
+          "default": false,
+          "title": "Delete",
+          "type": "boolean"
+        },
+        "sort": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/SortField"
+          },
+          "title": "Sort",
+          "type": "array"
+        }
+      },
+      "title": "RelationshipSide",
+      "type": "object"
+    },
+    "ScriptEntity": {
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "entityType": {
+          "default": "script",
+          "title": "Entitytype",
+          "type": "string"
+        },
+        "modified": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModificationInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "fmpId": {
+          "title": "Fmpid",
+          "type": "string"
+        },
+        "uuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uuid"
+        },
+        "folderPath": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Folderpath"
+        },
+        "runWithFullAccess": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Runwithfullaccess"
+        },
+        "showInMenu": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Showinmenu"
+        },
+        "siriShortcut": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sirishortcut"
+        },
+        "steps": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Steps",
+          "type": "array"
+        },
+        "referencedFields": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Referencedfields",
+          "type": "array"
+        },
+        "referencedLayouts": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Referencedlayouts",
+          "type": "array"
+        },
+        "referencedScripts": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Referencedscripts",
+          "type": "array"
+        },
+        "variables": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Variables",
+          "type": "array"
+        },
+        "warnings": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        },
+        "sourceXml": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceXmlInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "docId",
+        "name",
+        "fmpId"
+      ],
+      "title": "ScriptEntity",
+      "type": "object"
+    },
+    "ScriptStepEntity": {
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "entityType": {
+          "default": "scriptStep",
+          "title": "Entitytype",
+          "type": "string"
+        },
+        "scriptDocId": {
+          "title": "Scriptdocid",
+          "type": "string"
+        },
+        "index": {
+          "title": "Index",
+          "type": "integer"
+        },
+        "stepId": {
+          "title": "Stepid",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "rawText": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rawtext"
+        },
+        "parameters": {
+          "additionalProperties": true,
+          "default": {},
+          "title": "Parameters",
+          "type": "object"
+        },
+        "params": {
+          "default": [],
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Params",
+          "type": "array"
+        },
+        "fmText": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fmtext"
+        },
+        "calculations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/StepCalculation"
+          },
+          "title": "Calculations",
+          "type": "array"
+        },
+        "references": {
+          "default": [],
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "References",
+          "type": "array"
+        }
+      },
+      "required": [
+        "docId",
+        "scriptDocId",
+        "index",
+        "stepId",
+        "name"
+      ],
+      "title": "ScriptStepEntity",
+      "type": "object"
+    },
+    "ScriptTriggerInfo": {
+      "description": "A script trigger on a layout or layout object, e.g. OnLayoutEnter -> script.",
+      "properties": {
+        "event": {
+          "title": "Event",
+          "type": "string"
+        },
+        "scriptDocId": {
+          "title": "Scriptdocid",
+          "type": "string"
+        },
+        "scriptExternal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "event",
+        "scriptDocId"
+      ],
+      "title": "ScriptTriggerInfo",
+      "type": "object"
+    },
+    "SortField": {
+      "description": "One sort level: a field and its order. A custom order names the value list giving it.",
+      "properties": {
+        "fieldDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fielddocid"
+        },
+        "order": {
+          "default": "Ascending",
+          "title": "Order",
+          "type": "string"
+        },
+        "valueListDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valuelistdocid"
+        },
+        "external": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "SortField",
+      "type": "object"
+    },
+    "SourceXmlInfo": {
+      "description": "Trace back to the originating XML location for debugging.",
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "line": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "title": "SourceXmlInfo",
+      "type": "object"
+    },
+    "StepCalculation": {
+      "description": "One calculated parameter of a script step, e.g. Set Variable's value or repetition.",
+      "properties": {
+        "position": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Position"
+        },
+        "parameter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parameter"
+        },
+        "slot": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Slot"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mode"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "StepCalculation",
+      "type": "object"
+    },
+    "StorageOptions": {
+      "properties": {
+        "global": {
+          "default": false,
+          "title": "Global",
+          "type": "boolean"
+        },
+        "indexed": {
+          "default": false,
+          "title": "Indexed",
+          "type": "boolean"
+        },
+        "index": {
+          "default": "None",
+          "title": "Index",
+          "type": "string"
+        },
+        "autoIndex": {
+          "default": false,
+          "title": "Autoindex",
+          "type": "boolean"
+        },
+        "maxRepeat": {
+          "default": 1,
+          "title": "Maxrepeat",
+          "type": "integer"
+        },
+        "stored": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stored"
+        },
+        "externalStorage": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalstorage"
+        },
+        "externalStorageDirectory": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalstoragedirectory"
+        }
+      },
+      "title": "StorageOptions",
+      "type": "object"
+    },
+    "TableEntity": {
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "entityType": {
+          "default": "table",
+          "title": "Entitytype",
+          "type": "string"
+        },
+        "modified": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModificationInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "fmpId": {
+          "title": "Fmpid",
+          "type": "string"
+        },
+        "uuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uuid"
+        },
+        "comment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Comment"
+        },
+        "fields": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Fields",
+          "type": "array"
+        },
+        "tableOccurrences": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Tableoccurrences",
+          "type": "array"
+        },
+        "sourceXml": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceXmlInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "docId",
+        "name",
+        "fmpId"
+      ],
+      "title": "TableEntity",
+      "type": "object"
+    },
+    "TableOccurrenceEntity": {
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "entityType": {
+          "default": "tableOccurrence",
+          "title": "Entitytype",
+          "type": "string"
+        },
+        "modified": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModificationInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "baseTableDocId": {
+          "title": "Basetabledocid",
+          "type": "string"
+        },
+        "fmpId": {
+          "title": "Fmpid",
+          "type": "string"
+        },
+        "uuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uuid"
+        },
+        "externalDataSource": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externaldatasource"
+        },
+        "externalDataSourceId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externaldatasourceid"
+        },
+        "externalDataSourceUuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externaldatasourceuuid"
+        },
+        "externalBaseTable": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalbasetable"
+        },
+        "externalBaseTableId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalbasetableid"
+        },
+        "externalBaseTableUuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalbasetableuuid"
+        },
+        "externalBaseTableDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalbasetabledocid"
+        },
+        "relationships": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Relationships",
+          "type": "array"
+        },
+        "graphBounds": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GraphRect"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "collapsed": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Collapsed"
+        },
+        "sourceXml": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceXmlInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "docId",
+        "name",
+        "baseTableDocId",
+        "fmpId"
+      ],
+      "title": "TableOccurrenceEntity",
+      "type": "object"
+    },
+    "ThemeEntity": {
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "entityType": {
+          "default": "theme",
+          "title": "Entitytype",
+          "type": "string"
+        },
+        "modified": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModificationInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "fmpId": {
+          "title": "Fmpid",
+          "type": "string"
+        },
+        "displayName": {
+          "default": "",
+          "title": "Displayname",
+          "type": "string"
+        },
+        "group": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Group"
+        },
+        "defaultTheme": {
+          "default": false,
+          "title": "Defaulttheme",
+          "type": "boolean"
+        },
+        "sourceXml": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceXmlInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "docId",
+        "name",
+        "fmpId"
+      ],
+      "title": "ThemeEntity",
+      "type": "object"
+    },
+    "ValidationOptions": {
+      "properties": {
+        "required": {
+          "default": false,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "not_empty": {
+          "default": false,
+          "title": "Not Empty",
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "title": "Unique",
+          "type": "boolean"
+        },
+        "max_characters": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Characters"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Message"
+        },
+        "valueListDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valuelistdocid"
+        },
+        "existing": {
+          "default": false,
+          "title": "Existing",
+          "type": "boolean"
+        },
+        "strictType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stricttype"
+        },
+        "hasCalculation": {
+          "default": false,
+          "title": "Hascalculation",
+          "type": "boolean"
+        },
+        "hasMessageCalculation": {
+          "default": false,
+          "title": "Hasmessagecalculation",
+          "type": "boolean"
+        },
+        "alwaysValidate": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alwaysvalidate"
+        },
+        "range": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Range"
+        },
+        "validateOn": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Validateon"
+        },
+        "allowOverride": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Allowoverride"
+        },
+        "other": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "Other",
+          "type": "object"
+        }
+      },
+      "title": "ValidationOptions",
+      "type": "object"
+    },
+    "ValueListEntity": {
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "entityType": {
+          "default": "valueList",
+          "title": "Entitytype",
+          "type": "string"
+        },
+        "modified": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModificationInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "fmpId": {
+          "title": "Fmpid",
+          "type": "string"
+        },
+        "uuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uuid"
+        },
+        "listType": {
+          "default": "customValues",
+          "title": "Listtype",
+          "type": "string"
+        },
+        "values": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Values",
+          "type": "array"
+        },
+        "sourceFieldDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sourcefielddocid"
+        },
+        "secondFieldDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Secondfielddocid"
+        },
+        "sourceFieldExternal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "secondFieldExternal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sourceFieldToDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sourcefieldtodocid"
+        },
+        "secondFieldToDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Secondfieldtodocid"
+        },
+        "showFirstField": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Showfirstfield"
+        },
+        "sortBy": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sortby"
+        },
+        "relatedFromToDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Relatedfromtodocid"
+        },
+        "externalValueList": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "externalDataSource": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externaldatasource"
+        },
+        "missing": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Missing",
+          "type": "array"
+        },
+        "sourceXml": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceXmlInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "docId",
+        "name",
+        "fmpId"
+      ],
+      "title": "ValueListEntity",
+      "type": "object"
+    },
+    "VariableEntity": {
+      "description": "A ``$$global`` (file-wide) or a ``$local`` (one script) variable.\n\nFileMaker variable names are case-insensitive; ``name`` keeps the first spelling seen.",
+      "properties": {
+        "docId": {
+          "title": "Docid",
+          "type": "string"
+        },
+        "entityType": {
+          "default": "variable",
+          "title": "Entitytype",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "scope": {
+          "title": "Scope",
+          "type": "string"
+        },
+        "scriptDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scriptdocid"
+        },
+        "uses": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/VariableUse"
+          },
+          "title": "Uses",
+          "type": "array"
+        }
+      },
+      "required": [
+        "docId",
+        "name",
+        "scope"
+      ],
+      "title": "VariableEntity",
+      "type": "object"
+    },
+    "VariableUse": {
+      "description": "One place a variable is assigned or read.",
+      "properties": {
+        "sourceDocId": {
+          "title": "Sourcedocid",
+          "type": "string"
+        },
+        "scriptDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scriptdocid"
+        },
+        "step": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step"
+        },
+        "access": {
+          "title": "Access",
+          "type": "string"
+        },
+        "via": {
+          "title": "Via",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sourceDocId",
+        "access",
+        "via"
+      ],
+      "title": "VariableUse",
+      "type": "object"
+    }
+  },
+  "description": "entities.json: every entity collection ``{docId: entity}``, next to the envelope keys.",
+  "properties": {
+    "schemaVersion": {
+      "title": "Schemaversion",
+      "type": "string"
+    },
+    "generator": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Generator"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "source": {
+      "$ref": "#/$defs/ContractSource"
+    },
+    "tables": {
+      "additionalProperties": {
+        "$ref": "#/$defs/TableEntity"
+      },
+      "default": {},
+      "title": "Tables",
+      "type": "object"
+    },
+    "fields": {
+      "additionalProperties": {
+        "$ref": "#/$defs/FieldEntity"
+      },
+      "default": {},
+      "title": "Fields",
+      "type": "object"
+    },
+    "tableOccurrences": {
+      "additionalProperties": {
+        "$ref": "#/$defs/TableOccurrenceEntity"
+      },
+      "default": {},
+      "title": "Tableoccurrences",
+      "type": "object"
+    },
+    "relationships": {
+      "additionalProperties": {
+        "$ref": "#/$defs/RelationshipEntity"
+      },
+      "default": {},
+      "title": "Relationships",
+      "type": "object"
+    },
+    "layouts": {
+      "additionalProperties": {
+        "$ref": "#/$defs/LayoutEntity"
+      },
+      "default": {},
+      "title": "Layouts",
+      "type": "object"
+    },
+    "layoutObjects": {
+      "additionalProperties": {
+        "$ref": "#/$defs/LayoutObjectEntity"
+      },
+      "default": {},
+      "title": "Layoutobjects",
+      "type": "object"
+    },
+    "scripts": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ScriptEntity"
+      },
+      "default": {},
+      "title": "Scripts",
+      "type": "object"
+    },
+    "scriptSteps": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ScriptStepEntity"
+      },
+      "default": {},
+      "title": "Scriptsteps",
+      "type": "object"
+    },
+    "customFunctions": {
+      "additionalProperties": {
+        "$ref": "#/$defs/CustomFunctionEntity"
+      },
+      "default": {},
+      "title": "Customfunctions",
+      "type": "object"
+    },
+    "valueLists": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ValueListEntity"
+      },
+      "default": {},
+      "title": "Valuelists",
+      "type": "object"
+    },
+    "privilegeSets": {
+      "additionalProperties": {
+        "$ref": "#/$defs/PrivilegeSetEntity"
+      },
+      "default": {},
+      "title": "Privilegesets",
+      "type": "object"
+    },
+    "accounts": {
+      "additionalProperties": {
+        "$ref": "#/$defs/AccountEntity"
+      },
+      "default": {},
+      "title": "Accounts",
+      "type": "object"
+    },
+    "extendedPrivileges": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ExtendedPrivilegeEntity"
+      },
+      "default": {},
+      "title": "Extendedprivileges",
+      "type": "object"
+    },
+    "customMenus": {
+      "additionalProperties": {
+        "$ref": "#/$defs/CustomMenuEntity"
+      },
+      "default": {},
+      "title": "Custommenus",
+      "type": "object"
+    },
+    "customMenuSets": {
+      "additionalProperties": {
+        "$ref": "#/$defs/CustomMenuSetEntity"
+      },
+      "default": {},
+      "title": "Custommenusets",
+      "type": "object"
+    },
+    "themes": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ThemeEntity"
+      },
+      "default": {},
+      "title": "Themes",
+      "type": "object"
+    },
+    "fileReferences": {
+      "additionalProperties": {
+        "$ref": "#/$defs/FileReferenceEntity"
+      },
+      "default": {},
+      "title": "Filereferences",
+      "type": "object"
+    },
+    "variables": {
+      "additionalProperties": {
+        "$ref": "#/$defs/VariableEntity"
+      },
+      "default": {},
+      "title": "Variables",
+      "type": "object"
+    },
+    "externalDataSources": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ExternalDataSource"
+      },
+      "default": {},
+      "title": "Externaldatasources",
+      "type": "object"
+    },
+    "indirectionSites": {
+      "additionalProperties": {
+        "$ref": "#/$defs/IndirectionSite"
+      },
+      "default": {},
+      "title": "Indirectionsites",
+      "type": "object"
+    },
+    "fileOptions": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FileOptions"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "graphNotes": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/GraphNote"
+      },
+      "title": "Graphnotes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schemaVersion"
+  ],
+  "title": "EntitiesDoc",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fm-saxml/contract/schema-1.0/entities.schema.json"
+}

@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "1.0",
+  "generator": {
+    "name": "fm-saxml-converter",
+    "version": "0.6.2"
+  },
+  "source": {
+    "fmpFileName": "EverythingBagel.fmp12",
+    "fileUuid": "400FEDB4-F509-8F4D-AF05-472A0DE02EAC",
+    "scope": "400FEDB4-F509-8F4D-AF05-472A0DE02EAC",
+    "fileMakerVersion": "26.0.3",
+    "saxmlVersion": "2.3.0.0"
+  },
+  "dataSources": [
+    {
+      "name": "Empty",
+      "fmpId": "1",
+      "uuid": "E005F7A7-19A4-AA43-B012-BC4B36E44FEF",
+      "type": "FileMaker",
+      "paths": [
+        "file:Empty",
+        "fmnet:/127.0.0.1/Empty"
+      ]
+    },
+    {
+      "name": "odbc_test",
+      "fmpId": "2",
+      "uuid": "BC91A6FB-42D0-CC46-B3C3-E2C044FED050",
+      "type": "ODBC",
+      "paths": []
+    }
+  ],
+  "externalTableOccurrences": [
+    {
+      "docId": "to:Empty",
+      "name": "Empty",
+      "fmpId": "1065091",
+      "uuid": null,
+      "dataSource": "Empty",
+      "dataSourceId": "1",
+      "dataSourceUuid": "E005F7A7-19A4-AA43-B012-BC4B36E44FEF",
+      "baseTable": "Empty",
+      "baseTableId": "129",
+      "baseTableUuid": "7A2EC438-36A8-C546-B699-2E90E39CC4D0"
+    }
+  ],
+  "references": [
+    {
+      "sourceDocId": "to:Empty",
+      "sourceScopedDocId": "400FEDB4-F509-8F4D-AF05-472A0DE02EAC/to:Empty",
+      "sourceEntityType": "tableOccurrence",
+      "relationshipType": "basedOnBaseTable",
+      "role": null,
+      "rawText": null,
+      "target": {
+        "targetDocId": "table:Empty",
+        "scope": "ds:E005F7A7-19A4-AA43-B012-BC4B36E44FEF",
+        "scopedDocId": "ds:E005F7A7-19A4-AA43-B012-BC4B36E44FEF/table:Empty",
+        "dataSource": "Empty",
+        "dataSourceId": "1",
+        "dataSourceUuid": "E005F7A7-19A4-AA43-B012-BC4B36E44FEF",
+        "targetType": "table",
+        "name": "Empty",
+        "fmpId": "129",
+        "uuid": "7A2EC438-36A8-C546-B699-2E90E39CC4D0",
+        "tableOccurrence": "Empty",
+        "baseTable": null,
+        "baseTableId": null,
+        "baseTableUuid": null
+      }
+    }
+  ]
+}
