@@ -127,6 +127,18 @@
           ],
           "default": null,
           "title": "Saxmlversion"
+        },
+        "hasDdrInfo": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hasddrinfo"
         }
       },
       "title": "ContractSource",

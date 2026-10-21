@@ -68,5 +68,6 @@ def envelope(model: "DocumentModel") -> dict:
             "scope": src.scope,
             "fileMakerVersion": src.file_maker_version,
             "saxmlVersion": src.saxml_version,
+            "hasDdrInfo": src.has_ddr_info,
         },
     }

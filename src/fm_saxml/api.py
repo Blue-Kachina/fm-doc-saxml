@@ -208,7 +208,8 @@ class SolutionDocs:
         return DocumentModel(
             source=SourceInfo(fileName=src.fmp_file_name or self.path.name,
                               fileMakerVersion=src.file_maker_version or "unknown",
-                              saxmlVersion=src.saxml_version, fmpFileName=src.fmp_file_name,
+                              saxmlVersion=src.saxml_version, hasDdrInfo=src.has_ddr_info,
+                              fmpFileName=src.fmp_file_name,
                               fileUuid=src.file_uuid, scope=src.scope),
             solution=SolutionInfo(name=self.name),
             entities=EntityMaps(**{n: getattr(e, n) for n in EntityMaps.model_fields}),

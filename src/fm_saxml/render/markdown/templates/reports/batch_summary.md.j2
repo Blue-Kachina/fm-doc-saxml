@@ -10,6 +10,7 @@ generatedAt: {{ generated_at }}
 | Name | Value |
 |---|---|
 | Files converted | {{ files | length }} |
+| Summary.xml | {{ manifest_status | cell }} |
 {% if split_count %}| Of which separate-catalog exports | {{ split_count }} |
 {% endif %}| Not converted | {{ failed | length + skipped | length }} |
 | Cross-file references | {{ xref_total }} |

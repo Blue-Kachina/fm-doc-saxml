@@ -32,10 +32,23 @@ from .indirection import IndirectionSite
 from .references import ReferenceRecord
 
 
-SCHEMA_VERSION = "0.6.0"  # 0.3.0: script step params, variables. 0.4.0: file options, per-side relationship
+SCHEMA_VERSION = "0.7.0"  # 0.3.0: script step params, variables. 0.4.0: file options, per-side relationship
 #   options, value list sources, privilege set access, field and script options (all additive)
 #   0.5.0: indirectionSites, reference via / siteDocId, step calc mode (additive)
 #   0.6.0: source.saxmlVersion (additive)
+#   0.7.0: source.hasDdrInfo (additive)
+
+# What an export without DDR info (Has_DDR_INFO="False") loses. Shown in its warning, on the
+# coverage report and in index.md. A scripted Save a Copy as XML writes no DDR info unless
+# the step's JSON options set include_details ("Include details for analysis tools").
+NO_DDR_INFO_LOSSES = (
+    "script steps read in fm-saxml's own wording, not FileMaker's Script Workspace text",
+    "calculation references come from parsing the text, not FileMaker's own resolution",
+    "popover titles are missing",
+    "external table occurrences lose their base table, so external references lose those tables",
+)
+NO_DDR_INFO_FIX = ('Export with "Include details for analysis tools" turned on '
+                   '(`include_details` in the Save a Copy as XML step\'s JSON options).')
 
 
 class SourceInfo(BaseModel):
@@ -43,6 +56,8 @@ class SourceInfo(BaseModel):
     file_name: str = Field(alias="fileName")
     file_maker_version: str = Field("unknown", alias="fileMakerVersion")
     saxml_version: Optional[str] = Field(None, alias="saxmlVersion")  # FMSaveAsXML/@version, e.g. "2.3.0.0"
+    # FMSaveAsXML/@Has_DDR_INFO. False: no DDR_INFO block (NO_DDR_INFO_LOSSES). None: not stated.
+    has_ddr_info: Optional[bool] = Field(None, alias="hasDdrInfo")
     generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), alias="generatedAt")
     # Modification time (mtime) of the source XML file, captured at parse time.
     # Disambiguated in rendered docs as "XML Created At" vs the model's

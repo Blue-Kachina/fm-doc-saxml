@@ -17,7 +17,7 @@ At the top of the output folder:
 ## Details
 
 - Both export styles work: one XML per file, or **separate catalogs** (one folder per file with one XML per catalog). A single file's catalog folder can also be built on its own.
-- `Summary.xml` is used to warn about files it lists that are missing from the folder.
+- `Summary.xml` is used to warn about files it lists that are missing from the folder. It's optional: without it, fm-saxml uses the exports it finds, and the index's "Summary.xml" row says "not present (built from N exports)". See [manifest.md](manifest.md).
 - Data sources are paired with files by their file path (`file:Clients` → `Clients.fmp12`). References into files that aren't in the folder stay plain text and are listed in the index.
 - A file that can't be converted is reported and skipped; the others are still built, and the exit code is 1.
 - `--strict` also fails on files missing from `Summary.xml`, skipped XMLs, ambiguous pairings and cross-file targets that don't exist. `--model-out` isn't supported for folders.

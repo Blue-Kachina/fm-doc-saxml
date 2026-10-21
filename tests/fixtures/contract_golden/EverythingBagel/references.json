@@ -9,7 +9,8 @@
     "fileUuid": "400FEDB4-F509-8F4D-AF05-472A0DE02EAC",
     "scope": "400FEDB4-F509-8F4D-AF05-472A0DE02EAC",
     "fileMakerVersion": "26.0.3",
-    "saxmlVersion": "2.3.0.0"
+    "saxmlVersion": "2.3.0.0",
+    "hasDdrInfo": true
   },
   "references": [
     {

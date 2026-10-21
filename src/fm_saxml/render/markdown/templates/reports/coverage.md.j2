@@ -7,6 +7,10 @@ title: Coverage Report
 {% if not report.available %}
 _Not available: coverage is counted for "Save a Copy as XML" (v2) exports only, and this model has no counts (an older v1 export, or a model.json saved by an earlier version)._
 {% else %}
+{% if no_ddr_info %}
+> **Exported without DDR info** (`Has_DDR_INFO="False"`). These checks compare against the export, which itself lacks what DDR info would add: {{ no_ddr_info.losses | join("; ") }}. {{ no_ddr_info.fix }}
+
+{% endif %}
 {% set problems = report.problems %}
 {% if report.ok %}
 **All {{ report.rows | length }} checks complete; no unrecognised XML.** Everything counted in the export reached these docs, and every element and attribute under the {{ context_count }} kinds of element checked has a rule.

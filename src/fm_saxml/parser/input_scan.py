@@ -5,11 +5,16 @@ XML per file, or (with "separate catalogs") one folder per file holding one XML 
 catalog (``split_catalogs="True"``). Either way it adds a ``Summary.xml`` manifest
 (root ``FMPReport type="Summary"``). See ``multi_file_saxml.md``.
 
+A folder of several exports with no manifest (a scripted export, or one copied without
+it) gets one built in memory from the exports themselves. It is marked ``synthesized``
+and never written to disk. See ``docs/manifest.md``.
+
 Only each XML's root element is read here, so scanning a folder of large exports is cheap.
 """
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -47,9 +52,15 @@ class ManifestEntry:
 
 @dataclass
 class Manifest:
-    path: Path
-    created: str = ""
+    path: Path | None              # None when synthesized
+    created: str = ""              # never set when synthesized: an export holds no export time
     entries: list[ManifestEntry] = field(default_factory=list)
+    # Built in memory from the exports because the folder had no Summary.xml. It always
+    # agrees with them, so it can't report missing or unlisted files, and it has no hosts.
+    synthesized: bool = False
+    # The root's ``generator`` attribute: set when a tool wrote a FileMaker-shaped Summary.xml
+    # (e.g. "agentic-fm"); "" for FileMaker's own.
+    generator: str = ""
 
 
 @dataclass
@@ -127,12 +138,30 @@ def scan_input(path: Path) -> InputScan:
             scan.solutions.extend(sub_groups.solutions(sub))
     scan.solutions.extend(groups.solutions(path))
     scan.solutions.sort(key=lambda s: s.name.casefold())
+    if scan.manifest is None and scan.is_batch:
+        scan.manifest = synthesize_manifest(scan.solutions)
     return scan
+
+
+def synthesize_manifest(solutions: list[SolutionSource]) -> Manifest:
+    """The manifest FileMaker would have written, as far as the exports can tell (docs/manifest.md).
+
+    Each file's name comes from its root ``File`` attribute (a v1 export has none: its
+    XML's name plus ``.fmp12``) and its XML path is the local one. The export time and
+    each file's host or folder aren't in an export, so they stay empty.
+    """
+    return Manifest(path=None, synthesized=True, entries=[
+        ManifestEntry(
+            fmp_file_name=s.fmp_file_name or f"{s.path.stem}.fmp12",
+            xml_path=str(s.path) + (os.sep if s.is_split else ""),
+        )
+        for s in solutions
+    ])
 
 
 def manifest_mismatches(scan: InputScan) -> tuple[list[ManifestEntry], list[SolutionSource]]:
     """(manifest entries with no export found, exports the manifest doesn't list)."""
-    if scan.manifest is None:
+    if scan.manifest is None or scan.manifest.synthesized:
         return [], []
     matched: set[int] = set()
     missing = []
@@ -210,6 +239,7 @@ def _read_manifest(path: Path) -> Manifest:
         return manifest
     date, time = root.get("CreationDate", ""), root.get("CreationTime", "")
     manifest.created = f"{date} {time}".strip()
+    manifest.generator = root.get("generator", "")
     for f in root:
         if not isinstance(f.tag, str) or strip_namespace(f.tag) != "File":
             continue

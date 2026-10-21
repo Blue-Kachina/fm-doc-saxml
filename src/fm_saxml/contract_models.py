@@ -38,6 +38,9 @@ class ContractSource(BaseModel):
     scope: Optional[str] = None  # prefix of this file's scoped docIds: "<scope>/<docId>"
     file_maker_version: Optional[str] = Field(None, alias="fileMakerVersion")
     saxml_version: Optional[str] = Field(None, alias="saxmlVersion")
+    # False: the export has no DDR_INFO block, so FileMaker's step text, calc resolution,
+    # popover titles and external base tables are missing. None: the export didn't say.
+    has_ddr_info: Optional[bool] = Field(None, alias="hasDdrInfo")
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -141,6 +144,7 @@ class CatalogFile(BaseModel):
     scope: Optional[str] = None
     file_maker_version: Optional[str] = Field(None, alias="fileMakerVersion")
     saxml_version: Optional[str] = Field(None, alias="saxmlVersion")
+    has_ddr_info: Optional[bool] = Field(None, alias="hasDdrInfo")  # as in ContractSource
 
     model_config = ConfigDict(populate_by_name=True)
 

@@ -501,7 +501,8 @@ def _build_batch(scan, out: Path, scrubber, *, solution: str, include_json: bool
             for f in files:
                 write_split_json(f.model, work / f.folder)
             write_root_catalog(work, build_root_catalog(
-                "batch", solution, [(f.model, f.folder, f.name) for f in files], links.pairings))
+                "batch", solution, [(f.model, f.folder, f.name) for f in files], links.pairings,
+                synthesized_manifest=bool(scan.manifest and scan.manifest.synthesized)))
         write_batch_reports(BatchResult(scan=scan, files=files, links=links, failed=failed,
                                         manifest_missing=missing, manifest_extra=extra, manifest_hosts=hosts), work)
         if html:
@@ -613,6 +614,9 @@ def _print_manifest_check(scan):
     from .parser.input_scan import manifest_mismatches
 
     missing, extra = manifest_mismatches(scan)
+    if scan.manifest is not None and scan.manifest.synthesized:
+        console.print(f"[dim]No Summary.xml in this folder: using the {len(scan.manifest.entries)} exports found "
+                      "(nothing to check them against).[/dim]")
     for entry in missing:
         console.print(f"[yellow]Summary.xml lists {entry.fmp_file_name}, but no export for it was found.[/yellow]")
     for s in extra:

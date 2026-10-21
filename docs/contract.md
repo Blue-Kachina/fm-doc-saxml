@@ -29,13 +29,15 @@ The four per-file files are JSON objects that start with the same three keys (`d
     "fileUuid": "400FEDB4-F509-8F4D-AF05-472A0DE02EAC",
     "scope": "400FEDB4-F509-8F4D-AF05-472A0DE02EAC",
     "fileMakerVersion": "26.0.3",
-    "saxmlVersion": "2.3.0.0"
+    "saxmlVersion": "2.3.0.0",
+    "hasDdrInfo": true
   },
   "...": "payload"
 }
 ```
 
 - `source` never holds a path on the machine that ran the build.
+- `hasDdrInfo` is the export's `Has_DDR_INFO`, or `null` when it doesn't say. When it's `false` the export has no `DDR_INFO` block, so the docs are less complete: script steps use fm-saxml's own wording instead of FileMaker's, calculation references come from parsing the text, popover titles are missing, and external table occurrences have no base table (so `external-references.json` lacks those tables). A scripted Save a Copy as XML writes `false` unless its JSON options set `include_details`.
 - No file holds a timestamp. Building the same export twice with the same fm-saxml release gives byte-identical files.
 - `generator` is `null` in a file upgraded from before the contract existed (see Reading older files).
 - In `entities.json` the collections sit at the top level, next to these keys. No collection may be named `schemaVersion`, `generator` or `source`.
@@ -52,7 +54,8 @@ The catalog at the root of every output folder. Readers start here instead of sc
   "solution": "Accounting",
   "files": [
     {"name": "Invoices", "folder": "Invoices", "fmpFileName": "Invoices.fmp12", "fileUuid": "…",
-     "scope": "…", "fileMakerVersion": "26.0.3", "saxmlVersion": "2.3.0.0"}
+     "scope": "…", "fileMakerVersion": "26.0.3", "saxmlVersion": "2.3.0.0",
+     "hasDdrInfo": true}
   ],
   "pairings": [
     {"folder": "Invoices", "dataSource": "Clients", "dataSourceUuid": "…",
@@ -65,7 +68,7 @@ The catalog at the root of every output folder. Readers start here instead of sc
 - `kind` is `single` (one file's docs, in the root itself: its `folder` is `""`) or `batch` (each file in its own subfolder).
 - `solution` is the name `find_docs()` looks up: the FileMaker file name for one file, the input folder's name for a multi-file export, or `--solution`.
 - `pairings` (batch only) records which file each FileMaker data source was paired with, and how: `path` (the data source's path names the file), `name` (no path; matched by data source name), or `""` with a `reason`. `BatchDocs.resolve()` uses it for `ds:` scoped ids.
-- `synthesizedManifest` is true when fm-saxml made up a missing `Summary.xml`. It's always false today.
+- `synthesizedManifest` is true when a batch's input folder had no `Summary.xml`, so fm-saxml built one in memory from the exports. Missing-file checks and the export time and host are then unavailable. See [manifest.md](manifest.md).
 
 ## Where docs live
 

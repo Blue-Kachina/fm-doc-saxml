@@ -254,6 +254,8 @@ An `ExternalDataSource` of `type="FileMaker"` is paired with a batch file by, in
 
 The old rule "data source UUID equals file UUID" is **dropped**. Section 1.3 shows it can't match.
 
+Pairing never uses the manifest. It reads only the exports, so a folder with or without `Summary.xml` (or with one fm-saxml synthesized, `docs/manifest.md`) pairs the same way.
+
 Outcomes: one match pairs; no match is unresolved and plain text; several matches are ambiguous (a warning, or an error under `--strict`); a self-match is treated as unresolved. Paths containing variables (`$path`) or ODBC sources are never paired, and the reason says so.
 
 Pairing runs on the normalized models' `ExternalDataSource.paths`, so first check that `extract_external_data_sources` keeps every `UniversalPathList` line and not just the first.

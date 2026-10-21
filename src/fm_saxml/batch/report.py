@@ -39,6 +39,16 @@ def write_batch_reports(result: BatchResult, out: Path) -> None:
     write_text(out / REDACTIONS_PAGE, env.get_template("reports/batch_redactions.md.j2").render(**ctx))
 
 
+def _manifest_status(scan: InputScan) -> str:
+    """The "Summary.xml" row: who wrote the folder's manifest, or that fm-saxml built one."""
+    m = scan.manifest
+    if m is None:
+        return "not present"
+    if m.synthesized:
+        return f"not present (built from {len(m.entries)} exports)"
+    return f"present (written by {m.generator})" if m.generator else "present"
+
+
 def combined_scrubbing(files: list[BatchFile]) -> ScrubSummary | None:
     """Every file's findings as one summary; None when scrubbing was disabled."""
     summaries = [f.model.scrubbing for f in files]
@@ -179,6 +189,7 @@ def _context(result: BatchResult) -> dict:
         "fm_saxml_repo_label": REPO_LABEL,
         "manifest_created": result.scan.manifest.created if result.scan.manifest else "",
         "manifest_hosts": result.manifest_hosts,
+        "manifest_status": _manifest_status(result.scan),
         "files": rows,
         "show_coverage": any(r["coverage"] is not None for r in rows),
         "split_count": sum(1 for s in result.scan.solutions if s.is_split),

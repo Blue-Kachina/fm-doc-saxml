@@ -112,8 +112,11 @@ def write_split_json(model: DocumentModel, output_dir: Path) -> None:
 
 
 def build_root_catalog(kind: str, solution: str, files: list[tuple[DocumentModel, str, str]],
-                       pairings=None) -> dict:
-    """docs.json: ``files`` is ``[(model, folder, name)]``; ``pairings`` a batch's ``BatchLinks.pairings``."""
+                       pairings=None, synthesized_manifest: bool = False) -> dict:
+    """docs.json: ``files`` is ``[(model, folder, name)]``; ``pairings`` a batch's ``BatchLinks.pairings``.
+
+    ``synthesized_manifest``: the input folder had no Summary.xml, so fm-saxml built one from the exports.
+    """
     out = {
         "schemaVersion": format_version(CONTRACT_VERSION),
         "generator": {"name": GENERATOR_NAME, "version": __version__},
@@ -128,11 +131,12 @@ def build_root_catalog(kind: str, solution: str, files: list[tuple[DocumentModel
                 "scope": m.source.scope,
                 "fileMakerVersion": m.source.file_maker_version,
                 "saxmlVersion": m.source.saxml_version,
+                "hasDdrInfo": m.source.has_ddr_info,
             }
             for m, folder, name in files
         ],
         "pairings": [],
-        "synthesizedManifest": False,  # M1/M2: set when fm-saxml makes up a missing Summary.xml
+        "synthesizedManifest": synthesized_manifest,
     }
     by_folder = {folder: m for m, folder, _ in files}
     for p in pairings or []:

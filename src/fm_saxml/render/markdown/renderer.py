@@ -8,7 +8,7 @@ from typing import Any
 
 from jinja2 import Environment, PackageLoader, select_autoescape, Undefined
 
-from ...model.document_model import DocumentModel
+from ...model.document_model import DocumentModel, NO_DDR_INFO_FIX, NO_DDR_INFO_LOSSES
 from ...model.step_text import code_fence, render_script_block
 from ...analyze.access import build_access
 from ...analyze.coverage import build_coverage
@@ -185,8 +185,16 @@ def _render_root_index(model: DocumentModel, output_dir: Path, env: Environment,
     ctx["graph_note_count"] = len(model.graph_notes)
     ctx["coverage"] = build_coverage(model)
     ctx["scrub_notice"] = _scrub_notice(model)
+    ctx["no_ddr_info"] = _no_ddr_notice(model)
     content = tmpl.render(**ctx)
     write_text(output_dir / "index.md", content)
+
+
+def _no_ddr_notice(model: DocumentModel) -> dict[str, Any] | None:
+    """What an export without DDR info lost, for index.md and the coverage report; None otherwise."""
+    if model.source.has_ddr_info is not False:
+        return None
+    return {"losses": NO_DDR_INFO_LOSSES, "fix": NO_DDR_INFO_FIX}
 
 
 def _scrub_notice(model: DocumentModel) -> dict[str, Any] | None:
@@ -933,7 +941,8 @@ def _render_reports(model: DocumentModel, output_dir: Path, env: Environment, li
     # Coverage: only when the build asked for it (--coverage)
     if coverage.available:
         tmpl = env.get_template("reports/coverage.md.j2")
-        write_text(reports_dir / "coverage.md", tmpl.render(report=coverage, areas=areas, context_count=len(COVERAGE_CONTEXTS)))
+        write_text(reports_dir / "coverage.md", tmpl.render(report=coverage, areas=areas, context_count=len(COVERAGE_CONTEXTS),
+                                                             no_ddr_info=_no_ddr_notice(model)))
 
     # Indirection (by-name references)
     index = _by_name or ByNameIndex(model)

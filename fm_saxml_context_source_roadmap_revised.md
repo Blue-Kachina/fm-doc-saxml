@@ -14,7 +14,7 @@ This file goes below the surface of each unit: what the code does today (with fi
 
 ## Status
 
-F0 done (fixtures in `samples/by_type/`, v0 contract fixture frozen in `tests/fixtures/contract_v0/`). **C1 done 2026-10-21**: C1a–C1c in commit `db69023`, C1d–C1e uncommitted (1,093 passed, 13 skipped). **C2 and C3 done 2026-10-21** (uncommitted; 1,127 passed, 13 skipped). Next: M1–M3, G3, G5, G4a, D1 (the rest of the 0.7.0 cut). H is pinned to fm-saxml **0.6.2** (bumped and pushed 2026-10-21; download, build, adapter, `trace.py build` and its adapter tests all passed). **Before H bumps its pin to 0.7.0, it needs the references.json change in C1a.** The Claude Doc's v2 tab marks the contract item done (C1a–C1e) and corrects its "nothing reads these files" line. Nothing else started. Research done 2026-10-21 (three read-only surveys of this repo, agentic-fm and the harness adapter). Revised the same day for the tentative parent update. The revision added a read of `afm/.cursor/skills/menu-lookup/SKILL.md`. **Q1 answered 2026-10-21:** a colleague ran agentic-fm's real Explode XML path on a Mac (committed as `samples/EverythingBagel_mac_run/`, `3c3c4a8`). Section 1a has what it showed, and it also answers Q12, Q14 and Q15 and most of Q16.
+F0 done (fixtures in `samples/by_type/`, v0 contract fixture frozen in `tests/fixtures/contract_v0/`). **C1 done 2026-10-21**: C1a–C1c in commit `db69023`, C1d–C1e uncommitted (1,093 passed, 13 skipped). **C2 and C3 done 2026-10-21** (commit `c3cbb3b`). **D1 done 2026-10-21** (uncommitted). **M1–M3 done 2026-10-21** (uncommitted; 1,145 passed, 13 skipped; Q4 still open). Next: G3a, G5, G4a (the rest of the 0.7.0 cut). H is pinned to fm-saxml **0.6.2** (bumped and pushed 2026-10-21; download, build, adapter, `trace.py build` and its adapter tests all passed). **Before H bumps its pin to 0.7.0, it needs the references.json change in C1a.** The Claude Doc's v2 tab marks the contract item done (C1a–C1e) and corrects its "nothing reads these files" line. Nothing else started. Research done 2026-10-21 (three read-only surveys of this repo, agentic-fm and the harness adapter). Revised the same day for the tentative parent update. The revision added a read of `afm/.cursor/skills/menu-lookup/SKILL.md`. **Q1 answered 2026-10-21:** a colleague ran agentic-fm's real Explode XML path on a Mac (committed as `samples/EverythingBagel_mac_run/`, `3c3c4a8`). Section 1a has what it showed, and it also answers Q12, Q14 and Q15 and most of Q16.
 
 ---
 
@@ -69,7 +69,7 @@ I built it with fm-saxml and diffed entities.json against our build.
 
 | # | Finding | Effect on the plan |
 |---|---|---|
-| 7 | **Scripted exports have no DDR info.** The Explode XML script's Save a Copy as XML writes `Has_DDR_INFO="False"`; ours, from the Tools menu, is `True`. That removes the `DDR_INFO` block (262 `DDRREF`, 52 `ChunkList`). The build still succeeds with the same entity counts and 95 of 96 references, but it loses:<br>- every step's `fmText` (pages fall back to our own step text, which reads differently)<br>- every calc's `chunkRefs` (references fall back to parsing the text, `normalize/calc_refs.py:71`)<br>- the popover title calc (layout object 25)<br>- TO `Empty`'s external base table name, id and UUID, so external-references loses that table | Phase 3's export script must turn DDR info on. The step has an option for it: "Include details for analysis tools" in the dialog, `include_details` in its JSON options (Q17, answered). New unit **D1**: a no-DDR fixture, a warning when `Has_DDR_INFO="False"`, and a coverage check that names what's missing. |
+| 7 | **agentic-fm's export has no DDR info.** The Explode XML script's Save a Copy as XML doesn't set the "Include details" option, so it writes `Has_DDR_INFO="False"`. Ours are `True` because every `by_type` export was made with "Include details" on, not because they came from the Tools menu. That removes the `DDR_INFO` block (262 `DDRREF`, 52 `ChunkList`). The build still succeeds with the same entity counts and 95 of 96 references, but it loses:<br>- every step's `fmText` (pages fall back to our own step text, which reads differently)<br>- every calc's `chunkRefs` (references fall back to parsing the text, `normalize/calc_refs.py:71`)<br>- the popover title calc (layout object 25)<br>- TO `Empty`'s external base table name, id and UUID, so external-references loses that table | Phase 3's export script must turn DDR info on. The step has an option for it: "Include details for analysis tools" in the dialog, `include_details` in its JSON options (Q17, answered). New unit **D1**: a no-DDR fixture, a warning when `Has_DDR_INFO="False"`, and a coverage check that names what's missing. |
 | 8 | **Menu UUIDs: the clipboard and SaXML match** (menu, menu item, both catalogs, set). | Q12 answered. G3a's UUIDs are safe to hand to a paste. |
 | 9 | **The clipboard (paste) form isn't the SaXML form.** A copied menu comes wrapped in its catalog (`CustomMenuCatalog` with SortOrder, CustomOrderList and the catalog UUID) plus a `PasteIndexList`. Its action step is in snippet form (`StepText`, no hash), and the item `hash` differs. | Q16 mostly answered: the paste needs the catalog wrapper. Raw SaXML menu XML (G3b) is a **base for conversion**, not paste-ready, like steps for `fm_xml_to_snippet.py`. The SaXML → clipboard conversion is `[afm]` work; G3b serves the raw element plus the catalog UUID. |
 | 10 | **The exploder's menu files have no catalog UUIDs and drop item UUIDs and step bodies.** `custom_menus/…/Custom Custom Menu - ID 25.xml` keeps only the menu `<UUID>`; its `Beep` step is an empty `<Step>`. | `menu-lookup` today can't report the two catalog UUIDs its SKILL.md promises. G3a is a strict improvement, not just a port. |
@@ -88,17 +88,17 @@ The no-DDR build also trips the scrub guard on `Scripts/OneOfEverything.md:49`, 
 | F0 | *(new)* Fixtures | Add. Every unit below needs a committed sample with themes, menus and sets, styled layouts, data sources and real step shapes. | 1 |
 | C1 | Publish the model as a versioned contract | Keep. Split into 4 parts: complete the files, wrap them, add versions and migrations, then document. **Done 2026-10-21.** | 4 |
 | C2 | Python reader API | Keep. Depends on C1. **Done 2026-10-21.** | 2 |
-| C3 | Agree on the output location | Keep. Needs a root catalog JSON that doesn't exist yet. **Done 2026-10-21** (macOS run pending CI). | 1 |
-| M1 | Specify a synthesized `Summary.xml` | Reshape. Write a spec with a provenance flag, and decide whether the FileMaker export script writes the manifest itself (Q4). | 1 (with M2) |
-| M2 | Generate `Summary.xml` when missing | Reshape. Build it in memory only and never write it into the input folder. | (with M1) |
-| M3 | Use the synthesized manifest for pairing | Shrink to a test. Pairing already ignores the manifest. | ½ |
+| C3 | Agree on the output location | Keep. Needs a root catalog JSON that doesn't exist yet. **Done 2026-10-21**, macOS included. | 1 |
+| M1 | Specify a synthesized `Summary.xml` | Reshape. Write a spec with a provenance flag, and decide whether the FileMaker export script writes the manifest itself (Q4). **Done 2026-10-21** (Q4 open). | 1 (with M2) |
+| M2 | Generate `Summary.xml` when missing | Reshape. Build it in memory only and never write it into the input folder. **Done 2026-10-21.** | (with M1) |
+| M3 | Use the synthesized manifest for pairing | Shrink to a test. Pairing already ignores the manifest. **Done 2026-10-21.** | ½ |
 | G0 | *(new)* Source spans | Add. One shared mechanism to point back at the export's XML. G1 needs it, and G2 and G4 can use it. | 1 + spike |
 | G1 | Raw step XML per script step | Keep. Scrubbing is the hard part. | 1–2 |
 | G2 | Theme styles | Keep. Structured metadata, with CSS through G0 or a field (decision G2-D1). | 1 |
 | G3 | Custom menu and menu set UUIDs | **Changed by the update.** The consumer is now `menu-lookup`, not `install_menus.py`. It needs UUIDs on the pages, catalog UUIDs, and raw menu XML. Split it: G3a (UUIDs, model and pages), G3b (raw menu XML through G0). Contingent on the owner's open point 1. | 1 + ½ |
 | G4 | Layout object geometry and styles | Keep. The gap is larger than the published text suggests. Split it. | 2 |
 | G5 | External data source details | Shrink. The model is already complete; the only gap is in entities.json (done in C1). | ½ |
-| D1 | *(new, from Q1)* Exports without DDR info | Add. Scripted exports have no `DDR_INFO`. Fixture, warning, and a coverage line for what's lost. | ½ |
+| D1 | *(new, from Q1)* Exports without DDR info | Add. Scripted exports have no `DDR_INFO`. Fixture, warning, and a coverage line for what's lost. **Done 2026-10-21.** | ½ |
 
 ---
 
@@ -371,8 +371,9 @@ Done when the fixtures are committed and `uv run pytest` still passes: 1,045 pas
     - Applies to `build` (single and batch). `render` still clears its folder in place.
 - [x] State in the README and the contract that converted output is local and never committed. Agentic-fm's `.gitignore` is an `[afm]` follow-up.
 
-- [ ] *(new)* Test `find_docs`, the root catalog and the safe rewrite on macOS as well as Windows. The update's Phase 3 runs `/convert` on both, and on the Mac it replaces the exploder outright.
-    - Tests written and passing on Windows. The open-file test expects the swap to succeed on macOS/Linux. CI runs the suite on `macos-latest` and `ubuntu-latest`, so **tick this after the first green CI run on the push.**
+- [x] *(new)* Test `find_docs`, the root catalog and the safe rewrite on macOS as well as Windows. The update's Phase 3 runs `/convert` on both, and on the Mac it replaces the exploder outright.
+    - Tests written and passing on Windows. The open-file test expects the swap to succeed on macOS/Linux.
+    - **Passed on macOS 2026-10-21:** CI run 39677281608 (commit `c3cbb3b`), macOS on Python 3.11 and 3.12, 1,127 passed, 13 skipped; Ubuntu and Windows also green. The macOS 3.13 job never got a runner and was cancelled after 15 minutes in the queue (the same happened to two macOS jobs on `6df90be`), so it ran no tests and isn't a failure of ours.
 
 **Unknowns.** Whether agentic-fm wants to keep `exports/<name>_docs` or adopt `FM_SAXML_DOCS_ROOT` (Q8). Either works: agentic-fm can point `FM_SAXML_DOCS_ROOT` at its `exports/` folder, with `--solution` keeping names stable.
 
@@ -408,15 +409,17 @@ Done when the fixtures are committed and `uv run pytest` still passes: 1,045 pas
     - Input folders may be read-only.
     - `build` refuses to run when given a Summary.xml as its input.
 
+**Done 2026-10-21** (uncommitted), except the Q4 decision, which is the harness owner's. Tests in `tests/test_manifest.py`.
+
 **Proposed shape.**
-- [ ] Write the spec in `docs/manifest.md`, using the table above and the rules below.
-- [ ] Synthesize in memory only: `Manifest(synthesized=True, created=None, hosts=[])` when the input is a folder with two or more exports and no manifest.
+- [x] Write the spec in `docs/manifest.md`, using the table above and the rules below. *`version` and `membercount` aren't kept, so the "files differ" unknown no longer matters.*
+- [x] Synthesize in memory only: `Manifest(synthesized=True, created=None, hosts=[])` when the input is a folder with two or more exports and no manifest. *`synthesize_manifest()` in `parser/input_scan.py`, called by `scan_input`. `path` is None, `created` is "", and every entry's host is "". `manifest_mismatches` returns nothing for it, and the console prints one dim line.*
     - Never write it to disk, and never show an mtime as "XML Created At".
-    - index.md and batch-summary show "Summary.xml: not present (built from N exports)".
+    - index.md and batch-summary show "Summary.xml: not present (built from N exports)". *A "Summary.xml" row in both. A real manifest shows `present`.*
     - `docs.json` (C3) carries `synthesizedManifest: true`.
 - [ ] **Decide Q4: should the FileMaker export script write the manifest?** The script knows which files were open, `Get(HostName)`, the file paths and the export time. If it writes a FileMaker-shaped `Summary.xml` (marked with an extra `generator="agentic-fm"` attribute, which our parser ignores), then the completeness checks and the host and time rows work again for scripted exports.
-    - If yes, the `[saxml]` work is to accept and label that attribute. The `[fm]` work goes to Phase 3.
-- [ ] Tests:
+    - If yes, the `[saxml]` work is to accept and label that attribute. The `[fm]` work goes to Phase 3. *The `[saxml]` part is done already, since it costs nothing: `Manifest.generator`, shown as "present (written by agentic-fm)". Only the decision and the `[fm]` part remain.*
+- [x] Tests:
     - a folder with no manifest (this closes today's gap)
     - single-solution folders with no manifest
     - the label appears, with no "XML Created At" row
@@ -430,8 +433,10 @@ Done when the fixtures are committed and `uv run pytest` still passes: 1,045 pas
 
 ### M3. Pairing with a synthesized manifest (half a session)
 
-- [ ] Test: build `samples/multi_file_export/SaXML_no_separate_catalogue/` with and without its Summary.xml, and assert the Data Source Pairings table and the "Cross-file references: N of N resolved" line are identical.
-- [ ] Add one sentence to `multi_file_saxml.md`: pairing never uses the manifest.
+**Done 2026-10-21** (uncommitted).
+
+- [x] Test: build `samples/multi_file_export/SaXML_no_separate_catalogue/` with and without its Summary.xml, and assert the Data Source Pairings table and the "Cross-file references: N of N resolved" line are identical. *`docs.json` pairings are compared as well.*
+- [x] Add one sentence to `multi_file_saxml.md`: pairing never uses the manifest. *Also in `docs/manifest.md` and `docs/multi-file.md`.*
 
 ---
 
@@ -652,10 +657,12 @@ The UUID list is nearly the same, so G3a's model work stands. What's new is the 
 
 **Why.** The export the roadmap depends on, agentic-fm's scripted Save a Copy as XML, writes `Has_DDR_INFO="False"` (1a #7). Nothing in fm-saxml says so today. The output just reads a little differently and quietly loses the popover title, the external base table and FileMaker's own step text.
 
-- [ ] Fixture: `samples/EverythingBagel_mac_run/saxml/EverythingBagel.xml` is a committed no-DDR twin of `by_type/whole/`. Test that both builds have the same entity docIds (apart from the two pasted scripts), and that references differ only in the external base table.
-- [ ] Read `@Has_DDR_INFO` into `SourceInfo`, and put it in the contract's `source` (a 1.x minor field).
-- [ ] When it's `False`, add one model warning that names what's missing, and a line on the coverage report and index.md.
-- [ ] Check whether the external base table can come from somewhere other than `DDR_INFO` (the `Empty` TO's `BaseTableReference`, or the paired file in a batch). If it can, use it.
+**Done 2026-10-21** (uncommitted), except the `[fm]` note. Tests in `tests/test_no_ddr_info.py`.
+
+- [x] Fixture: `samples/EverythingBagel_mac_run/saxml/EverythingBagel.xml` is a committed no-DDR twin of `by_type/whole/`. Test that both builds have the same entity docIds (apart from the two pasted scripts), and that references differ only in the external base table. *(Also apart from `variable:$$AGENTIC.FM`, the pasted scripts' global.)*
+- [x] Read `@Has_DDR_INFO` into `SourceInfo`, and put it in the contract's `source` (a 1.x minor field). *As `hasDdrInfo` (`true`/`false`, `null` when the attribute is absent), in every file's `source` and in each `docs.json` file entry. Added to **1.0** rather than 1.1, because 1.0 hasn't shipped yet (last tag v0.6.2). model.json goes to 0.7.0.*
+- [x] When it's `False`, add one model warning that names what's missing, and a line on the coverage report and index.md. *Warning code `NO_DDR_INFO`. Its detail gives the fix (`include_details`). The list of losses is `NO_DDR_INFO_LOSSES` in `model/document_model.py`.*
+- [x] Check whether the external base table can come from somewhere other than `DDR_INFO` (the `Empty` TO's `BaseTableReference`, or the paired file in a batch). If it can, use it. **It can't.** Without DDR info, the TO's `BaseTableSourceReference` holds only the `DataSourceReference`. FileMaker drops the `BaseTableReference`, and nothing else in the export names the table. A batch can't recover it either: TO names needn't match table names, and field ids repeat across tables.
 - [ ] `[fm]` note for Phase 3: the export script turns on the step's analysis-tools option, `include_details` (Q17). A colleague's rewrite of the export script already sets it. Once it runs, check its export says `Has_DDR_INFO="True"` and has a `DDR_INFO` block.
 
 ## 4. Order and dependencies
@@ -708,7 +715,7 @@ About 19–22 agent sessions in total (G3b and D1 add half a session each).
 | Q15 | ~~What does each `Display @Style` number mean?~~ **0 Edit Box, 1 Drop-down List, 2 Pop-up Menu, 3 Checkbox Set, 4 Radio Button Set, 6 Drop-down Calendar, 7 Concealed Edit Box**; 5 not seen (1a #13). | — | answered 2026-10-21 |
 | Q14 | ~~Bounds unit (points vs pixels).~~ **Points**, the same in SaXML and the clipboard (1a #13). | — | answered 2026-10-21 |
 | Q16 | What XML does a menu paste need? **Mostly answered:** the catalog wrapper plus a `PasteIndexList`, with steps in snippet form (1a #9). SaXML → clipboard conversion is `[afm]` work. Still read `afm/agent/docs/CUSTOM_MENUS.md` before writing that converter. | `[afm]` menu converter | afm |
-| Q17 | ~~What is the Save a Copy as XML script step's option that sets `Has_DDR_INFO="True"`~~ **`include_details`**, in the step's JSON options ("Specify JSON options", then `[ "include_details" ; True ; JSONBoolean ]`). Seen in a copied step from FileMaker 26 on Windows (2026-10-21). A colleague's rewrite of the export script uses it. agentic-fm's Explode XML step has no JSON options at all, which is why its export lacks DDR info. **Still open:** confirm an export made with it has `Has_DDR_INFO="True"`, and whether FileMaker 21–25 and the Mac offer it. | D1, Phase 3 `[fm]` export script | person on FileMaker |
+| Q17 | ~~What is the Save a Copy as XML script step's option that sets `Has_DDR_INFO="True"`~~ **`include_details`**, in the step's JSON options ("Specify JSON options", then `[ "include_details" ; True ; JSONBoolean ]`). Seen in a copied step from FileMaker 26 on Windows (2026-10-21). A colleague's rewrite of the export script uses it. agentic-fm's Explode XML step has no JSON options at all, which is why its export lacks DDR info. **Confirmed for the dialog:** every `by_type` export was made with "Include details" on, and each says `Has_DDR_INFO="True"` with a `DDR_INFO` block. **Still open:** the same check for the script step's `include_details` JSON option (the colleague's rewritten export script), and whether FileMaker 21–25 and the Mac offer it. | D1, Phase 3 `[fm]` export script | person on FileMaker |
 | OP1 | *(new; the parent update's open point 1)* Do menu UUIDs stay in v1, or does `menu-lookup` answer only from what the pages hold? | G3a, G3b, Q12, Q16 | owner (Matt) |
 | G1-D1 | Where scrubbed raw XML comes from (on-demand rewrite, scrubbed copy, or inline). It now also feeds G3b. | G1, G3b | us + harness owner |
 

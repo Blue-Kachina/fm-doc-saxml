@@ -7,7 +7,9 @@ from pathlib import Path
 from typing import Any, Optional
 
 from ..parser.saxml_reader import RawModel
-from ..model.document_model import DocumentModel, SourceInfo, SolutionInfo, EntityMaps, Warning
+from ..model.document_model import (
+    DocumentModel, SourceInfo, SolutionInfo, EntityMaps, Warning, NO_DDR_INFO_FIX, NO_DDR_INFO_LOSSES,
+)
 from ..model.entities import (
     TableEntity,
     FieldEntity,
@@ -92,6 +94,7 @@ def normalize(
         fileName=source_file or raw.file_name,
         fileMakerVersion=raw.filemaker_version,
         saxmlVersion=raw.saxml_version or None,
+        hasDdrInfo=raw.has_ddr_info,
         generatedAt=datetime.now(timezone.utc),
         sourceModifiedAt=source_modified_at,
         fmpFileName=raw.fmp_file_name or None,
@@ -109,6 +112,13 @@ def normalize(
         )
         for ds in raw.external_data_sources
     ]
+
+    if raw.has_ddr_info is False:
+        model.add_warning(
+            "NO_DDR_INFO",
+            'This export has no DDR info (Has_DDR_INFO="False"): ' + "; ".join(NO_DDR_INFO_LOSSES) + ".",
+            detail=NO_DDR_INFO_FIX,
+        )
 
     # Propagate parse-time warnings
     for w in raw.parse_warnings:

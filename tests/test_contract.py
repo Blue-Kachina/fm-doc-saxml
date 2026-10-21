@@ -73,6 +73,7 @@ def test_every_contract_file_has_the_same_envelope(bagel_docs):
         "scope": "400FEDB4-F509-8F4D-AF05-472A0DE02EAC",
         "fileMakerVersion": "26.0.3",
         "saxmlVersion": "2.3.0.0",
+        "hasDdrInfo": True,
     }
 
 
