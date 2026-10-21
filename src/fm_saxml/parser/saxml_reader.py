@@ -36,6 +36,7 @@ class RawModel:
 
     file_name: str = ""
     filemaker_version: str = "unknown"
+    saxml_version: str = ""  # the export format: FMSaveAsXML/@version, e.g. "2.3.0.0"
     solution_name: str = ""
     fmp_file_name: str = ""
     file_uuid: str = ""
@@ -87,6 +88,7 @@ def parse_savexml(xml_path: Path, fragments: list[Path] | None = None, *, covera
         return raw
 
     root_tag = root.tag.split("}")[-1] if "}" in root.tag else root.tag
+    raw.saxml_version = root.get("version") or root.get("Version") or ""
     if root_tag == "FMSaveAsXML" and _is_v2_format(root):
         return _parse_v2(xml_path, root, raw, coverage)
     return _parse_v1(xml_path, root, raw)

@@ -32,15 +32,17 @@ from .indirection import IndirectionSite
 from .references import ReferenceRecord
 
 
-SCHEMA_VERSION = "0.5.0"  # 0.3.0: script step params, variables. 0.4.0: file options, per-side relationship
+SCHEMA_VERSION = "0.6.0"  # 0.3.0: script step params, variables. 0.4.0: file options, per-side relationship
 #   options, value list sources, privilege set access, field and script options (all additive)
 #   0.5.0: indirectionSites, reference via / siteDocId, step calc mode (additive)
+#   0.6.0: source.saxmlVersion (additive)
 
 
 class SourceInfo(BaseModel):
     type: str = "FileMakerSaveAsXML"
     file_name: str = Field(alias="fileName")
     file_maker_version: str = Field("unknown", alias="fileMakerVersion")
+    saxml_version: Optional[str] = Field(None, alias="saxmlVersion")  # FMSaveAsXML/@version, e.g. "2.3.0.0"
     generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), alias="generatedAt")
     # Modification time (mtime) of the source XML file, captured at parse time.
     # Disambiguated in rendered docs as "XML Created At" vs the model's

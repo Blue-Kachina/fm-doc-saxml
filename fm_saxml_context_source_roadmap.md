@@ -8,7 +8,7 @@ This file goes below the surface of each unit: what the code does today (with fi
 
 ## Status
 
-F0 done (fixtures in `samples/by_type/`, v0 contract fixture frozen in `tests/fixtures/contract_v0/`). Nothing else started. Research done 2026-10-21 (three read-only surveys of this repo, agentic-fm and the harness adapter).
+F0 done (fixtures in `samples/by_type/`, v0 contract fixture frozen in `tests/fixtures/contract_v0/`). **C1a–C1c done 2026-10-21** (uncommitted; 1,062 passed, 13 skipped). Next: C1d. **Before H bumps its pin past 0.6.x, it needs the references.json change in C1a.** Nothing else started. Research done 2026-10-21 (three read-only surveys of this repo, agentic-fm and the harness adapter).
 
 ---
 
@@ -54,7 +54,8 @@ The published units are mostly right, but six findings change their size or shap
 - [x] Fixture solution: an FM26 (26.0.3, SaXML 2.3.0.0) `EverythingBagel.fmp12` plus an `Empty.fmp12`, committed under **`samples/by_type/`** (2026-10-21):
     - `whole/EverythingBagel.xml`: one file, 356 KB, UTF-8, CR+LF
     - `split_catalogues/`: the same file as split catalogs, plus Summary.xml
-    - `second_file/`: EverythingBagel and Empty, both split, plus a real two-file Summary.xml
+    - `second_file/`: EverythingBagel and Empty as whole files, plus a real two-file Summary.xml
+    - Re-exported 2026-10-21 (commit `076d510`) with the two additions below. All three exports carry them.
 - [x] Froze the stale `EverythingBagel_docs/*.json` (from `samples/has_restricted_access_to_scripts/`; it has no `via`/`siteDocId`) as `tests/fixtures/contract_v0/`. The source folder is gitignored (`*_docs/`), so this copy is the only versioned one.
 
 **What `samples/by_type/whole/EverythingBagel.xml` covers**
@@ -62,20 +63,20 @@ The published units are mostly right, but six findings change their size or shap
 | Need | Present | Notes |
 |---|---|---|
 | Scripts and steps | Yes | 2 scripts, 209 steps: **one of every step type** (`OneOfEverything`), with `# (comment)`, If/Else and Set Variable. Every step has `DDRREF` and `OwnerID` children, the real shape Q11 asks about. |
-| Themes | Partly | **One** custom theme, `Vibrant Custom`. It has `baseName="com.filemaker.theme.vibrant"` and `baseVersion`, so custom themes *do* carry their base on `<Theme>`. There's no `defaultTheme` attribute and no second theme, so default-theme selection can't be tested. |
+| Themes | Yes | Two custom themes:<br>- `Vibrant Custom` (`defaultTheme="True"`, `baseName="com.filemaker.theme.vibrant"`)<br>- `Apex Blue Copy` (`baseName="com.filemaker.theme.apex_blue"`)<br>Each is used by one layout. Custom themes *do* carry their base on `<Theme>`. |
 | Layout `LocalCSS` | Yes | 16 objects |
 | Layout objects | Yes | Portal, button bar, 2 popovers, 4 buttons, 5 `IconData`, 26 `findMode` |
 | Field display styles | Yes, but **numeric** | `Display Style="0|1|2|6"`, not `dropDown`/`popUp`. G4a needs a number → name map (Q15). |
 | Custom menus | Yes | 25 menus (24 bracketed standard copies plus `Custom Custom Menu`) |
 | Menu set | Yes | `Custom Menu Set` id 2 with `<UUID>` |
 | File default menu set | Yes | Catalog-level `CustomMenuSetReference` → `[Standard FileMaker Menus]` |
-| Menu set on a layout | **No** | The layout uses `[File Default]` with `UUID=""`. A step parameter also references the standard set. |
+| Menu set on a layout | Yes | Layout `CustomMenuSetLayout` → `Custom Menu Set` (`UUID="4629F04A-…"`). Layout `EverythingBagel` uses `[File Default]` with `UUID=""`, so readers must allow an empty UUID. |
 | External data sources | Yes | `Empty` (FileMaker, `file:Empty` + `fmnet:/127.0.0.1/Empty`) and `odbc_test` (ODBC) |
 | Multi-file pairing | Yes | In `second_file/`, the `Empty` data source should pair with `Empty.fmp12` by path |
 
-Gaps that are still open. Each is optional; add it when its unit needs it:
-- [ ] a second theme, with one marked `defaultTheme="True"` (G2)
-- [ ] a layout with its own custom menu set (G3)
+- [x] Added in the re-export: a second theme with a default marked (G2), and a layout with its own custom menu set (G3).
+
+Smoke-testing these fixtures found a scrubber bug outside this roadmap. It's logged as backlog item **B1** (section 7).
 
 Done when the fixtures are committed and `uv run pytest` still passes: 1,045 passed, 13 skipped on 2026-10-21.
 
@@ -108,9 +109,19 @@ Done when the fixtures are committed and `uv run pytest` still passes: 1,045 pas
 
 #### C1a. Shape decisions and consumer check (session 1, mostly writing)
 
-- [ ] Grep H and `afm/` for any read of `entities.json`, `references.json`, `backlinks.json` and `external-references.json`. The breaking changes below assume there are none.
-- [ ] Decide the contract's scope. **Proposal:** one contract version shared by `entities.json`, `references.json`, `backlinks.json` and `external-references.json`. `model.json` stays internal and keeps its own `SCHEMA_VERSION`.
-- [ ] Decide the envelope. **Proposal:** every contract file becomes an object:
+**Done 2026-10-21.** The decisions are below each item.
+
+- [x] Grep H and `afm/` for any read of `entities.json`, `references.json`, `backlinks.json` and `external-references.json`. The breaking changes below assume there are none.
+    - **agentic-fm reads none of them.** Its only `*.json` reads are the plug-in's `preferences.json`.
+    - **H reads three of them, so the assumption was wrong:**
+        - `entities.json`: the top level must be an object. It reads 10 named collections (`check_input`, `REQUIRED_KEYS`) plus `privilegeSets`, and ignores unknown top-level keys. **The envelope keys don't break it.**
+        - `references.json`: `check_input` requires a bare list ("top level is not a list"), and `build_references` / `build_privileges` iterate it. **Wrapping it breaks H: it refuses to convert.**
+        - `external-references.json`: it reads `dataSources[]` and `source.fileMakerVersion`. **Both are kept.** It doesn't read `source.fileName`, and H's fixtures already blank that path by hand.
+        - It doesn't read `backlinks.json`.
+    - **Mitigation:** H pins fm-saxml by version and hash (`get_fm_saxml.py` `VERSION = "0.6.1"`, `FM_SAXML_TESTED`). Nothing breaks until someone bumps that pin. **The bump to 0.7.0 needs a two-line change in H**: read `refs["references"]` when the top level is an object. C1d's upgrade chain makes the same change on the reader side.
+- [x] Decide the contract's scope. **Proposal:** one contract version shared by `entities.json`, `references.json`, `backlinks.json` and `external-references.json`. `model.json` stays internal and keeps its own `SCHEMA_VERSION`.
+    - **Decided: one version (Q3).** It lives in `contract.py` as `CONTRACT_VERSION = (1, 0)`.
+- [x] Decide the envelope. **Proposal:** every contract file becomes an object:
   ```json
   { "schemaVersion": "1.0", "generator": {"name": "fm-saxml-converter", "version": "0.7.0"},
     "source": {"fmpFileName": "...", "fileUuid": "...", "fileMakerVersion": "...", "saxmlVersion": "2.3.0.0"},
@@ -119,26 +130,54 @@ Done when the fixtures are committed and `uv run pytest` still passes: 1,045 pas
   Under this envelope references.json's payload goes under `references`, and backlinks' under `backlinks`.
   - `source` has no absolute path; the input file name is enough.
   - `generatedAt` is left out so output is byte-reproducible (Q6).
-- [ ] Decide what to do about the docId instabilities:
-    - Document positional step ids and name-based ids as they are.
-    - Make silent duplicate overwrites a model warning: does FileMaker ever allow duplicate table, TO, value list or custom function names? Verify; Q5.
-    - Recommendation: don't rewrite `ds:` scopes in 1.0. Add a `resolvedScope` on pairing in a 1.x minor.
+  - **Decided, with three refinements:**
+    - In `entities.json` the collections stay **at the top level, next to the envelope keys**, not under an `entities` key. That keeps H working unchanged. `schemaVersion`, `generator` and `source` are reserved, and no collection may use those names (a test checks this).
+    - `source` also carries `scope`, since every scoped id is built from it.
+    - `generatedAt` is left out of every contract file (**Q6: yes**). `generator.version` is the package version, not the git commit, so two builds from one release are byte-identical.
+- [x] Decide what to do about the docId instabilities:
+    - Document positional step ids and name-based ids as they are. **Decided:** C1e writes them into `docs/contract.md`. Stable step ids wait for 2.0 (section 6).
+    - Make silent duplicate overwrites a model warning. **Done:** `normalize._warn_duplicate_names` compares the raw records with the docIds they produce and adds `DUPLICATE_NAME` for tables, fields, TOs, value lists, custom functions, privilege sets, accounts, extended privileges, custom menus, menu sets and themes. FileMaker's dialogs reject duplicate names for these, so the warning shouldn't fire. If it does, Q5's answer is "yes" and it shows up in `Reports/warnings.md`. It doesn't fire on F0, NEXUS or DGC_UAT.
+    - **Decided:** don't rewrite `ds:` scopes in 1.0. Add a `resolvedScope` on pairing in a 1.x minor.
 
 #### C1b. Complete `entities.json` (session 2)
 
-- [ ] Add the missing maps: `accounts`, `extendedPrivileges`, `customMenus`, `customMenuSets`, `themes`, `fileReferences`, `variables`, `externalDataSources`, `indirectionSites`.
-- [ ] Add `fileOptions` and `graphNotes` as top-level non-map keys.
-- [ ] Drive the list from `EntityMaps`' fields instead of the hardcoded list at `writer.py:89-101`, so a new entity type can't be left out again.
-- [ ] Scrubbing: accounts and variables are already scrubbed in the model. Confirm `_guard_output` covers the new keys (`cli.py:422`).
-- [ ] Measure the size change on NEXUS (33 MB XML) and DGC_UAT (218 MB). Record it here.
-- [ ] Test: every `targetDocId` in references.json either exists in entities.json, is scoped external, or has confidence `unresolved`.
+**Done 2026-10-21** (`render/json/writer.py` `build_entities`, tests in `tests/test_contract.py`).
+
+- [x] Add the missing maps: `accounts`, `extendedPrivileges`, `customMenus`, `customMenuSets`, `themes`, `fileReferences`, `variables`, `externalDataSources`, `indirectionSites`.
+    - `externalDataSources` is a list on the model. It's keyed here by a new docId form, `dataSource:<name>` (`ids.data_source_doc_id`). FileMaker keeps data source names unique.
+    - `indirectionSites` is keyed by the site's own `docId` (`<source docId>#ind<n>`).
+- [x] Add `fileOptions` and `graphNotes` as top-level non-map keys. `fileOptions` is `null` when the export has none.
+- [x] Drive the list from `EntityMaps`' fields instead of the hardcoded list at `writer.py:89-101`, so a new entity type can't be left out again. A test asserts that every `EntityMaps` field is present.
+- [x] Scrubbing: accounts and variables are already scrubbed in the model. Confirm `_guard_output` covers the new keys (`cli.py:422`).
+    - Confirmed: `guard_output` scans every text file under the output folder, so new keys are covered with no change. `AccountEntity` has no password field.
+    - NEXUS and DGC_UAT builds at the default level pass the guard. F0 still trips B1, which this unit doesn't touch.
+- [x] Measure the size change on NEXUS (33 MB XML) and DGC_UAT (218 MB). Record it here.
+
+    | File | NEXUS before → after | DGC_UAT before → after |
+    |---|---|---|
+    | entities.json | 12.35 → 13.73 MB (+11%) | 150.9 → 162.7 MB (+8%) |
+    | references.json | 3.29 → 3.51 MB | 58.8 → 62.8 MB |
+    | backlinks.json | 1.91 → 2.05 MB | 34.3 → 36.6 MB |
+    | build time | 4.9 s → 5.0 s | 1 m 46.5 s → 1 m 46.7 s |
+
+    - Most of the entities growth is `variables`: 949 entries / 1.1 MB on NEXUS, 7,447 / 8.3 MB on DGC. Next are `indirectionSites` (2.1 MB on DGC) and `customMenus` (0.4 MB). Everything else is under 0.1 MB.
+    - references.json and backlinks.json grow about 7% with no new data. Their payload moved one level down under the envelope, so every line gets two more spaces of indentation. If size starts to matter, drop `OPT_INDENT_2` for these two files (a minor change, since readers parse JSON, not whitespace).
+- [x] Test: every `targetDocId` in references.json either exists in entities.json, is scoped external, or has confidence `unresolved`. It passes on F0 with no exceptions.
 
 #### C1c. Envelope and versions (session 3)
 
-- [ ] Add a `contract.py` module with `CONTRACT_VERSION = (1, 0)` and `parse_version("1.0") -> (1, 0)`. Fix the string comparison at `cli.py:787` to use it (with the model's own version).
-- [ ] Wrap all four files as decided in C1a. `external-references.json` moves from its own `1.0.0` to the shared contract.
-- [ ] Write the split JSON from `render` too, or say in the contract that only `build` produces it (decision).
-- [ ] Remove the absolute input path from `external-references.json`.
+**Done 2026-10-21.**
+
+- [x] Add a `contract.py` module with `CONTRACT_VERSION = (1, 0)` and `parse_version("1.0") -> (1, 0)`. Fix the string comparison at `cli.py:787` to use it (with the model's own version).
+    - `contract.py` also holds `CONTRACT_FILES`, `ENVELOPE_KEYS`, `format_version` and `envelope(model)`.
+    - `parse_version` returns a tuple of any length (`"0.5.0"` → `(0, 5, 0)`) and raises `ValueError` on anything else.
+    - rename-check now calls `cli._model_older_than(model, (0, 5))`. A version it can't read counts as old.
+- [x] Wrap all four files as decided in C1a. `external-references.json` moves from its own `1.0.0` to the shared contract.
+    - references.json is now `{envelope, "references": [...]}`, and backlinks.json is `{envelope, "backlinks": {...}}`.
+    - The envelope's `source.saxmlVersion` needed a new model field: `SourceInfo.saxml_version`, read from `FMSaveAsXML/@version`. **model.json `SCHEMA_VERSION` 0.5.0 → 0.6.0** (additive).
+- [x] Write the split JSON from `render` too, or say in the contract that only `build` produces it (decision).
+    - **Decided: `render` writes it too.** `--include-json/--no-include-json` is now shared by `build` and `render` (`IncludeJsonOpt`), so every docs folder carries the contract.
+- [x] Remove the absolute input path from `external-references.json`. `source.fileName` is gone. No contract file holds a path, and a test checks this.
 
 #### C1d. Upgrade chain (session 4)
 
@@ -478,11 +517,11 @@ About 17–20 agent sessions in total.
 | # | Question | Blocks | Who |
 |---|---|---|---|
 | Q1 | Can someone run fm-xml-export-exploder on a Mac against F0's export, so we have real `xml_parsed/` output (file shape, `@key`, kept `UUID`/`hash`/`DDRREF`)? | G4b comparison, Phase 2 golden fixtures | colleague with a Mac |
-| Q2 | Do H or agentic-fm parse `entities.json`/`references.json` anywhere today? | C1 (breaking) | C1a grep |
-| Q3 | One contract version for all four files, or one each? (Proposal: one.) | C1c | us |
+| Q2 | ~~Do H or agentic-fm parse `entities.json`/`references.json` anywhere today?~~ **H does; agentic-fm doesn't.** Only the references.json wrap breaks H, and only after its pin bump. See C1a. | — | answered 2026-10-21 |
+| Q3 | ~~One contract version for all four files, or one each?~~ **One** (`contract.CONTRACT_VERSION`). | — | decided 2026-10-21 |
 | Q4 | Should the FileMaker export script write a Summary.xml (host, time, file list)? | M1 scope, Phase 3 `[fm]` | harness owner |
 | Q5 | Can tables, TOs, value lists or custom functions have duplicate names in a real export? Today they silently overwrite. | C1a docId rules | check FileMaker |
-| Q6 | Drop `generatedAt` from contract files to make them byte-reproducible? | C1e golden test | us |
+| Q6 | ~~Drop `generatedAt` from contract files to make them byte-reproducible?~~ **Yes, dropped.** A test builds F0 twice and compares the bytes. | — | decided 2026-10-21 |
 | Q7 | Is the full CLI dependency set acceptable inside agentic-fm, or do we add a `[cli]` extra? | C2b | harness owner |
 | Q8 | `FM_SAXML_DOCS_ROOT` or agentic-fm's `exports/<name>_docs`? | C3 | harness owner |
 | Q9 | Are byte spans reliable on UTF-16 and CR-heavy exports, and what do they cost on 218 MB? | G0 | spike |
@@ -500,3 +539,101 @@ About 17–20 agent sessions in total.
 - A `fm-saxml snippet <docs> "script:Foo"` command would make G1 useful on its own, before agentic-fm's port.
 - Stable step ids: once step UUIDs are kept (G1), `scriptStep:<script>:<uuid>` could become a 2.0 docId. For now it stays positional.
 - `docs.json` could carry a coverage summary, so Phase 7's `doctor` can report "converted with schema 1.0, 1,824/1,824 checks".
+
+## 7. Backlog (outside Phase 1)
+
+Found while working on this roadmap. These items don't block any Phase 1 unit. Do B2 after B1, because B2 replaces the rule B1 patches.
+
+### B1. Scrubber: AI account names redacted as API keys, and the guard trips on a parameter label
+
+**Symptom.**
+- `fm-saxml build samples/by_type/second_file` writes everything, then exits 2: "Scrubbing guard failed: 2 redacted value(s) still appear in the output".
+- Both hits are in `EverythingBagel/entities.json`, on step 26, *Configure RAG Account*.
+
+**Cause, in two parts.**
+1. **Over-broad rule.**
+    - `scrub/structural.py:136-137` treats *every* calc of Configure AI Account (212) and Configure RAG Account (227) as `api_key` / `ai_account`.
+    - So the account **name** is redacted as if it were the key: `"accountNameGoesHere"` → `[REDACTED:api_key#1]`, `"RAGAccountName"` → `[REDACTED:api_key#2]`.
+    - Each step has separate calc slots for name, key and endpoint. The rule should look at the slot, not the step.
+2. **The guard matches a structural word.**
+    - The literal `"RAGAccountName"` is also the parameter's type (`<Parameter type="RAGAccountName">`).
+    - entities.json writes that as `params[].label` and `calculations[].parameter`.
+    - `scrub/guard.py` searches the output for every redacted value, so it finds the parameter type name and reports a leak. The real value was redacted correctly.
+    - Anyone who hardcodes a value equal to a step's parameter type name or option label hits the same failure.
+
+**Work.**
+- [ ] Make the AI/RAG rule slot-based: only the API key parameter is `api_key`. The account-name slot moves to B2's `account_name` rule, or is left alone if B2 isn't done yet.
+    - The sample's API key slots are empty: Configure AI Account only shows `LLMAccountName`. So F0 needs both steps filled in with a literal key and endpoint first, to learn the key's parameter type name (see B2's census).
+- [ ] Guard decision (B1-D1). The options:
+    - (a) Build a vocabulary of structural names from the export (`Parameter/@type`, `Boolean/@type`, `List/@name`, step names). When a redacted value equals one of those words, don't count its occurrences in label and parameter fields as leaks.
+    - (b) Don't redact a literal that equals its own slot's parameter type name. It's almost certainly a placeholder, not a secret.
+    - (c) Both.
+    - Recommendation: (c). (b) avoids the redaction where it is clearly a placeholder. (a) keeps the guard from failing on any remaining coincidence, and it still fails on real leaks in text fields.
+- [ ] Tests:
+    - the `by_type/second_file` build passes the guard
+    - a real-looking key in Configure AI Account is still redacted
+    - the account name is handled per B2 (or left alone)
+    - a value equal to a parameter type name, appearing in an unrelated text field, is still caught as a leak
+
+### B2. Scrub hardcoded account names in every step slot that takes one
+
+**Goal.** Know every script-step slot where a developer can type an account name. Then redact a **hardcoded literal** there (category `account_name`), and leave variables (`$account`) and field references (`Users::Name`) as they are.
+
+This extends the existing structural rules in `scrub/structural.py`, which already do this by slot for passwords: `<Parameter type="Password">` → `password_parameter`.
+
+**Census so far.** From `samples/by_type/whole/EverythingBagel.xml`, which holds one of nearly every step. Many steps were saved without their options set, so their account slot doesn't appear in the XML.
+
+| Step (id) | Account slot seen in sample | Kind of account | Status |
+|---|---|---|---|
+| Configure AI Account (212) | `LLMAccountName` (calc) | AI account label | confirmed |
+| Configure RAG Account (227) | `RAGAccountName` (calc) | RAG account label | confirmed |
+| Generate Response from Model (220) | `LLMAccountName` (calc) | AI account label | confirmed |
+| Fine-Tune Model (213) | `FineTuneAccountName` (calc) | AI account label | confirmed |
+| Insert Embedding (215) | none: options not set | AI account label | **need the step configured** |
+| Insert Embedding in Found Set (216) | none | AI account label | **need the step configured** |
+| Perform Semantic Find (218) | none | AI account label | **need the step configured** |
+| Perform RAG Action (219) | none | RAG account label | **need the step configured** |
+| Perform Find by Natural Language (221) | none | AI account label | **need the step configured** |
+| Perform SQL Query by Natural Language (214) | none | AI account label | **need the step configured** |
+| Configure Prompt Template (226) | none | probably none | verify |
+| Add Account (134) | none (only `AccountType`, privilege set, `Expire password`) | FileMaker login | **need the step configured** |
+| Delete Account (135) | none | FileMaker login | **need the step configured** |
+| Reset Account Password (136) | only `Password` | FileMaker login | **need the step configured** |
+| Re-Login (138) | only data source + `With dialog` | FileMaker login | **need the step configured** |
+| Enable Account | **step missing from sample** | FileMaker login | **add to sample** |
+| Change Password (83) | only `With dialog`; it takes old and new passwords, no account name | none | verify |
+| Send Mail (63), via SMTP | no SMTP options set | SMTP user name | **need SMTP configured** |
+| Execute SQL (117), ODBC | no ODBC options set | ODBC user name | **need ODBC configured** |
+| Import Records (35), ODBC source | no ODBC options set | ODBC user name | **need ODBC configured** |
+| Insert from URL / Open URL / Trigger Claris Connect Flow | `URL`, cURL options | user in `--user` or in the URL | already covered by positional cURL rules; confirm user-only redaction |
+
+**Work.**
+1. [ ] **Complete the census sample** (FileMaker, by hand). In a copy of EverythingBagel, configure each step marked "need …" above with a **hardcoded literal** in every account, user, password and key slot. Use obviously fake values (`"acct-literal-<step>"`).
+    - Add Enable Account.
+    - Add a second copy of each step that uses a `$variable`, and a third that uses a field reference.
+    - Re-export all three sample types.
+2. [ ] **Census script.** Add `tests/tools/step_slot_census.py`. It lists, per step id, every `Parameter/@type` that holds a calc, plus every non-calc attribute holding text. Run it on the new sample and record the result in `docs/scrubbing.md` as the slot table. The table is the source of truth for the rule.
+3. [ ] **Rule.** Add an `ACCOUNT_NAME_SLOTS = {(step_id, parameter_type), …}` table in `scrub/structural.py`. In `_structural_rule`, a match returns `("account_name", "account_slot", "<step> account name")`. Handling by value shape (existing `_resolve`):
+    - **literal** → redacted
+    - **`$variable` / field reference** → left as written (decision B2-D2)
+    - **expression** (`"svc_" & Get(...)`) → redact its string pieces, as passwords do
+    - Some slots may be plain attributes rather than calcs (SMTP and ODBC user names). Check whether the walker exposes them as slots; if not, extend `scrub/walker.py`.
+4. [ ] **Level (decision B2-D1).** Today account and modified-by names are scrubbed only at `--scrub-level strict` (`scrub/policy.py:13`, `walker.py:42`).
+    - Recommendation:
+        - **FileMaker login, SMTP and ODBC user names** → `secrets`. A hardcoded login name next to a hardcoded password is half the credential.
+        - **AI/RAG account labels** → `standard`. They name a configuration, not a person or a login.
+    - Either way, the redactions report shows the category.
+5. [ ] **Keep the placeholder numbering consistent.** The same account name in the Accounts catalog (strict) and in a Re-Login step (secrets) must get the same placeholder, `[REDACTED:account_name#n]`, when both are scrubbed. Check that `registry` keys by value, not by category.
+6. [ ] **Tests** (one per row of the census table, generated from the table):
+    - a literal is redacted
+    - `$var` is untouched
+    - a field reference is untouched
+    - an expression's string parts are redacted
+    - the guard passes on the full sample
+    - the coverage report (`--coverage`) still shows every step complete
+7. [ ] **Docs.** Add the slot table and the level rule to `docs/scrubbing.md`. Update the list at line 54 ("password parameters … Configure AI / RAG Account").
+
+**Open questions.**
+- B2-D1: which level for each kind of account (above).
+- B2-D2: should a `$variable` be traced back to its Set Variable and redacted there, as passwords are (`structural.py` `_trace`)? Your rule as stated keeps variables and field references. The trade-off is that `Set Variable [$acct; "admin"]` → `Re-Login [$acct]` leaves `"admin"` visible. Recommendation: trace for FileMaker login slots, don't trace for AI labels.
+- Does FileMaker store any account slot as a plain attribute rather than a calc (likely for SMTP/ODBC)? The census answers this.

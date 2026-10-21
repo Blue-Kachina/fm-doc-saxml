@@ -79,6 +79,11 @@ def file_reference_doc_id(ref_type: str, display_name: str) -> str:
     return f"fileRef:{ref_type}:{display_name}"
 
 
+def data_source_doc_id(name: str) -> str:
+    """Key of an external data source in entities.json. FileMaker keeps data source names unique."""
+    return f"dataSource:{name}"
+
+
 # ---------------------------------------------------------------------------
 # File-scoped docIds
 #

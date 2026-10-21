@@ -91,6 +91,7 @@ def normalize(
     source = SourceInfo(
         fileName=source_file or raw.file_name,
         fileMakerVersion=raw.filemaker_version,
+        saxmlVersion=raw.saxml_version or None,
         generatedAt=datetime.now(timezone.utc),
         sourceModifiedAt=source_modified_at,
         fmpFileName=raw.fmp_file_name or None,
@@ -136,8 +137,45 @@ def normalize(
     if raw.coverage is not None:
         model.coverage_inventory = XmlInventory.model_validate(raw.coverage)
     build_variables(model)  # needs scripts and every entity's calculations
+    _warn_duplicate_names(raw, model)
 
     return model
+
+
+def _warn_duplicate_names(raw: RawModel, model: DocumentModel) -> None:
+    """Two records with one docId: the later one replaced the earlier, so say which.
+
+    Layouts, scripts and file references get a docId with their id instead (``_index_script_ids``).
+    FileMaker keeps the names below unique, so this should never fire on a real export.
+    """
+    from collections import Counter
+
+    kinds = (
+        ("tables", raw.tables, lambda r: table_doc_id(normalize_name(r.get("name", "")))),
+        ("fields", raw.fields, lambda r: field_doc_id(normalize_name(r.get("table_name", "")),
+                                                      normalize_name(r.get("name", "")))),
+        ("table occurrences", raw.table_occurrences, lambda r: to_doc_id(normalize_name(r.get("name", "")))),
+        ("value lists", raw.value_lists, lambda r: value_list_doc_id(normalize_name(r.get("name", "")))),
+        ("custom functions", raw.custom_functions,
+         lambda r: custom_function_doc_id(normalize_name(r.get("name", "")))),
+        ("privilege sets", raw.privilege_sets, lambda r: privilege_set_doc_id(normalize_name(r.get("name", "")))),
+        ("accounts", raw.accounts, lambda r: account_doc_id(normalize_name(r.get("name", "")))),
+        ("extended privileges", raw.extended_privileges,
+         lambda r: extended_privilege_doc_id(normalize_name(r.get("name", "")))),
+        ("custom menus", raw.custom_menus, lambda r: custom_menu_doc_id(normalize_name(r.get("name", "")))),
+        ("custom menu sets", raw.custom_menu_sets,
+         lambda r: custom_menu_set_doc_id(normalize_name(r.get("name", "")))),
+        ("themes", raw.themes, lambda r: theme_doc_id(normalize_name(r.get("name", "")))),
+    )
+    for label, records, doc_id_of in kinds:
+        counts = Counter(doc_id_of(r) for r in records if normalize_name(r.get("name", "")))
+        for doc_id, n in counts.items():
+            if n > 1:
+                model.add_warning(
+                    "DUPLICATE_NAME",
+                    f"{n} {label} share the docId '{doc_id}': only one is kept in the docs",
+                    entity_doc_id=doc_id,
+                )
 
 
 def _resolve_lookups(model: DocumentModel) -> None:

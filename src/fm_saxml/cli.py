@@ -105,6 +105,10 @@ ScrubAllowOpt = Annotated[Optional[list[str]], typer.Option(
 # variable rather than a flag, so it doesn't land in shell history.
 SALT_ENV = "FM_SAXML_SCRUB_SALT"
 
+IncludeJsonOpt = Annotated[bool, typer.Option(
+    "--include-json/--no-include-json",
+    help="Write the JSON data files (entities, references, backlinks, external-references) into the docs dir",
+)]
 HtmlOpt = Annotated[bool, typer.Option(
     "--html",
     help="Also write index.html for browsing the docs in a web browser, straight from disk "
@@ -296,7 +300,7 @@ def build(
     input_xml: Annotated[Path, typer.Argument(help="FileMaker SaveAsXML file, or a folder of them (FileMaker 26 multi-file export)")],
     out: Annotated[Optional[Path], typer.Option("--out", "-o", help="Markdown output directory (defaults to <input name>_docs next to the input)")] = None,
     model_out: Annotated[Optional[Path], typer.Option("--model-out", help="Path to write model.json")] = None,
-    include_json: Annotated[bool, typer.Option("--include-json/--no-include-json", help="Write entities.json/references.json into docs dir")] = True,
+    include_json: IncludeJsonOpt = True,
     strict: Annotated[bool, typer.Option("--strict", help="Exit non-zero if there are unresolved references")] = False,
     force: Annotated[bool, typer.Option("--force", "-f", help="Overwrite the output directory without prompting")] = False,
     yes: Annotated[bool, typer.Option("--yes", "-y", help="Assume yes to all interactive prompts")] = False,
@@ -627,6 +631,7 @@ def render(
     coverage: Annotated[bool, typer.Option(
         "--coverage", help="Write Reports/coverage.md (needs a model.json saved with parse --coverage)",
     )] = False,
+    include_json: IncludeJsonOpt = True,
 ) -> None:
     """Render an existing model.json into documentation."""
     model_json = _normalize_path(model_json)
@@ -651,6 +656,10 @@ def render(
                       "save it with 'fm-saxml parse --coverage'.[/yellow]")
     _render_markdown_with_progress(model, out)
     console.print(f"[green]Markdown documentation written to {out}[/green]")
+    if include_json:
+        from .render.json.writer import write_split_json
+        write_split_json(model, out)
+        console.print(f"[dim]JSON data files written to {out}[/dim]")
     if html or webmcp:
         _render_html_viewer(out, _write_webmcp_data([(model, "", None)], out) if webmcp else None)
     _guard_output(scrubber, out)
@@ -784,7 +793,7 @@ def rename_check(
 
     scrubber = _make_scrubber(disable_scrubbing, scrub_level, None, None)
     model = _load_model_for_diff(input_xml, label="the", scrubber=scrubber)
-    if not model.indirection and model.schema_version < "0.5.0":
+    if not model.indirection and _model_older_than(model, (0, 5)):
         # A model.json saved before by-name analysis existed: everything it needs is in the model
         from .analyze.indirection import analyze_indirection
         from .analyze.backlinks import generate_backlinks
@@ -971,6 +980,16 @@ def _warn_incomparable_placeholders(old_path: Path, old_model, new_path: Path, n
             f"can't be compared: a changed secret may show as unchanged, or the reverse. Set {SALT_ENV} "
             "to the same private value for every run to get comparable fingerprint placeholders.[/yellow]"
         )
+
+
+def _model_older_than(model, version: tuple[int, ...]) -> bool:
+    """True when a saved model.json predates ``version`` (or its version can't be read)."""
+    from .contract import parse_version
+
+    try:
+        return parse_version(model.schema_version) < version
+    except ValueError:
+        return True
 
 
 def _load_model_json(path: Path, scrubber):

@@ -6,7 +6,9 @@ from pathlib import Path
 
 import orjson
 
-from ...model.document_model import DocumentModel
+from ...contract import envelope
+from ...model.document_model import DocumentModel, EntityMaps
+from ...normalize.ids import data_source_doc_id
 from ...utils.file_writer import write_bytes
 
 
@@ -14,9 +16,6 @@ def write_model_json(model: DocumentModel, out_path: Path) -> None:
     """Serialize the full DocumentModel to a single JSON file."""
     data = model.model_dump(by_alias=True, mode="json")
     write_bytes(out_path, orjson.dumps(data, option=orjson.OPT_INDENT_2))
-
-
-EXTERNAL_REFERENCES_SCHEMA_VERSION = "1.0.0"
 
 
 def build_external_references(model: DocumentModel) -> dict:
@@ -36,14 +35,7 @@ def build_external_references(model: DocumentModel) -> dict:
     """
     external = [r for r in model.references if r.confidence == "external"]
     return {
-        "schemaVersion": EXTERNAL_REFERENCES_SCHEMA_VERSION,
-        "source": {
-            "fileName": model.source.file_name,
-            "fmpFileName": model.source.fmp_file_name,
-            "fileUuid": model.source.file_uuid,
-            "scope": model.source.scope,
-            "fileMakerVersion": model.source.file_maker_version,
-        },
+        **envelope(model),
         "dataSources": [ds.model_dump(by_alias=True, mode="json") for ds in model.external_data_sources],
         "externalTableOccurrences": [
             {
@@ -83,31 +75,36 @@ def write_external_references_json(model: DocumentModel, output_dir: Path) -> No
     )
 
 
-def write_split_json(model: DocumentModel, output_dir: Path) -> None:
-    """Write entities.json, references.json, and backlinks.json into output_dir."""
-    entities_data = {}
-    for key, entity_map in {
-        "tables": model.entities.tables,
-        "fields": model.entities.fields,
-        "tableOccurrences": model.entities.table_occurrences,
-        "relationships": model.entities.relationships,
-        "layouts": model.entities.layouts,
-        "layoutObjects": model.entities.layout_objects,
-        "scripts": model.entities.scripts,
-        "scriptSteps": model.entities.script_steps,
-        "customFunctions": model.entities.custom_functions,
-        "valueLists": model.entities.value_lists,
-        "privilegeSets": model.entities.privilege_sets,
-    }.items():
-        entities_data[key] = {
-            doc_id: entity.model_dump(by_alias=True, mode="json")
-            for doc_id, entity in entity_map.items()
-        }
+def build_entities(model: DocumentModel) -> dict:
+    """entities.json: every entity map of the model, keyed by docId, after the contract envelope.
 
-    write_bytes(output_dir / "entities.json", orjson.dumps(entities_data, option=orjson.OPT_INDENT_2))
-    write_bytes(output_dir / "references.json", orjson.dumps(
-        [r.model_dump(by_alias=True, mode="json") for r in model.references],
-        option=orjson.OPT_INDENT_2,
-    ))
-    write_bytes(output_dir / "backlinks.json", orjson.dumps(model.backlinks, option=orjson.OPT_INDENT_2))
+    The collections come from ``EntityMaps``' fields, so a new entity type is written
+    without touching this function.
+    """
+    def dump(value) -> dict:
+        return value.model_dump(by_alias=True, mode="json")
+
+    data = envelope(model)
+    for name, info in EntityMaps.model_fields.items():
+        data[info.alias or name] = {doc_id: dump(e) for doc_id, e in getattr(model.entities, name).items()}
+    # Kept as lists on the model; keyed here like every other collection.
+    data["externalDataSources"] = {data_source_doc_id(ds.name): dump(ds) for ds in model.external_data_sources}
+    data["indirectionSites"] = {site.doc_id: dump(site) for site in model.indirection}
+    data["fileOptions"] = dump(model.file_options) if model.file_options else None
+    data["graphNotes"] = [dump(note) for note in model.graph_notes]
+    return data
+
+
+def _write(path: Path, data) -> None:
+    write_bytes(path, orjson.dumps(data, option=orjson.OPT_INDENT_2))
+
+
+def write_split_json(model: DocumentModel, output_dir: Path) -> None:
+    """Write the contract files (see ``contract.py``) into output_dir."""
+    _write(output_dir / "entities.json", build_entities(model))
+    _write(output_dir / "references.json", {
+        **envelope(model),
+        "references": [r.model_dump(by_alias=True, mode="json") for r in model.references],
+    })
+    _write(output_dir / "backlinks.json", {**envelope(model), "backlinks": model.backlinks})
     write_external_references_json(model, output_dir)
