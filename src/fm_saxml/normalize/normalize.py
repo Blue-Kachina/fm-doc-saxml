@@ -48,6 +48,8 @@ from ..model.entities import (
     AutoEnterOptions,
     ValidationOptions,
     SourceXmlInfo,
+    DISPLAY_STYLES,
+    LocalStyle,
 )
 from .ids import (
     table_doc_id,
@@ -239,7 +241,9 @@ def _normalize_file_options(raw: RawModel, model: DocumentModel) -> None:
         hideFromClientSharing=fo.get("hide_from_client_sharing"),
         hideFromWebDirectSharing=fo.get("hide_from_webdirect_sharing"),
         useDefaultFields=fo.get("use_default_fields"),
-        defaultMenuSet=fo.get("default_menu_set"),
+        defaultMenuSet=(fo.get("default_menu_set") or {}).get("name"),
+        defaultMenuSetId=(fo.get("default_menu_set") or {}).get("id"),
+        defaultMenuSetUuid=(fo.get("default_menu_set") or {}).get("uuid"),
         scriptTriggers=_script_triggers(fo.get("script_triggers"), ExternalTargets(model), model),
     )
 
@@ -672,9 +676,17 @@ def _normalize_layouts(raw: RawModel, model: DocumentModel) -> None:
             uuid=layout.get("uuid"),
             baseTableOccurrenceDocId=to_doc,
             theme=layout.get("theme"),
+            themeUuid=layout.get("theme_uuid"),
+            themeBase=layout.get("theme_base"),
             folderPath=layout.get("folder_path"),
             referencedFields=ref_field_doc_ids,
             menuSet=layout.get("menu_set"),
+            menuSetUuid=layout.get("menu_set_uuid"),
+            width=layout.get("width"),
+            gridStyle=layout.get("grid_style"),
+            clientType=layout.get("client_type"),
+            options=layout.get("options"),
+            hidden=layout.get("hidden"),
             parts=[
                 LayoutPart(
                     type=p.get("type") or "",
@@ -686,6 +698,10 @@ def _normalize_layouts(raw: RawModel, model: DocumentModel) -> None:
                         if p.get("break_field") else None
                     ),
                     objectCount=p.get("object_count", 0),
+                    definitionKind=p.get("definition_kind"),
+                    absolute=p.get("absolute"),
+                    options=p.get("options"),
+                    localStyle=LocalStyle.model_validate(p["local_style"]) if p.get("local_style") else None,
                 )
                 for p in layout.get("parts") or []
             ],
@@ -828,6 +844,16 @@ def _normalize_layout_objects(raw: RawModel, model: DocumentModel) -> None:
                 calculations=_entity_calcs(obj.get("calculations")),
                 references=obj_refs,
                 rawText=obj.get("raw_text"),
+                options=obj.get("options"),
+                localStyle=LocalStyle.model_validate(obj["local_style"]) if obj.get("local_style") else None,
+                displayStyle=(
+                    DISPLAY_STYLES.get(obj["display_style"], str(obj["display_style"]))
+                    if obj.get("display_style") is not None else None
+                ),
+                displayStyleCode=obj.get("display_style"),
+                hideInFindMode=obj.get("hide_in_find_mode"),
+                labelText=obj.get("label_text"),
+                iconType=obj.get("icon_type"),
                 sourceXml=(
                     SourceXmlInfo(path=obj.get("source_xml_path", ""))
                     if obj.get("source_xml_path")
@@ -949,6 +975,7 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
                 scriptDocId=script_entity.doc_id,
                 index=raw_step.get("index", 0),
                 stepId=str(raw_step.get("step_type_id", "")),
+                uuid=raw_step.get("uuid"),
                 name=raw_step.get("name", ""),
                 enabled=raw_step.get("enabled", True),
                 rawText=raw_step.get("raw_text"),
@@ -1292,6 +1319,8 @@ def _normalize_custom_menus(raw: RawModel, model: DocumentModel) -> None:
                 script_did = model.local_script_doc_id(sref["name"], sref.get("id")) if sref else None
             items.append(CustomMenuItem(
                 name=item.get("name", ""),
+                fmpId=item.get("id") or None,
+                uuid=item.get("uuid"),
                 actionType=item.get("action_type", ""),
                 installCondition=item.get("install_condition"),
                 scriptDocId=script_did,
@@ -1302,6 +1331,8 @@ def _normalize_custom_menus(raw: RawModel, model: DocumentModel) -> None:
             docId=doc_id,
             name=name,
             fmpId=str(cm.get("id", "")),
+            uuid=cm.get("uuid"),
+            catalogUuid=cm.get("catalog_uuid"),
             baseMenuName=cm.get("base_menu_name"),
             installCondition=cm.get("install_condition"),
             browseMode=cm.get("browse_mode", True),
@@ -1334,6 +1365,8 @@ def _normalize_custom_menu_sets(raw: RawModel, model: DocumentModel) -> None:
             docId=doc_id,
             name=name,
             fmpId=str(cms.get("id", "")),
+            uuid=cms.get("uuid"),
+            catalogUuid=cms.get("catalog_uuid"),
             menuDocIds=menu_doc_ids,
             modified=ModificationInfo.model_validate(cms["modified"]) if cms.get("modified") else None,
             sourceXml=SourceXmlInfo(path=cms.get("source_xml_path", "")) if cms.get("source_xml_path") else None,
@@ -1358,6 +1391,16 @@ def _normalize_themes(raw: RawModel, model: DocumentModel) -> None:
             displayName=th.get("display_name", ""),
             group=th.get("group"),
             defaultTheme=th.get("default_theme", False),
+            uuid=th.get("uuid"),
+            version=th.get("version"),
+            platform=th.get("platform"),
+            locale=th.get("locale"),
+            baseName=th.get("base_name"),
+            baseVersion=th.get("base_version"),
+            namedStyles=th.get("named_styles") or {},
+            colorPalette=th.get("color_palette") or {},
+            layoutBuilder=th.get("layout_builder") or {},
+            charting=th.get("charting") or {},
             modified=ModificationInfo.model_validate(th["modified"]) if th.get("modified") else None,
             sourceXml=SourceXmlInfo(path=th.get("source_xml_path", "")) if th.get("source_xml_path") else None,
         )

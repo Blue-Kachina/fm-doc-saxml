@@ -79,6 +79,47 @@
       "title": "ContractSource",
       "type": "object"
     },
+    "DataSourcePairingInfo": {
+      "description": "Which file of a batch build a data source was paired with (batch/links.py), or why none.",
+      "properties": {
+        "file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "File"
+        },
+        "folder": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Folder"
+        },
+        "match": {
+          "default": "",
+          "title": "Match",
+          "type": "string"
+        },
+        "reason": {
+          "default": "",
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "title": "DataSourcePairingInfo",
+      "type": "object"
+    },
     "ExternalDataSource": {
       "description": "An entry of the file's External Data Sources catalog (other files it reaches into).",
       "properties": {
@@ -122,6 +163,17 @@
           },
           "title": "Paths",
           "type": "array"
+        },
+        "pairing": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DataSourcePairingInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [

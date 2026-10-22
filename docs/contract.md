@@ -170,6 +170,13 @@ Every entity has a `docId`: a type prefix and its name, as written in FileMaker 
 
 Two more keys aren't collections: `fileOptions` (an object, or `null` when the export has none) and `graphNotes` (a list).
 
+Fields some readers look for:
+- **Custom menus and menu sets** have `uuid` and `catalogUuid`: the UUID of the file's `CustomMenuCatalog` (on menus) or `CustomMenuSetCatalog` (on sets), which a pasted menu or set must name. Menu items have `uuid`; FileMaker gives a pasted item a new one. `fileOptions` has the default menu set's `defaultMenuSetId` and `defaultMenuSetUuid`, and layouts have `menuSetUuid`. Even `[Standard FileMaker Menus]` has a different UUID in each file, so read it from the file in question. The menu and menu set pages carry `fmpId`, `uuid` and `catalogUuid` in their front matter too.
+- **Layouts and layout objects**: `bounds`, layout `width` and part `height` and `absolute` are in **points**, the same numbers FileMaker's clipboard uses. Objects are identified by `objectId` (FileMaker's `id`); SaXML objects have no `key`. Field controls have `displayStyle` (`editBox`, `dropDownList`, `popUpMenu`, `checkboxSet`, `radioButtonSet`, `dropDownCalendar`, `concealedEditBox`) and the raw `displayStyleCode`; an unknown code is passed through as its number. `options` on layouts, parts and objects is FileMaker's bitfield, not decoded. Objects and parts have `localStyle` (`{type, name, displayName}`): for `ThemeCustomStyle`, `name` is a key of the layout's theme's `namedStyles`. Layouts have `themeUuid` and `themeBase`.
+- **Themes** have `uuid`, `baseName` and `baseVersion` (the built-in theme a custom theme was made from), and the theme's metadata as `{key: value}` maps: `namedStyles` (style class → name shown in FileMaker), `colorPalette` (`swatch1`… → `#rrggbb`), `layoutBuilder` and `charting`. The theme's CSS and every object's local CSS text aren't in the contract yet. Theme metadata and style names are never scrubbed: they hold no credentials, and skipping them keeps a colour or style class from tripping a detector.
+- **Script steps** have `uuid`, which stays the same when steps above them move (their docId is positional).
+- **External data sources** have `pairing` in a batch build: `{file, folder, match, reason}`, the batch file the data source was paired with (`file` and `folder` are `null` when it wasn't, and `reason` says why). It's `null` in a single-file build. `docs.json`'s `pairings` hold the same information for the whole batch.
+
 What readers should know about docIds:
 
 - **They follow names.** Renaming something in FileMaker changes its docId, and the docIds of everything named after it (a table's fields, a script's steps).

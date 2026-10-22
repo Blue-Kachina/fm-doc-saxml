@@ -36,7 +36,7 @@ SCHEMA_VERSION = "0.7.0"  # 0.3.0: script step params, variables. 0.4.0: file op
 #   options, value list sources, privilege set access, field and script options (all additive)
 #   0.5.0: indirectionSites, reference via / siteDocId, step calc mode (additive)
 #   0.6.0: source.saxmlVersion (additive)
-#   0.7.0: source.hasDdrInfo (additive)
+#   0.7.0: source.hasDdrInfo, data source pairing (additive)
 
 # What an export without DDR info (Has_DDR_INFO="False") loses. Shown in its warning, on the
 # coverage report and in index.md. A scripted Save a Copy as XML writes no DDR info unless
@@ -74,6 +74,17 @@ class SourceInfo(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+class DataSourcePairingInfo(BaseModel):
+    """Which file of a batch build a data source was paired with (batch/links.py), or why none."""
+
+    file: Optional[str] = None     # FileMaker file name without extension; None when not paired
+    folder: Optional[str] = None   # that file's docs folder, relative to the batch root
+    match: str = ""                # "path", "name" (weak), "path (its own file)", or "" when not paired
+    reason: str = ""               # why it isn't paired
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
 class ExternalDataSource(BaseModel):
     """An entry of the file's External Data Sources catalog (other files it reaches into)."""
 
@@ -82,6 +93,7 @@ class ExternalDataSource(BaseModel):
     uuid: Optional[str] = None
     type: str = "FileMaker"
     paths: list[str] = []  # e.g. ["file:idiClients"]
+    pairing: Optional[DataSourcePairingInfo] = None  # set only in a batch build
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -134,6 +146,9 @@ class FileOptions(BaseModel):
     hide_from_webdirect_sharing: Optional[bool] = Field(None, alias="hideFromWebDirectSharing")
     use_default_fields: Optional[bool] = Field(None, alias="useDefaultFields")  # new tables get the default fields
     default_menu_set: Optional[str] = Field(None, alias="defaultMenuSet")  # Manage Custom Menus: default for this file
+    default_menu_set_id: Optional[str] = Field(None, alias="defaultMenuSetId")
+    # Read per file: even [Standard FileMaker Menus] has a different UUID in each file
+    default_menu_set_uuid: Optional[str] = Field(None, alias="defaultMenuSetUuid")
     script_triggers: list[ScriptTriggerInfo] = Field([], alias="scriptTriggers")  # OnFirstWindowOpen, ...
 
     model_config = ConfigDict(populate_by_name=True)

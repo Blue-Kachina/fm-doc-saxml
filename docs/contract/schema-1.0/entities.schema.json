@@ -541,6 +541,30 @@
           "title": "Fmpid",
           "type": "string"
         },
+        "uuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uuid"
+        },
+        "catalogUuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cataloguuid"
+        },
         "baseMenuName": {
           "anyOf": [
             {
@@ -622,6 +646,30 @@
         "name": {
           "title": "Name",
           "type": "string"
+        },
+        "fmpId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fmpid"
+        },
+        "uuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uuid"
         },
         "actionType": {
           "default": "",
@@ -712,6 +760,30 @@
           "title": "Fmpid",
           "type": "string"
         },
+        "uuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uuid"
+        },
+        "catalogUuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cataloguuid"
+        },
         "menuDocIds": {
           "default": [],
           "items": {
@@ -738,6 +810,47 @@
         "fmpId"
       ],
       "title": "CustomMenuSetEntity",
+      "type": "object"
+    },
+    "DataSourcePairingInfo": {
+      "description": "Which file of a batch build a data source was paired with (batch/links.py), or why none.",
+      "properties": {
+        "file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "File"
+        },
+        "folder": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Folder"
+        },
+        "match": {
+          "default": "",
+          "title": "Match",
+          "type": "string"
+        },
+        "reason": {
+          "default": "",
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "title": "DataSourcePairingInfo",
       "type": "object"
     },
     "EntityCalculation": {
@@ -887,6 +1000,17 @@
           },
           "title": "Paths",
           "type": "array"
+        },
+        "pairing": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DataSourcePairingInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -1388,6 +1512,30 @@
           "default": null,
           "title": "Defaultmenuset"
         },
+        "defaultMenuSetId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Defaultmenusetid"
+        },
+        "defaultMenuSetUuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Defaultmenusetuuid"
+        },
         "scriptTriggers": {
           "default": [],
           "items": {
@@ -1778,6 +1926,30 @@
           "default": null,
           "title": "Theme"
         },
+        "themeUuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Themeuuid"
+        },
+        "themeBase": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Themebase"
+        },
         "folderPath": {
           "anyOf": [
             {
@@ -1789,6 +1961,66 @@
           ],
           "default": null,
           "title": "Folderpath"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Width"
+        },
+        "gridStyle": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gridstyle"
+        },
+        "clientType": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clienttype"
+        },
+        "options": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Options"
+        },
+        "hidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hidden"
         },
         "referencedFields": {
           "default": [],
@@ -1825,6 +2057,18 @@
           ],
           "default": null,
           "title": "Menuset"
+        },
+        "menuSetUuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Menusetuuid"
         },
         "scriptTriggers": {
           "default": [],
@@ -1863,7 +2107,7 @@
       "type": "object"
     },
     "LayoutObjectBounds": {
-      "description": "Pixel bounds of a layout object on the layout.",
+      "description": "Bounds of a layout object on the layout, in points (the same numbers as FileMaker's clipboard).",
       "properties": {
         "top": {
           "anyOf": [
@@ -2149,6 +2393,89 @@
           "default": null,
           "title": "Rawtext"
         },
+        "options": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Options"
+        },
+        "localStyle": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalStyle"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "displayStyle": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displaystyle"
+        },
+        "displayStyleCode": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displaystylecode"
+        },
+        "hideInFindMode": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hideinfindmode"
+        },
+        "labelText": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Labeltext"
+        },
+        "iconType": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Icontype"
+        },
         "sourceXml": {
           "anyOf": [
             {
@@ -2215,12 +2542,102 @@
           "default": 0,
           "title": "Objectcount",
           "type": "integer"
+        },
+        "definitionKind": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Definitionkind"
+        },
+        "absolute": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Absolute"
+        },
+        "options": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Options"
+        },
+        "localStyle": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalStyle"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
         "type"
       ],
       "title": "LayoutPart",
+      "type": "object"
+    },
+    "LocalStyle": {
+      "description": "``<LocalCSS type name displayName>`` on a layout object or part (the CSS itself isn't kept).\n\n``ThemeCustomStyle``: a theme's named style (``name`` is its class, ``displayName`` what\nFileMaker shows). ``ObjectCustomStyle``: local changes only, usually with no name.",
+      "properties": {
+        "type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Type"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displayname"
+        }
+      },
+      "title": "LocalStyle",
       "type": "object"
     },
     "ModificationInfo": {
@@ -2952,6 +3369,18 @@
           "title": "Stepid",
           "type": "string"
         },
+        "uuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uuid"
+        },
         "name": {
           "title": "Name",
           "type": "string"
@@ -3583,6 +4012,110 @@
           "default": false,
           "title": "Defaulttheme",
           "type": "boolean"
+        },
+        "uuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uuid"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        },
+        "platform": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Platform"
+        },
+        "locale": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Locale"
+        },
+        "baseName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Basename"
+        },
+        "baseVersion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Baseversion"
+        },
+        "namedStyles": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "Namedstyles",
+          "type": "object"
+        },
+        "colorPalette": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "Colorpalette",
+          "type": "object"
+        },
+        "layoutBuilder": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "Layoutbuilder",
+          "type": "object"
+        },
+        "charting": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "Charting",
+          "type": "object"
         },
         "sourceXml": {
           "anyOf": [

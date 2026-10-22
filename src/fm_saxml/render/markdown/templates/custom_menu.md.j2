@@ -2,6 +2,10 @@
 docId: {{ entity.doc_id }}
 entityType: customMenu
 name: {{ entity.name }}
+fmpId: "{{ entity.fmp_id }}"
+{% if entity.uuid %}uuid: {{ entity.uuid }}
+{% endif %}{% if entity.catalog_uuid %}catalogUuid: {{ entity.catalog_uuid }}
+{% endif %}itemCount: {{ entity.items | length }}
 ---
 
 # Custom Menu: {{ entity.name }}
@@ -11,6 +15,9 @@ name: {{ entity.name }}
 | Name | Value |
 |---|---|
 | FMP ID | {{ entity.fmp_id }} |
+{% if entity.uuid %}| UUID | `{{ entity.uuid }}` |
+{% endif %}{% if entity.catalog_uuid %}| Custom Menu Catalog UUID | `{{ entity.catalog_uuid }}` |
+{% endif %}| Items | {{ entity.items | length }} |
 {% if entity.modified %}| Last Modified By | {{ entity.modified.account_name or entity.modified.user_name }}{% if entity.modified.user_name and entity.modified.user_name != entity.modified.account_name %} (user: {{ entity.modified.user_name }}){% endif %} |
 | Last Modified | {{ entity.modified.timestamp }} |
 {% endif %}{% if entity.base_menu_name %}| Base Menu | {{ entity.base_menu_name }} |

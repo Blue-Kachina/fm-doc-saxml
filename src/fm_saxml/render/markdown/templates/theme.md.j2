@@ -17,3 +17,27 @@ name: {{ entity.name }}
 {% if entity.display_name %}| Display Name | {{ entity.display_name }} |
 {% endif %}{% if entity.group %}| Group | {{ entity.group }} |
 {% endif %}| Default Theme | {{ entity.default_theme }} |
+{% if entity.uuid %}| UUID | `{{ entity.uuid }}` |
+{% endif %}{% if entity.base_name %}| Based On | `{{ entity.base_name }}`{% if entity.base_version %} (version {{ entity.base_version }}){% endif %} |
+{% endif %}{% if entity.charting.colorScheme %}| Chart Color Scheme | {{ entity.charting.colorScheme | cell }} |
+{% endif %}
+{% if entity.color_palette %}
+## Color Palette
+
+| Swatch | Color |
+|---|---|
+{% for swatch, color in entity.color_palette.items() %}
+| {{ swatch }} | `{{ color }}` |
+{% endfor %}
+{% endif %}
+{% if entity.named_styles %}
+## Named Styles
+
+Style classes the theme defines, and the name FileMaker shows for each. A layout object's style is in its local CSS.
+
+| Style Class | Name |
+|---|---|
+{% for cls, label in entity.named_styles | dictsort %}
+| `{{ cls }}` | {{ label | cell }} |
+{% endfor %}
+{% endif %}

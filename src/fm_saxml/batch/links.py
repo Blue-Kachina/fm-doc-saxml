@@ -22,7 +22,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Optional
 
-from ..model.document_model import DocumentModel
+from ..model.document_model import DataSourcePairingInfo, DocumentModel
 from ..model.references import ExternalTarget, ReferenceRecord
 from ..render.markdown.link_resolver import LinkResolver
 
@@ -99,6 +99,10 @@ def link_batch(files: list[BatchFile]) -> BatchLinks:
             p = _pair(f, ds.name, ds.type, ds.paths, files)
             links.pairings.append(p)
             pair_of[(f.folder, ds.name.casefold())] = p
+            ds.pairing = DataSourcePairingInfo(  # written to entities.json and the file's index.md
+                file=by_folder[p.target].name if p.target else None, folder=p.target,
+                match=p.match, reason=p.reason,
+            )
 
     incoming: dict[str, dict[tuple, dict]] = {f.folder: {} for f in files}
     for f in files:

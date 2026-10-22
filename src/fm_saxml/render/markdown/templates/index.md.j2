@@ -68,7 +68,7 @@ Coverage: {% if coverage.ok %}all {{ coverage.rows | length }} checks complete, 
 |---|---|
 {% if fo.default_layout %}| Switch to layout (on open) | {{ link(fo.default_layout) }} |
 {% endif %}{% for t in fo.script_triggers %}| {{ t.event }} | {{ link(t.script_doc_id) }} |
-{% endfor %}{% if fo.default_menu_set %}| Default menu set | {{ fo.default_menu_set }} |
+{% endfor %}{% if fo.default_menu_set %}| Default menu set | {{ fo.default_menu_set }}{% if fo.default_menu_set_uuid %} (UUID `{{ fo.default_menu_set_uuid }}`){% endif %} |
 {% endif %}{% if fo.minimum_version %}| Minimum version allowed to open | {{ fo.minimum_version }} |
 {% endif %}{% if fo.login_account %}| Log in using | {{ fo.login_account }} |
 {% elif fo.login_type %}| Log in using | {{ "Not set (prompt for account)" if fo.login_type == "-1" else "Type " ~ fo.login_type }} |
@@ -84,10 +84,14 @@ Coverage: {% if coverage.ok %}all {{ coverage.rows | length }} checks complete, 
 
 ## External Data Sources
 
-| Name | Type | File Path List |
-|---|---|---|
+{% set paired = external_data_sources | selectattr("pairing") | list %}
+| Name | Type | File Path List |{% if paired %} Paired With |{% endif %}
+
+|---|---|---|{% if paired %}---|{% endif %}
+
 {% for ds in external_data_sources %}
-| {{ ds.name }} | {{ ds.type }} | {{ ds.paths | join("<br>") | cell }} |
+| {{ ds.name }} | {{ ds.type }} | {{ ds.paths | join("<br>") | cell }} |{% if paired %} {% if ds.pairing and ds.pairing.folder %}[{{ ds.pairing.file | cell }}](../{{ ds.pairing.folder | urlencode }}/index.md){% if ds.pairing.match != "path" %} ({{ ds.pairing.match }}){% endif %}{% elif ds.pairing %}_{{ ds.pairing.reason | cell }}_{% endif %} |{% endif %}
+
 {% endfor %}
 {% endif %}
 

@@ -182,6 +182,7 @@ def _parse_step(
     return {
         "step_type_id": step_type_id,
         "index": index,
+        "uuid": uuid_of(elem),
         "name": name,
         "enabled": enabled,
         "raw_text": raw_text,

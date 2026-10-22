@@ -22,6 +22,10 @@ layout: {{ entity.layout_doc_id }}
 {% endif %}{% if entity.parent_object_doc_id %}| Inside | {{ link(entity.parent_object_doc_id) }} |
 {% endif %}{% if entity.button_script_doc_id %}| Triggers Script | {{ link(entity.button_script_doc_id) }} |
 {% endif %}{% if entity.button_step %}| Button Action | {{ entity.button_step | cell }} |
+{% endif %}{% if entity.label_text %}| Button Label | {{ entity.label_text | cell }} |
+{% endif %}{% if entity.local_style and entity.local_style.display_name %}| Style | {{ entity.local_style.display_name | cell }} |
+{% endif %}{% if entity.display_style %}| Control Style | {{ entity.display_style }} |
+{% endif %}{% if entity.hide_in_find_mode is not none %}| Hide Condition Applies in Find Mode | {{ "Yes" if entity.hide_in_find_mode else "No" }} |
 {% endif %}
 
 {% if entity.portal %}

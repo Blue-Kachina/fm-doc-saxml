@@ -18,6 +18,7 @@ name: {{ entity.name }}
 {% if entity.base_table_occurrence_doc_id %}| Table Occurrence | {{ link(entity.base_table_occurrence_doc_id) }} |
 {% endif %}{% if entity.menu_set %}| Menu Set | {{ entity.menu_set }} |
 {% endif %}{% if entity.theme %}| Theme | {{ entity.theme }} |
+{% endif %}{% if entity.width %}| Width (pt) | {{ entity.width }} |
 {% endif %}| Field Count | {{ entity.referenced_fields | length }} |
 | Layout Object Count | {{ entity.layout_objects | length }} |
 

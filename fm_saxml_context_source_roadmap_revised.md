@@ -92,11 +92,11 @@ The no-DDR build also trips the scrub guard on `Scripts/OneOfEverything.md:49`, 
 | M1 | Specify a synthesized `Summary.xml` | Reshape. Write a spec with a provenance flag, and decide whether the FileMaker export script writes the manifest itself (Q4). **Done 2026-10-21** (Q4 open). | 1 (with M2) |
 | M2 | Generate `Summary.xml` when missing | Reshape. Build it in memory only and never write it into the input folder. **Done 2026-10-21.** | (with M1) |
 | M3 | Use the synthesized manifest for pairing | Shrink to a test. Pairing already ignores the manifest. **Done 2026-10-21.** | ½ |
-| G0 | *(new)* Source spans | Add. One shared mechanism to point back at the export's XML. G1 needs it, and G2 and G4 can use it. | 1 + spike |
-| G1 | Raw step XML per script step | Keep. Scrubbing is the hard part. | 1–2 |
-| G2 | Theme styles | Keep. Structured metadata, with CSS through G0 or a field (decision G2-D1). | 1 |
-| G3 | Custom menu and menu set UUIDs | **Changed by the update.** The consumer is now `menu-lookup`, not `install_menus.py`. It needs UUIDs on the pages, catalog UUIDs, and raw menu XML. Split it: G3a (UUIDs, model and pages), G3b (raw menu XML through G0). Contingent on the owner's open point 1. | 1 + ½ |
-| G4 | Layout object geometry and styles | Keep. The gap is larger than the published text suggests. Split it. | 2 |
+| G0 | *(new)* Source spans | Add. One shared mechanism to point back at the export's XML. G1 needs it, and G2 and G4 can use it. **Deferred 2026-10-22: `raw_xml()` won't be built for now (backlog B3).** | 1 + spike |
+| G1 | Raw step XML per script step | Keep. Scrubbing is the hard part. **Deferred with G0 (B3)**, except the cheap step `uuid` field. | 1–2 |
+| G2 | Theme styles | Keep. Structured metadata, with CSS through G0 or a field (decision G2-D1). **Structured metadata only; the CSS is deferred with G0 (B3).** | 1 |
+| G3 | Custom menu and menu set UUIDs | **Changed by the update.** The consumer is now `menu-lookup`, not `install_menus.py`. It needs UUIDs on the pages, catalog UUIDs, and raw menu XML. Split it: G3a (UUIDs, model and pages), G3b (raw menu XML through G0). Contingent on the owner's open point 1. **G3b deferred with G0 (B3).** | 1 + ½ |
+| G4 | Layout object geometry and styles | Keep. The gap is larger than the published text suggests. Split it. **G4b's raw layout XML deferred with G0 (B3); its `local_css` field stays.** | 2 |
 | G5 | External data source details | Shrink. The model is already complete; the only gap is in entities.json (done in C1). | ½ |
 | D1 | *(new, from Q1)* Exports without DDR info | Add. Scripted exports have no `DDR_INFO`. Fixture, warning, and a coverage line for what's lost. **Done 2026-10-21.** | ½ |
 
@@ -440,7 +440,7 @@ Done when the fixtures are committed and `uv run pytest` still passes: 1,045 pas
 
 ---
 
-### G0. Source spans: a pointer back into the export (spike + 1 session)
+### G0. Source spans: a pointer back into the export (spike + 1 session) — **deferred (B3)**
 
 G1 needs this, and G2, G3b and G4 can reuse it. Today `SourceXmlInfo{path, line}` exists (`model/entities.py:45-51`), but `line` is never filled and `path` is a non-unique tag chain (`parser/extractors/_helpers.py:87-96`).
 
@@ -472,7 +472,7 @@ G1 needs this, and G2, G3b and G4 can reuse it. Today `SourceXmlInfo{path, line}
 
 ---
 
-### G1. Raw step XML (1–2 sessions, after G0)
+### G1. Raw step XML (1–2 sessions, after G0) — **deferred (B3), except the step `uuid`**
 
 **What agentic-fm needs** (`afm/agent/scripts/fm_xml_to_snippet.py`):
 - `translate_script` reads the first `ObjectList` → `Step` (`:345-365`).
@@ -498,7 +498,7 @@ Decision G1-D1, where the scrubbed bytes come from:
 
 **Recommendation:** B when scrubbing is on, with spans pointing into the scrubbed copy. Otherwise the original. Raise it with the harness owner, because it bends "No extra files".
 
-- [ ] Add a `uuid` field to `ScriptStepEntity` (cheap, and useful for diff).
+- [x] Add a `uuid` field to `ScriptStepEntity` (cheap, and useful for diff). *Done 2026-10-22 (`tests/test_step_uuid.py`); unique per step on F0 and kept by scrubbing.*
 - [ ] Implement G1-D1.
 - [ ] Spans per script (one `StepsForScripts/Script` element) **and** per step. The script span feeds `fm_xml_to_snippet.py` directly; the step spans allow partial pastes.
 - [ ] Test: for F0, `raw_xml("script:…")` parses, contains every `Step` in order, and holds no secret seeded in a step calc.
@@ -521,15 +521,15 @@ Decision G1-D1, where the scrubbed bytes come from:
 
 **In the export:** `FileA_ThemeCatalog.xml:10-5907` has `<Theme Display Group version locale platform name defaultTheme id>`, then `<Image>` (a base64 thumbnail), `<CSS>` (about 5,700 lines), then `<Metadata>` (`namedstyles`, `colorpalette`, `layoutbuilder`, `charting`, `colorScheme`). Built-in themes have no `baseName`. Custom themes do: `samples/by_type` has `<Theme … baseName="com.filemaker.theme.vibrant" baseVersion="6">`. Layouts also carry it as `LayoutThemeReference @Base`. Keep `base_name` and `base_version`.
 
-- [ ] Add structured fields: `uuid`, `version`, `platform`, `locale`, `named_styles: dict`, `color_palette: dict`, `layout_builder: dict`, `charting: dict`, `color_scheme`. Leave out `Image`.
-- [ ] Decision G2-D1, CSS:
+- [x] Add structured fields: `uuid`, `version`, `platform`, `locale`, `named_styles: dict`, `color_palette: dict`, `layout_builder: dict`, `charting: dict`, `color_scheme`. Leave out `Image`. *Done 2026-10-22 (`tests/test_theme_styles.py`), plus `base_name` and `base_version`. `color_scheme` is `charting.colorScheme`, the only key FileMaker writes there, so it has no separate field. The palette is sorted by swatch number.*
+- [ ] Decision G2-D1, CSS: **deferred with B3 (2026-10-22).** No CSS in the model for now.
     - (a) a `css` field in entities.json, about 200–400 KB per theme
     - (b) a G0 span read through `raw_xml`
     - Recommendation: (b). Keep entities.json small; themes rarely change.
-- [ ] Layouts: keep `LayoutThemeReference @Base` and its UUID.
-- [ ] Scrubbing: CSS and palette data carry no credentials. Exclude them from detectors explicitly so they can't cause false positives, and say so in `docs/contract.md`.
-- [ ] Theme Markdown page: list named styles and palette swatches. Optional; decide in-session.
-- [ ] Test: F0's two themes, the default flag, a named style seen on a layout, and CSS that loads through `raw_xml`.
+- [x] Layouts: keep `LayoutThemeReference @Base` and its UUID. *`themeBase`, `themeUuid`.*
+- [x] Scrubbing: CSS and palette data carry no credentials. Exclude them from detectors explicitly so they can't cause false positives, and say so in `docs/contract.md`. *The four metadata maps and `local_style` are skipped subtrees in `scrub/walker.py`. A custom named style's class looks like a UUID (`FM-B9C26F7D-…`), so this matters.*
+- [x] Theme Markdown page: list named styles and palette swatches. Optional; decide in-session. *Done: UUID, base theme, chart colour scheme, a palette table and a named styles table.*
+- [x] Test: F0's two themes, the default flag, a named style seen on a layout, and CSS that loads through `raw_xml`. *All but the CSS (B3). Every `ThemeCustomStyle` on F0's layouts resolves to its theme's `namedStyles`.*
 
 ---
 
@@ -574,17 +574,19 @@ The UUID list is nearly the same, so G3a's model work stands. What's new is the 
 
 #### G3a. UUIDs in the model and on the pages (session 1)
 
-- [ ] Add `uuid` to `CustomMenuEntity`, `CustomMenuItem` (plus `id`) and `CustomMenuSetEntity`.
-- [ ] Add catalog UUIDs (`customMenuCatalogUuid`, `customMenuSetCatalogUuid`) and the default set reference `{name, id, uuid}` to `fileOptions` (or `SolutionInfo`; decide which).
-- [ ] Keep the UUID on layout `menu_set` references.
-- [ ] **Pages** *(new)*. Front matter on menu and menu set pages gets `fmpId`, `uuid` and `catalogUuid`, so a skill can read them without parsing tables. The Metadata table gets the same rows plus the item count.
-    - The page's own UUID goes in front matter only if the scrubber leaves it alone. UUIDs aren't secrets, but confirm `_guard_output` doesn't treat them as such.
-- [ ] Item count from the model (`len(items)`). Check that it equals `MenuItemList @membercount` on F0.
-- [ ] Test on F0 (it needs a non-empty menu set; see F0). Assert the four UUIDs on the page and in entities.json for `Custom Custom Menu` and `Custom Menu Set`.
+**Done 2026-10-22** (uncommitted). Tests in `tests/test_custom_menu_uuids.py`.
+
+- [x] Add `uuid` to `CustomMenuEntity`, `CustomMenuItem` (plus `id`) and `CustomMenuSetEntity`. *Item `fmpId` is set only for v1 exports: v2 items have no id.*
+- [x] Add catalog UUIDs (`customMenuCatalogUuid`, `customMenuSetCatalogUuid`) and the default set reference `{name, id, uuid}` to `fileOptions` (or `SolutionInfo`; decide which). *Decided: `catalogUuid` on each menu and menu set entity, because `fileOptions` only exists when the export has a `Metadata` block, and `SolutionInfo` isn't in the contract. The default set goes in `fileOptions`, flat (`defaultMenuSetId`, `defaultMenuSetUuid`), so `defaultMenuSet` keeps its type and older files need no migration.*
+- [x] Keep the UUID on layout `menu_set` references. *`menuSetUuid`.*
+- [x] **Pages** *(new)*. Front matter on menu and menu set pages gets `fmpId`, `uuid` and `catalogUuid`, so a skill can read them without parsing tables. The Metadata table gets the same rows plus the item count.
+    - The page's own UUID goes in front matter only if the scrubber leaves it alone. UUIDs aren't secrets, but confirm `_guard_output` doesn't treat them as such. *Confirmed: a scrubbed build leaves every menu UUID unredacted (the test builds with scrubbing on), so the guard, which only looks for redacted values, has nothing to flag.*
+- [x] Item count from the model (`len(items)`). Check that it equals `MenuItemList @membercount` on F0. *It does for all 25 menus. Front matter has `itemCount` too. The set page also lists each menu's UUID, and index.md shows the default set's UUID.*
+- [x] Test on F0 (it needs a non-empty menu set; see F0). Assert the four UUIDs on the page and in entities.json for `Custom Custom Menu` and `Custom Menu Set`.
 - [x] Verify with a person on FileMaker that the clipboard `FMObjectTransfer` UUIDs equal the SaXML ones (Q12). **They match** for the menu, its item, both catalogs and the set (Mac run, `clipboard/`). The exploder's menu files lack the catalog UUIDs entirely (1a #10), so this unit gives `menu-lookup` data it never had.
 - [x] Verify whether the `[Standard FileMaker Menus]` UUID is a constant across files (Q13): it isn't. Read it per file.
 
-#### G3b. Raw menu XML (half a session, after G0) *(new)*
+#### G3b. Raw menu XML (half a session, after G0) *(new)* — **deferred (B3)**
 
 - [ ] G0 spans on `CustomMenu` and `CustomMenuSet` elements, so `docs.raw_xml("customMenu:…")` returns the base XML that `menu-lookup` edits.
 - [x] Decide the shape (Q16). **The paste needs the catalog wrapper** (1a #9). FileMaker's clipboard copy is `CustomMenuCatalog` (SortOrder, CustomOrderList, catalog UUID) → `CustomMenu`, plus a `PasteIndexList`. Its action steps are in snippet form, not SaXML form. So:
@@ -622,20 +624,45 @@ The UUID list is nearly the same, so G3a's model work stands. What's new is the 
 
 #### G4a. Structure and geometry (session 1)
 
-- [ ] Fix the dropped part `options`.
-- [ ] Add layout `width`, `grid_style`, `client_type` and `options`, plus part `definition_kind`.
-- [ ] Add object `display_style` (dropDown/popUp/…), `hide_in_find`, `options` (raw bitfield int plus decoded flags where known), `label_text` (StyledText button labels) and `icon_type` (type only; the SVG stays in raw XML).
+**Done 2026-10-22** (uncommitted). Tests in `tests/test_layout_structure.py`.
+
+- [x] Fix the dropped part `options`. *Also part `absolute` (top edge, points).*
+- [x] Add layout `width`, `grid_style`, `client_type` and `options`, plus part `definition_kind`. *Plus layout `hidden` (`<Options hidden>`). `grid_style` is the `<Style>` number; the grid colour isn't kept. `client_type` and the options bitfields stay FileMaker's numbers, because their meanings aren't confirmed.*
+- [x] Add object `display_style` (dropDown/popUp/…), `hide_in_find`, `options` (raw bitfield int plus decoded flags where known), `label_text` (StyledText button labels) and `icon_type` (type only; the SVG stays in raw XML). *`displayStyle` plus `displayStyleCode`. `hideInFindMode` is `<Conditions><Hide findMode>`: whether the hide condition also applies in Find mode. No object option flags are confirmed yet, so `options` is the raw number only. A label calc stays in `calculations` (role `label`). `labelText` is scrubbed like `rawText`. The object page shows the control style, the button label and the hide setting, and the layout page shows the width.*
     - `display_style` map (Q15, 1a #13): 0 `editBox`, 1 `dropDownList`, 2 `popUpMenu`, 3 `checkboxSet`, 4 `radioButtonSet`, 6 `dropDownCalendar`, 7 `concealedEditBox`. Keep the raw number too; 5 and anything unknown pass through as the number.
     - Fixture: `samples/EverythingBagel_mac_run/display_styles/EverythingBagel_styles.saxml.xml` has styles 3, 4, 6 and 7. F0 has only 0, 1, 2 and 6.
-- [x] Bounds: confirm the unit (Q14). **Points.** SaXML and the XML2 clipboard give identical bounds (1a #13). Our docstrings that say "pixel" get fixed in this session, and the contract says points.
-- [ ] `@key` vs `id`: `layout_to_summary.py:514` reads `@key`, but SaXML objects carry `id`. **Confirmed by the Mac run**: exploded layout objects have no `@key` (1a #12). Note it for the Phase 2 port. No model change.
+- [x] Bounds: confirm the unit (Q14). **Points.** SaXML and the XML2 clipboard give identical bounds (1a #13). Our docstrings that say "pixel" get fixed in this session, and the contract says points. *Done: `LayoutObjectBounds` and `docs/contract.md`.*
+- [x] `@key` vs `id`: `layout_to_summary.py:514` reads `@key`, but SaXML objects carry `id`. **Confirmed by the Mac run**: exploded layout objects have no `@key` (1a #12). Note it for the Phase 2 port. No model change.
 
 #### G4b. Styles and raw layout XML (session 2)
 
-- [ ] Add `local_css: {name, display_name, css}` on objects and parts.
-- [ ] Decide whether to also parse the visuals agentic-fm derives (colour, radius, font) into fields, or leave that to the port (decision G4-D1). Recommendation: keep `css` raw, and let a helper in the reader API parse it so the logic lives in one place.
-- [ ] G0 spans on layouts and layout objects, so layout-design can fetch real layout XML through `raw_xml`.
-- [ ] Field-by-field comparison: run `layout_to_summary.py` on F0 through the exploder (Q1) and diff its output against what the model now holds. The Mac run didn't generate layout summaries (not on the default path), but its `xml_parsed/layouts/` is the input: run `layout_to_summary.py` on it locally. Every remaining gap is either fixed here or noted as "not needed" with a reason. That table also answers Phase 2's "port or retire" question.
+- [x] Add `local_css: {name, display_name, css}` on objects and parts. *Done 2026-10-22 as `localStyle: {type, name, displayName}`, **without the CSS text**. DGC_UAT has 33,549 `LocalCSS` blocks with 24 MB of CSS, and its entities.json is already 125 MB. With the style names it grows by 2.7 MB. The text waits for B3 with the theme CSS. Part and object pages show the style name.*
+- [ ] *Deferred with the CSS text (B3).* Decide whether to also parse the visuals agentic-fm derives (colour, radius, font) into fields, or leave that to the port (decision G4-D1). Recommendation: keep `css` raw, and let a helper in the reader API parse it so the logic lives in one place.
+- [ ] *Deferred (B3).* G0 spans on layouts and layout objects, so layout-design can fetch real layout XML through `raw_xml`.
+- [x] Field-by-field comparison: run `layout_to_summary.py` on F0 through the exploder (Q1) and diff its output against what the model now holds. The Mac run didn't generate layout summaries (not on the default path), but its `xml_parsed/layouts/` is the input: run `layout_to_summary.py` on it locally. Every remaining gap is either fixed here or noted as "not needed" with a reason. That table also answers Phase 2's "port or retire" question.
+    *Done 2026-10-22: `layout_to_summary.py` run locally on `samples/EverythingBagel_mac_run/xml_parsed/layouts/`. Every key it can emit, against the model:*
+
+    | `layout_to_summary.py` key | In the model | Status |
+    |---|---|---|
+    | layout `layout`, `id`, `table`, `theme` | `name`, `fmpId`, `baseTableOccurrenceDocId`, `theme` (+ `themeUuid`, `themeBase`) | covered |
+    | layout `width` | `width` | covered (G4a) |
+    | part `type`, `height` | `parts[].type`, `height` (+ `definitionKind`, `absolute`, `options`, `localStyle`) | covered |
+    | object `type`, `name`, `bounds` | `objectType`, `name`, `bounds` (points) | covered |
+    | object `key` | none: SaXML objects have no `@key` (1a #12); use `objectId` | not needed |
+    | `field`, `fieldId` | `fieldDocId` (the field entity has `fmpId`) | covered |
+    | `displayStyle` | `displayStyle` / `displayStyleCode`; theirs has no 3 or 7 (`style_3`) and different names (`dropDown`, `calendar`) | covered, more complete |
+    | `valueList`, `placeholder`, `tooltip` | `valueListDocId`; calculations with role `placeholder`, `tooltip` | covered |
+    | `style`, `styleName` | `localStyle.name`, `localStyle.displayName` | covered (G4b) |
+    | `visuals` (`bgColor`, `bgGradient`, `textColor`, `borderRadius`, `fontSize`, `fontFamily`) | none: parsed from the local CSS text | **gap: needs the CSS text (B3)** |
+    | `text`, button `label` | `rawText`; `labelText`, or a calculation with role `label` | covered |
+    | `hasIcon`, `iconDesc` | `iconType` (non-zero = has icon); no SVG description | `hasIcon` covered; **`iconDesc` needs raw XML (B3)** |
+    | `script`, `scriptId`, `param` | `buttonScriptDocId` (the script has `fmpId`), calculation role `buttonParameter` | covered |
+    | portal `relatedTO`, `visibleRows` | `tableOccurrenceDocId`, `portal.rows` | covered |
+    | button bar `buttons`, `activeSegment` | child objects via `parentObjectDocId`; calculation role `activeSegment` | covered |
+    | `conditions.hideWhen`, `hideInFind`, `conditionalFormats` | calculations `hideCondition`; `hideInFindMode`; count of `conditionalFormatting` calculations | covered |
+    | `triggers` | `scriptTriggers` | covered |
+
+    *Answer for Phase 2: port it. A port is a thin reader over the model and drops `key` (always absent). `visuals` and `iconDesc` come back only with B3; until then the port leaves them out or reads the clipboard.*
 
 ---
 
@@ -648,8 +675,8 @@ The UUID list is nearly the same, so G3a's model work stands. What's new is the 
 **What we keep:** `ExternalDataSource{name, fmp_id, uuid, type, paths[]}` (`document_model.py:60-69`), with paths split per line or `<Location>` (fixed in fix_gaps2). That already covers everything `analyze.py` uses.
 
 - [x] Add `externalDataSources` to entities.json (done in C1b; tick both). Keyed by `dataSource:<name>`.
-- [ ] Add `pairedFile` / `pairing.match` from batch linking to each data source in a batch build. agentic-fm's `data_source_map` recomputes this by path and base-table overlap (`:2097-2160`); we already compute it in `batch/links.py`.
-- [ ] Note for Phase 2: H's `data_sources.index` is never read by `analyze.py` (H:360-367). The port reads the model, so nothing to fix here.
+- [x] *Done 2026-10-22 (uncommitted; `tests/test_data_source_pairing.py`): each data source gets `pairing: {file, folder, match, reason}` in a batch build (`null` in a single-file build), and the file's index.md gets a "Paired With" column.* Add `pairedFile` / `pairing.match` from batch linking to each data source in a batch build. agentic-fm's `data_source_map` recomputes this by path and base-table overlap (`:2097-2160`); we already compute it in `batch/links.py`.
+- [x] Note for Phase 2: H's `data_sources.index` is never read by `analyze.py` (H:360-367). The port reads the model, so nothing to fix here.
 
 ---
 
@@ -678,6 +705,8 @@ F0 ─┬─ C1a → C1b → C1c → C1d → C1e ─┬─ C2a → C2b
 Suggested release cut:
 - **0.7.0 = contract 1.0**: F0, C1, C2a, C3, M1–M3, G3a, G5, G4a, D1.
 - **0.8.0 = raw XML**: G0, G1, G2, G3b, G4b, C2b.
+
+**Changed 2026-10-22:** `raw_xml()` isn't being built for now (B3). So 0.8.0 holds only the parts that don't need it: G1's step `uuid`, G2's structured theme metadata, G4b's `local_css`, and C2b. G0, the rest of G1, G2's CSS, G3b and G4b's raw layout XML wait for B3. Until then, the tools that need an object's original XML use the clipboard fallback (see B3).
 
 H (the harness adapter) moves to 0.7.0 only with its references.json fix. Otherwise it stays on 0.6.2 until Phase 2 retires it.
 
@@ -717,7 +746,7 @@ About 19–22 agent sessions in total (G3b and D1 add half a session each).
 | Q16 | What XML does a menu paste need? **Mostly answered:** the catalog wrapper plus a `PasteIndexList`, with steps in snippet form (1a #9). SaXML → clipboard conversion is `[afm]` work. Still read `afm/agent/docs/CUSTOM_MENUS.md` before writing that converter. | `[afm]` menu converter | afm |
 | Q17 | ~~What is the Save a Copy as XML script step's option that sets `Has_DDR_INFO="True"`~~ **`include_details`**, in the step's JSON options ("Specify JSON options", then `[ "include_details" ; True ; JSONBoolean ]`). Seen in a copied step from FileMaker 26 on Windows (2026-10-21). A colleague's rewrite of the export script uses it. agentic-fm's Explode XML step has no JSON options at all, which is why its export lacks DDR info. **Confirmed for the dialog:** every `by_type` export was made with "Include details" on, and each says `Has_DDR_INFO="True"` with a `DDR_INFO` block. **Still open:** the same check for the script step's `include_details` JSON option (the colleague's rewritten export script), and whether FileMaker 21–25 and the Mac offer it. | D1, Phase 3 `[fm]` export script | person on FileMaker |
 | OP1 | *(new; the parent update's open point 1)* Do menu UUIDs stay in v1, or does `menu-lookup` answer only from what the pages hold? | G3a, G3b, Q12, Q16 | owner (Matt) |
-| G1-D1 | Where scrubbed raw XML comes from (on-demand rewrite, scrubbed copy, or inline). It now also feeds G3b. | G1, G3b | us + harness owner |
+| G1-D1 | Where scrubbed raw XML comes from (on-demand rewrite, scrubbed copy, or inline). It now also feeds G3b. **Parked 2026-10-22:** `raw_xml()` isn't being built for now; revisit with B3. | G1, G3b | us + harness owner |
 
 ## 6. Brainstorm (add freely)
 
@@ -731,6 +760,31 @@ About 19–22 agent sessions in total (G3b and D1 add half a session each).
 ## 7. Backlog (outside Phase 1)
 
 Found while working on this roadmap. These items don't block any Phase 1 unit. Do B2 after B1, because B2 replaces the rule B1 patches.
+
+### B3. Raw XML for round trips: `docs.raw_xml()` (decided 2026-10-22: not now, revisit later)
+
+**What it would be.** `docs.raw_xml(doc_id)` returns an object's original XML from the export: a script, step, theme, layout, layout object, custom menu or menu set. The model is a digest for reading. It drops what's only needed to rebuild an object (a step's full parameter tree, theme CSS, layout styling, a menu's complete element).
+
+**Who needs it.** Only round trips back into FileMaker ("take this existing thing, change it, paste it back"). Reading, lookups, references, impact and rename analysis, and UUIDs (G3a) don't need it.
+
+| Unit | agentic-fm consumer | Use |
+|---|---|---|
+| G1 | `fm_xml_to_snippet.py` | an existing script → clipboard XML, to modify and paste back |
+| G2 (CSS) | `extract_theme.py` | `theme.css` and classes, so new layouts and web content match the theme |
+| G3b | `menu-lookup` skill | the base XML to edit an existing menu |
+| G4b (raw) | layout-design skill | real layouts as examples for new ones |
+
+**Fallback while it isn't built.** The developer copies the object in FileMaker, and the tool reads the clipboard (`clipboard.py read`), the path `menu-lookup` already uses for new menus. Every round trip then needs a person at FileMaker. Theme CSS and layout examples have no clipboard equivalent that's as convenient.
+
+**Effect on the Phase 2 gate.** "Delete the exploder path" requires 0.8.0 or a working fallback for every kept reader (section 4). With B3 deferred, that means the clipboard fallback for the four consumers above. The Phase 2 and Phase 5 ports must say so.
+
+**When it comes back, decide G1-D1 first.** Scrubbing runs on parsed records, so a slice of the original export is unscrubbed. The options:
+- **Always copy:** every build writes the export (scrubbed if scrubbing is on) into the docs folder. The reader needs only the docs folder, so Q10 goes away. It costs one copy per file (DGC_UAT is 218 MB) and bends "no extra files". This was the suggestion.
+- **Copy only when scrubbed** (the original option B): for unscrubbed builds the reader needs the original export, so Q10 comes back (store its absolute path, or the caller passes it).
+- **Rescrub on demand** (option A): no copies, but it needs the original export plus the run's salt and finding map, including the whole batch's map.
+- **Inline in entities.json** (option C): no spans or reader I/O, but entities.json grows by about the export's size.
+
+Then G0 (spike and spans, Q9 and Q10), the rest of G1, G2's CSS, G3b and G4b's raw XML follow as planned in section 3.
 
 ### B1. Scrubber: AI account names redacted as API keys, and the guard trips on a parameter label
 

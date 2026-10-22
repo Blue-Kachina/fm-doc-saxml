@@ -260,6 +260,20 @@ class RelationshipEntity(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+class LocalStyle(BaseModel):
+    """``<LocalCSS type name displayName>`` on a layout object or part (the CSS itself isn't kept).
+
+    ``ThemeCustomStyle``: a theme's named style (``name`` is its class, ``displayName`` what
+    FileMaker shows). ``ObjectCustomStyle``: local changes only, usually with no name.
+    """
+
+    type: Optional[str] = None
+    name: Optional[str] = None
+    display_name: Optional[str] = Field(None, alias="displayName")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
 class LayoutPart(BaseModel):
     """A layout part (Header, Body, Sub-summary, ...), top to bottom."""
 
@@ -268,6 +282,12 @@ class LayoutPart(BaseModel):
     height: Optional[int] = None  # points
     break_field_doc_id: Optional[str] = Field(None, alias="breakFieldDocId")  # sub-summary "when sorted by"
     object_count: int = Field(0, alias="objectCount")  # objects placed directly in the part
+    # <Definition kind absolute Options>: FileMaker's part kind number (4 = Body, 12 = Top Navigation, ...),
+    # the part's top edge in points from the top of the layout, and its options bitfield (not decoded)
+    definition_kind: Optional[int] = Field(None, alias="definitionKind")
+    absolute: Optional[int] = None
+    options: Optional[int] = None
+    local_style: Optional[LocalStyle] = Field(None, alias="localStyle")
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -281,11 +301,19 @@ class LayoutEntity(BaseModel):
     uuid: Optional[str] = None
     base_table_occurrence_doc_id: Optional[str] = Field(None, alias="baseTableOccurrenceDocId")
     theme: Optional[str] = None
+    theme_uuid: Optional[str] = Field(None, alias="themeUuid")
+    theme_base: Optional[str] = Field(None, alias="themeBase")  # <LayoutThemeReference Base>: the theme it derives from
     folder_path: Optional[str] = Field(None, alias="folderPath")  # layout folder(s), e.g. "DEV/Old"
+    width: Optional[int] = None  # points
+    grid_style: Optional[int] = Field(None, alias="gridStyle")  # <GridStyle><Style>, FileMaker's number
+    client_type: Optional[int] = Field(None, alias="clientType")  # <ClientType>, FileMaker's number
+    options: Optional[int] = None  # <Options> bitfield, not decoded
+    hidden: Optional[bool] = None  # <Options hidden>
     referenced_fields: list[str] = Field([], alias="referencedFields")
     layout_objects: list[str] = Field([], alias="layoutObjects")  # LayoutObject docIds
     parts: list[LayoutPart] = []
     menu_set: Optional[str] = Field(None, alias="menuSet")  # custom menu set used on this layout
+    menu_set_uuid: Optional[str] = Field(None, alias="menuSetUuid")
     script_triggers: list[ScriptTriggerInfo] = Field([], alias="scriptTriggers")
     calculations: list[EntityCalculation] = []  # script trigger parameters
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
@@ -294,7 +322,7 @@ class LayoutEntity(BaseModel):
 
 
 class LayoutObjectBounds(BaseModel):
-    """Pixel bounds of a layout object on the layout."""
+    """Bounds of a layout object on the layout, in points (the same numbers as FileMaker's clipboard)."""
 
     top: Optional[float] = None
     left: Optional[float] = None
@@ -349,9 +377,30 @@ class LayoutObjectEntity(BaseModel):
     # Direct targets of the button step and a portal's sort fields; same shape as ScriptStepEntity.references
     references: list[dict[str, Any]] = []
     raw_text: Optional[str] = Field(None, alias="rawText")  # Plain-text label (Text objects)
+    options: Optional[int] = None  # the object's <Options> bitfield, not decoded
+    local_style: Optional[LocalStyle] = Field(None, alias="localStyle")
+    # Field controls: <Display Style>, by name (DISPLAY_STYLES), or the number when it isn't known
+    display_style: Optional[str] = Field(None, alias="displayStyle")
+    display_style_code: Optional[int] = Field(None, alias="displayStyleCode")
+    hide_in_find_mode: Optional[bool] = Field(None, alias="hideInFindMode")  # "Hide object when" applies in Find mode
+    label_text: Optional[str] = Field(None, alias="labelText")  # a button's fixed label (a label calc is in calculations)
+    icon_type: Optional[int] = Field(None, alias="iconType")  # <IconData type>; the icon itself isn't kept
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
     model_config = ConfigDict(populate_by_name=True)
+
+
+# <Field><Display Style>: confirmed on the Mac run (samples/EverythingBagel_mac_run/display_styles/).
+# The clipboard's displayType uses the same numbers. 5 hasn't been seen.
+DISPLAY_STYLES = {
+    0: "editBox",
+    1: "dropDownList",
+    2: "popUpMenu",
+    3: "checkboxSet",
+    4: "radioButtonSet",
+    6: "dropDownCalendar",
+    7: "concealedEditBox",
+}
 
 
 class StepCalculation(BaseModel):
@@ -369,6 +418,7 @@ class ScriptStepEntity(BaseModel):
     script_doc_id: str = Field(alias="scriptDocId")
     index: int
     step_id: str = Field(alias="stepId")   # FileMaker's built-in step type ID
+    uuid: Optional[str] = None  # the step's own <UUID>; stays the same when steps above it move
     name: str
     enabled: bool = True
     raw_text: Optional[str] = Field(None, alias="rawText")  # short preview; see model/step_text.py for the full text
@@ -582,6 +632,8 @@ class CustomMenuItem(BaseModel):
     """Embedded within CustomMenuEntity — not a standalone entity."""
 
     name: str
+    fmp_id: Optional[str] = Field(None, alias="fmpId")  # v1 items only; v2 items have a UUID instead
+    uuid: Optional[str] = None  # FileMaker assigns a new one on paste, so any value works in pasted XML
     action_type: str = Field("", alias="actionType")  # separator | submenu | command | script | action
     install_condition: Optional[str] = Field(None, alias="installCondition")
     script_doc_id: Optional[str] = Field(None, alias="scriptDocId")  # script the item performs
@@ -597,6 +649,9 @@ class CustomMenuEntity(BaseModel):
     modified: Optional[ModificationInfo] = None
     name: str
     fmp_id: str = Field(alias="fmpId")
+    uuid: Optional[str] = None
+    # UUID of the file's CustomMenuCatalog, which a pasted menu must name (the same on every menu)
+    catalog_uuid: Optional[str] = Field(None, alias="catalogUuid")
     base_menu_name: Optional[str] = Field(None, alias="baseMenuName")
     install_condition: Optional[str] = Field(None, alias="installCondition")
     browse_mode: bool = Field(True, alias="browseMode")
@@ -615,6 +670,9 @@ class CustomMenuSetEntity(BaseModel):
     modified: Optional[ModificationInfo] = None
     name: str
     fmp_id: str = Field(alias="fmpId")
+    uuid: Optional[str] = None
+    # UUID of the file's CustomMenuSetCatalog (the same on every menu set)
+    catalog_uuid: Optional[str] = Field(None, alias="catalogUuid")
     menu_doc_ids: list[str] = Field([], alias="menuDocIds")
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
@@ -630,6 +688,17 @@ class ThemeEntity(BaseModel):
     display_name: str = Field("", alias="displayName")
     group: Optional[str] = None
     default_theme: bool = Field(False, alias="defaultTheme")
+    uuid: Optional[str] = None
+    version: Optional[str] = None
+    platform: Optional[str] = None
+    locale: Optional[str] = None
+    base_name: Optional[str] = Field(None, alias="baseName")  # built-in theme a custom theme was made from
+    base_version: Optional[str] = Field(None, alias="baseVersion")
+    # <Metadata> sections, {key: value} in the export's order. The theme's CSS isn't kept (backlog B3).
+    named_styles: dict[str, str] = Field({}, alias="namedStyles")  # style class -> name shown in FileMaker
+    color_palette: dict[str, str] = Field({}, alias="colorPalette")  # swatchN -> "#rrggbb"
+    layout_builder: dict[str, str] = Field({}, alias="layoutBuilder")  # kHeaderMinSize -> "50", ...
+    charting: dict[str, str] = {}  # colorScheme -> "FileMaker Apps"
     source_xml: Optional[SourceXmlInfo] = Field(None, alias="sourceXml")
 
     model_config = ConfigDict(populate_by_name=True)

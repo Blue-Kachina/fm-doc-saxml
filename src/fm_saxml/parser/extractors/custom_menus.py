@@ -25,6 +25,7 @@ def extract_custom_menus(container: etree._Element, chunk_lists: ChunkLists | No
     if catalog is None:
         return []
 
+    catalog_uuid = _uuid(catalog)
     results = []
     for menu_elem in find_all_descendants(catalog, "CustomMenu"):
         base_elem = find_child(menu_elem, "Base")
@@ -56,6 +57,8 @@ def extract_custom_menus(container: etree._Element, chunk_lists: ChunkLists | No
         results.append({
             "id": attr(menu_elem, "id", "ID"),
             "name": attr(menu_elem, "name", "Name"),
+            "uuid": _uuid(menu_elem),
+            "catalog_uuid": catalog_uuid,
             "base_menu_name": base_menu_name,
             "install_condition": install_condition,
             "browse_mode": browse_mode,
@@ -76,6 +79,7 @@ def _parse_menu_item(item_elem: etree._Element) -> dict[str, Any]:
     item_base = find_child(item_elem, "Base")  # v1
     item: dict[str, Any] = {
         "id": attr(item_elem, "id", "ID"),
+        "uuid": _uuid(item_elem),
         "name": attr(item_elem, "name", "Name"),
         "action_type": attr(item_elem, "type", "Type", default=""),
         "base_name": attr(item_base, "name", "Name") if item_base is not None else None,
@@ -113,11 +117,22 @@ def _menu_set_catalog(container: etree._Element) -> etree._Element | None:
     return find_child(container, "CustomMenuSetCatalog", "CustomMenuSetsCatalog")
 
 
-def default_menu_set(container: etree._Element) -> str | None:
-    """The file's default menu set: the ``<CustomMenuSetReference>`` directly in the catalog."""
+def default_menu_set(container: etree._Element) -> dict[str, str | None] | None:
+    """The file's default menu set: the ``<CustomMenuSetReference>`` directly in the catalog.
+
+    ``{name, id, uuid}``. ``[Standard FileMaker Menus]`` has a UUID too, and it differs per file.
+    """
     catalog = _menu_set_catalog(container)
     ref = find_child(catalog, "CustomMenuSetReference") if catalog is not None else None
-    return (attr(ref, "name", "Name") or None) if ref is not None else None
+    if ref is None or not attr(ref, "name", "Name"):
+        return None
+    return {"name": attr(ref, "name", "Name"), "id": attr(ref, "id", "ID") or None,
+            "uuid": attr(ref, "UUID", "uuid") or None}
+
+
+def _uuid(elem: etree._Element) -> str | None:
+    """The element's own ``<UUID>`` child: a catalog, menu, menu item or menu set."""
+    return text_of(find_child(elem, "UUID")) or None
 
 
 def extract_custom_menu_sets(container: etree._Element) -> list[dict[str, Any]]:
@@ -125,6 +140,7 @@ def extract_custom_menu_sets(container: etree._Element) -> list[dict[str, Any]]:
     if catalog is None:
         return []
 
+    catalog_uuid = _uuid(catalog)
     results = []
     for set_elem in find_all_descendants(catalog, "CustomMenuSet"):
         menu_refs = []
@@ -137,6 +153,8 @@ def extract_custom_menu_sets(container: etree._Element) -> list[dict[str, Any]]:
         results.append({
             "id": attr(set_elem, "id", "ID"),
             "name": attr(set_elem, "name", "Name"),
+            "uuid": _uuid(set_elem),
+            "catalog_uuid": catalog_uuid,
             "menu_refs": menu_refs,
             "modified": modification_info(set_elem),
             "source_xml_path": xml_path(set_elem),

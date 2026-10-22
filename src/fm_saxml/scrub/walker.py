@@ -38,7 +38,10 @@ _SKIP_SUFFIX_RE = re.compile(
 # Keys whose whole subtree is identifiers / bookkeeping.
 _SKIP_SUBTREES = {"references", "backlinks", "scrubbing", "field_refs", "layout_ref", "script_ref",
                   "value_list_refs", "referenced_fields", "privilege_set_refs", "storage",
-                  "coverage", "coverage_inventory"}  # counts and XML element names only
+                  "coverage", "coverage_inventory",  # counts and XML element names only
+                  # Theme metadata: style names, colours and layout spacing, never credentials.
+                  # Skipped so a hex colour or a style name can't trip a detector.
+                  "named_styles", "color_palette", "layout_builder", "charting", "local_style"}
 _PERSON_KEYS = {"user_name", "account_name"}
 _STEP_COLLECTIONS = ("steps", "script_steps", "button_step")
 

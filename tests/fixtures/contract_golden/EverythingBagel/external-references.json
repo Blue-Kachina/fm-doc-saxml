@@ -21,14 +21,16 @@
       "paths": [
         "file:Empty",
         "fmnet:/127.0.0.1/Empty"
-      ]
+      ],
+      "pairing": null
     },
     {
       "name": "odbc_test",
       "fmpId": "2",
       "uuid": "BC91A6FB-42D0-CC46-B3C3-E2C044FED050",
       "type": "ODBC",
-      "paths": []
+      "paths": [],
+      "pairing": null
     }
   ],
   "externalTableOccurrences": [

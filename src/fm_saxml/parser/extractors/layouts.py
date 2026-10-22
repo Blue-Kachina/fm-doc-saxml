@@ -5,7 +5,9 @@ from __future__ import annotations
 from typing import Any
 from lxml import etree
 
-from ._helpers import attr, find_child, find_all_children, find_all_descendants, xml_path, modification_info, uuid_of
+from ._helpers import (
+    attr, find_child, find_all_children, find_all_descendants, xml_path, modification_info, text_of, uuid_of,
+)
 from .chunk_lists import ChunkLists, collect_calcs
 from .scripts import _parse_step, _sibling_data_source
 from .relationships import parse_sort_spec
@@ -84,10 +86,9 @@ def _parse_layout(elem: etree._Element, chunk_lists: ChunkLists | None = None) -
 
     # v2: theme is in a <LayoutThemeReference> child; v1 keeps it as an attribute.
     theme = attr(elem, "theme", "Theme") or None
-    if not theme:
-        theme_ref = find_child(elem, "LayoutThemeReference")
-        if theme_ref is not None:
-            theme = attr(theme_ref, "name", "Name") or None
+    theme_ref = find_child(elem, "LayoutThemeReference")
+    if not theme and theme_ref is not None:
+        theme = attr(theme_ref, "name", "Name") or None
 
     # Collect every LayoutObject inside this layout (across all parts)
     layout_objects = _collect_layout_objects(elem, chunk_lists)
@@ -103,10 +104,13 @@ def _parse_layout(elem: etree._Element, chunk_lists: ChunkLists | None = None) -
         "table_occurrence_id": to_id,
         "table_occurrence_name": to_name,
         "theme": theme,
+        "theme_uuid": attr(theme_ref, "UUID", "uuid") or None if theme_ref is not None else None,
+        "theme_base": attr(theme_ref, "Base") or None if theme_ref is not None else None,
         "referenced_fields": referenced_fields,
         "layout_objects": layout_objects,
         "parts": _parse_parts(elem),
-        "menu_set": _menu_set(elem),
+        **_layout_setup(elem),
+        **_menu_set(elem),
         "script_triggers": _parse_script_triggers(elem),
         "calculations": (
             collect_calcs(triggers_elem, chunk_lists, lambda _path: "scriptTriggerParameter")
@@ -119,12 +123,42 @@ def _parse_layout(elem: etree._Element, chunk_lists: ChunkLists | None = None) -
 
 
 
-def _menu_set(layout_elem: etree._Element) -> str | None:
-    """``<MenuSet><CustomMenuSetReference name="…"/>``: the layout's menu set (None = the file default)."""
+def _int(value: str | None) -> int | None:
+    try:
+        return int(value.strip()) if value and value.strip() else None
+    except ValueError:
+        return None
+
+
+def _layout_setup(layout_elem: etree._Element) -> dict[str, Any]:
+    """``@width``, ``<GridStyle><Style>``, ``<ClientType>`` and ``<Options hidden>N</Options>`` of a layout.
+
+    The options bitfield and the client type aren't decoded: they're kept as FileMaker's numbers.
+    """
+    grid = find_child(layout_elem, "GridStyle")
+    options = find_child(layout_elem, "Options")
+    hidden = attr(options, "hidden") if options is not None else ""
+    return {
+        "width": _int(attr(layout_elem, "width", "Width")),
+        "grid_style": _int(text_of(find_child(grid, "Style"))) if grid is not None else None,
+        "client_type": _int(text_of(find_child(layout_elem, "ClientType"))),
+        "options": _int(text_of(options)),
+        "hidden": hidden.lower() == "true" if hidden else None,
+    }
+
+
+def _menu_set(layout_elem: etree._Element) -> dict[str, str | None]:
+    """``<MenuSet><CustomMenuSetReference name="…" UUID="…"/>``: the layout's menu set.
+
+    ``menu_set`` is None for the file default. ``menu_set_uuid`` is set for
+    ``[Standard FileMaker Menus]`` too, whose UUID differs per file.
+    """
     menu_set = find_child(layout_elem, "MenuSet")
     ref = find_child(menu_set, "CustomMenuSetReference") if menu_set is not None else None
     name = attr(ref, "name", "Name") if ref is not None else ""
-    return name if name and name != "[File Default]" else None
+    if not name or name == "[File Default]":
+        return {"menu_set": None, "menu_set_uuid": None}
+    return {"menu_set": name, "menu_set_uuid": attr(ref, "UUID", "uuid") or None}
 
 
 def _parse_parts(layout_elem: etree._Element) -> list[dict[str, Any]]:
@@ -149,7 +183,10 @@ def _parse_parts(layout_elem: etree._Element) -> list[dict[str, Any]]:
             "height": height,
             "break_field": _field_ref_dict(fr) if fr is not None and attr(fr, "name", "Name") else None,
             "object_count": len(find_all_children(obj_list, "LayoutObject")) if obj_list is not None else 0,
-            "options": attr(definition, "Options") or None if definition is not None else None,
+            "options": _int(attr(definition, "Options")) if definition is not None else None,
+            "definition_kind": _int(attr(definition, "kind")) if definition is not None else None,
+            "absolute": _int(attr(definition, "absolute")) if definition is not None else None,
+            "local_style": _local_style(definition) if definition is not None else None,
         })
     return parts
 
@@ -389,11 +426,56 @@ def _parse_layout_object(
         "button_step": button_step,
         "button_kind": button_kind if (button_script or button_step) else None,
         "portal": _parse_portal(find_child(lo, "Portal")),
+        "options": _int(text_of(find_child(lo, "Options"))),
+        "local_style": _local_style(lo),
+        "display_style": _int(attr(display, "Style")) if display is not None else None,
+        "hide_in_find_mode": _hide_in_find_mode(lo),
+        **_button_face(lo),
         "script_triggers": _parse_script_triggers(lo),
         "calculations": collect_calcs(lo, chunk_lists, _object_calc_role, stop_at=("LayoutObject",)),
         "fallback_index": fallback_index,
         "source_xml_path": xml_path(lo),
     }
+
+
+def _local_style(elem: etree._Element) -> dict[str, str | None] | None:
+    """``<LocalCSS type name displayName>``: which style the object or part uses.
+
+    ``ThemeCustomStyle`` names a theme's named style (``displayName`` as FileMaker shows it);
+    ``ObjectCustomStyle`` is a local change on top of it. The CSS text isn't kept: DGC_UAT holds
+    24 MB of it, so it waits for raw XML (backlog B3) with the theme's CSS.
+    """
+    css = find_child(elem, "LocalCSS")
+    if css is None:
+        return None
+    return {"type": attr(css, "type") or None, "name": attr(css, "name") or None,
+            "display_name": attr(css, "displayName") or None}
+
+
+def _hide_in_find_mode(lo: etree._Element) -> bool | None:
+    """``<Conditions><Hide findMode>``: whether "Hide object when" also applies in Find mode."""
+    conditions = find_child(lo, "Conditions")
+    hide = find_child(conditions, "Hide") if conditions is not None else None
+    value = attr(hide, "findMode") if hide is not None else ""
+    return value.lower() == "true" if value else None
+
+
+def _button_face(lo: etree._Element) -> dict[str, Any]:
+    """A button's fixed label text and icon type.
+
+    ``<Button|PopoverButton><Label><Text><StyledText>``: a label calc is kept with the object's
+    calculations instead. ``<IconData type>``: the icon's type only; the image stays in the export.
+    """
+    for child in lo:
+        if not isinstance(child.tag, str) or _local(child.tag) not in _BUTTON_KINDS:
+            continue
+        label = find_child(child, "Label")
+        icon = find_child(child, "IconData")
+        return {
+            "label_text": _parse_text_content(find_child(label, "Text")) if label is not None else None,
+            "icon_type": _int(attr(icon, "type")) if icon is not None else None,
+        }
+    return {"label_text": None, "icon_type": None}
 
 
 _BUTTON_KINDS = {"Button": "button", "GroupedButton": "buttonGroup", "PopoverButton": "popoverButton"}

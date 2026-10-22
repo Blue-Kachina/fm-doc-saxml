@@ -2,7 +2,10 @@
 docId: {{ entity.doc_id }}
 entityType: customMenuSet
 name: {{ entity.name }}
----
+fmpId: "{{ entity.fmp_id }}"
+{% if entity.uuid %}uuid: {{ entity.uuid }}
+{% endif %}{% if entity.catalog_uuid %}catalogUuid: {{ entity.catalog_uuid }}
+{% endif %}---
 
 # Custom Menu Set: {{ entity.name }}
 
@@ -11,15 +14,17 @@ name: {{ entity.name }}
 | Name | Value |
 |---|---|
 | FMP ID | {{ entity.fmp_id }} |
-{% if entity.modified %}| Last Modified By | {{ entity.modified.account_name or entity.modified.user_name }}{% if entity.modified.user_name and entity.modified.user_name != entity.modified.account_name %} (user: {{ entity.modified.user_name }}){% endif %} |
+{% if entity.uuid %}| UUID | `{{ entity.uuid }}` |
+{% endif %}{% if entity.catalog_uuid %}| Custom Menu Set Catalog UUID | `{{ entity.catalog_uuid }}` |
+{% endif %}{% if entity.modified %}| Last Modified By | {{ entity.modified.account_name or entity.modified.user_name }}{% if entity.modified.user_name and entity.modified.user_name != entity.modified.account_name %} (user: {{ entity.modified.user_name }}){% endif %} |
 | Last Modified | {{ entity.modified.timestamp }} |
 {% endif %}
 {% if entity.menu_doc_ids %}
 ## Menus
 
-| Menu |
-|---|
-{% for menu_id in entity.menu_doc_ids %}
-| {{ link(menu_id) }} |
+| Menu | UUID |
+|---|---|
+{% for menu_id in entity.menu_doc_ids %}{% set menu = get_entity(menu_id) %}
+| {{ link(menu_id) }} | {% if menu and menu.uuid %}`{{ menu.uuid }}`{% else %}—{% endif %} |
 {% endfor %}
 {% endif %}
