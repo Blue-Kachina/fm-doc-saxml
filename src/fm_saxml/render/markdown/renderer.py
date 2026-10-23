@@ -12,6 +12,7 @@ from ...model.document_model import DocumentModel, NO_DDR_INFO_FIX, NO_DDR_INFO_
 from ...model.step_text import code_fence, render_script_block
 from ...analyze.access import build_access
 from ...analyze.coverage import build_coverage
+from ...analyze.profile import build_profile
 from ...parser.coverage import CONTEXTS as COVERAGE_CONTEXTS
 from ...normalize.paths import relative_md_link
 from ...utils.file_writer import write_text
@@ -964,6 +965,9 @@ def _render_reports(model: DocumentModel, output_dir: Path, env: Environment, li
     tmpl = env.get_template("reports/unresolved_references.md.j2")
     content = tmpl.render(refs=unresolved)
     write_text(reports_dir / "unresolved-references.md", content)
+
+    # Solution profile (data model, scripts, layouts, integrations, unused candidates)
+    write_text(reports_dir / "profile.md", env.get_template("reports/profile.md.j2").render(p=build_profile(model)))
 
 
 # ---------------------------------------------------------------------------

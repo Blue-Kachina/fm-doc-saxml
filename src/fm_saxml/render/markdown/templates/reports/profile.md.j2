@@ -1,0 +1,192 @@
+---
+title: Solution Profile
+---
+
+# Solution Profile
+
+An overview of the file's structure: data model, scripts, layouts, integrations and what looks unused. Counts of each kind of object are in [summary.md](summary.md).
+
+## Data Model
+
+### Tables
+
+{% if p.tables %}
+| Table | Fields | Data types | Field types |
+|---|---:|---|---|
+{% for t in p.tables %}
+| {{ t.name | cell }} | {{ t.fields }} | {% for k, n in t.data_types %}{{ k }}: {{ n }}{% if not loop.last %}, {% endif %}{% endfor %} | {% for k, n in t.field_types %}{{ k }}: {{ n }}{% if not loop.last %}, {% endif %}{% endfor %} |
+{% endfor %}
+{% else %}
+_No tables._
+{% endif %}
+
+### Relationships
+
+| Measure | Count |
+|---|---:|
+| Relationships | {{ p.relationships.total }} |
+{% for op, n in p.relationships.operators %}
+| Join operator {{ op }} | {{ n }} |
+{% endfor %}
+| Multi-predicate | {{ p.relationships.multi_predicate }} |
+| Self-joins (both sides on one table) | {{ p.relationships.self_joins }} |
+| Create related records: left side / right side | {{ p.relationships.cascade.create.left }} / {{ p.relationships.cascade.create.right }} |
+| Delete related records: left side / right side | {{ p.relationships.cascade.delete.left }} / {{ p.relationships.cascade.delete.right }} |
+| Sorted sides | {{ p.relationships.sorted_sides }} |
+
+A parent-child cascade is usually set on the child's side, which is the right side when the parent is on the left.
+
+### Relationship Graph
+
+| Measure | Value |
+|---|---:|
+| Table occurrences | {{ p.graph.tos }} |
+| Average relationships per TO | {{ p.graph.avg_degree }} |
+| Most relationships on one TO | {{ p.graph.max_degree }} |
+| Hub TOs ({{ p.graph.hub_degree }}+ relationships) | {{ p.graph.hubs | length }} |
+| TOs in no relationship | {{ p.graph.isolated_tos | length }} |
+| Tables none of whose TOs is in a relationship | {{ p.graph.disconnected_tables | length }} |
+
+{% if p.graph.hubs %}
+Hub TOs: {% for name, n in p.graph.hubs %}{{ name }} ({{ n }}){% if not loop.last %}, {% endif %}{% endfor %}.
+
+{% endif %}
+{% if p.graph.disconnected_tables %}
+Tables in no relationship: {{ p.graph.disconnected_tables | join(", ") }}.
+
+{% endif %}
+## Scripts
+
+| Measure | Value |
+|---|---:|
+| Scripts | {{ p.scripts.total }} |
+| Steps | {{ p.scripts.steps }} |
+| Average steps per script | {{ p.scripts.avg_steps }} |
+| Most steps in one script | {{ p.scripts.max_steps }} |
+| Perform Script links (caller → callee, this file) | {{ p.scripts.call_edges }} |
+
+{% if p.scripts.largest %}
+### Largest Scripts
+
+| Script | Steps |
+|---|---:|
+{% for name, n in p.scripts.largest %}
+| {{ name | cell }} | {{ n }} |
+{% endfor %}
+
+### Script Folders
+
+| Folder | Scripts |
+|---|---:|
+{% for folder, n in p.scripts.folders %}
+| {{ folder | cell }} | {{ n }} |
+{% endfor %}
+
+{% endif %}
+### Entry Points
+
+Scripts no other script of this file performs, but something else runs: a button, a trigger, a custom menu or another file.
+
+{% if p.scripts.entry_points %}
+| Script | Run by |
+|---|---|
+{% for name, how in p.scripts.entry_points %}
+| {{ name | cell }} | {{ how | join(", ") }} |
+{% endfor %}
+{% else %}
+_None found._
+{% endif %}
+
+## Layouts
+
+{% if p.layouts.by_base_to %}
+| Base table occurrence | Layouts |
+|---|---:|
+{% for to, n in p.layouts.by_base_to %}
+| {{ to | cell }} | {{ n }} |
+{% endfor %}
+{% else %}
+_No layouts._
+{% endif %}
+
+{% if p.layouts.folders | length > 1 %}
+### Layout Folders
+
+| Folder | Layouts |
+|---|---:|
+{% for folder, n in p.layouts.folders %}
+| {{ folder | cell }} | {{ n }} |
+{% endfor %}
+
+{% endif %}
+### Portals
+
+{% if p.layouts.portals %}
+| Layout | Portal table occurrence |
+|---|---|
+{% for lay, to in p.layouts.portals %}
+| {{ lay | cell }} | {{ to | cell }} |
+{% endfor %}
+{% else %}
+_No portals._
+{% endif %}
+
+### Layouts Nothing Navigates To
+
+Layouts no script, button, menu or file option opens (Go to Layout, New Window, the file's default layout). Users can still reach them from the Layouts menu.
+
+{% if p.layouts.not_navigated %}
+{% for name in p.layouts.not_navigated %}
+- {{ name }}
+{% endfor %}
+{% else %}
+_None._
+{% endif %}
+
+## Value Lists
+
+{% if p.value_lists.by_type %}
+| Type | Value lists |
+|---|---:|
+{% for kind, n in p.value_lists.by_type %}
+| {{ kind }} | {{ n }} |
+{% endfor %}
+{% else %}
+_No value lists._
+{% endif %}
+
+## Integrations
+
+Enabled script steps that reach outside the file. External data sources are listed in the [index](../index.md).
+
+{% if p.external_calls %}
+| Step | Steps | Scripts |
+|---|---:|---|
+{% for c in p.external_calls %}
+| {{ c.step }} | {{ c.count }} | {{ c.scripts | join(", ") | cell }} |
+{% endfor %}
+{% else %}
+_None._
+{% endif %}
+
+## Unused Candidates
+
+Objects with no use anywhere in these docs (structure such as a table containing its field doesn't count). Uses from other files of a multi-file build count. Calls by calculated name, server schedules and `fmp://` URLs don't show up, so check before deleting anything.
+
+| Kind | Unused |
+|---|---:|
+| Fields | {{ p.unused.fields | length }} |
+| Scripts | {{ p.unused.scripts | length }} |
+| Layouts | {{ p.unused.layouts | length }} |
+| Value lists | {{ p.unused.value_lists | length }} |
+| Custom functions | {{ p.unused.custom_functions | length }} |
+{% for kind, label in [("scripts", "Scripts"), ("layouts", "Layouts"), ("value_lists", "Value lists"), ("custom_functions", "Custom functions"), ("fields", "Fields")] %}
+{% if p.unused[kind] %}
+
+### {{ label }}
+
+{% for name in p.unused[kind] %}
+- {{ name }}
+{% endfor %}
+{% endif %}
+{% endfor %}

@@ -100,6 +100,18 @@ The report counts about 70 things straight from the export's XML (scripts, step 
 
 The report also lists any element or attribute the converter has no rule for ("Unrecognised XML"), so a FileMaker option this version doesn't document can't disappear silently, and what it leaves out on purpose (images, styling, layout geometry). The home page shows a one-line result, and a multi-file build's `Reports/batch-summary.md` has a Coverage column.
 
+## Solution profile
+
+Every build writes `Reports/profile.md`, a first look at one file's structure:
+
+- **Data model:** fields per table by data type and field type; relationship join operators, multi-predicate joins, self-joins, and "create" / "delete related records" counted per side (a parent-child cascade is usually on the right); the relationship graph's degrees, hub TOs (5+ relationships), TOs and tables in no relationship.
+- **Scripts:** steps per script and the largest, folders, Perform Script links within the file, and entry points: scripts no script performs that a button, trigger, custom menu or another file runs.
+- **Layouts:** layouts per base TO and folder, portals and their TOs, layouts nothing navigates to (Go to Layout, New Window, the default layout).
+- **Value lists** by type, and **integrations:** enabled steps that reach outside the file (Insert from URL, Send Mail, Execute SQL, Perform Script on Server, Import/Export ...), with their scripts.
+- **Unused candidates** for fields, scripts, layouts, value lists and custom functions: no use in the backlinks other than structure, the same rule as the `UNUSED_FIELD_CANDIDATE` warning. Uses from other files of a multi-file build count; calls by calculated name, server schedules and `fmp://` URLs don't, so they're candidates only.
+
+Every number comes from the model; nothing is guessed from object names.
+
 ## Output layout
 
 ```text
@@ -128,7 +140,8 @@ saxml2doc/
 │  ├─ redactions.md
 │  ├─ indirection.md  (names written in text: see docs/indirection.md)
 │  ├─ warnings.md
-│  └─ unresolved-references.md
+│  ├─ unresolved-references.md
+│  └─ profile.md      (data model, scripts, layouts, integrations, unused candidates)
 ├─ index.html          (--html only)
 └─ _viewer/            (--html only)
    ├─ manifest.js
