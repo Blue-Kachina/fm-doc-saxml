@@ -53,6 +53,10 @@ _ENCODING_ATTR_RE = re.compile(r"""encoding\s*=\s*["']([A-Za-z0-9._-]+)["']""")
 _SKIP_TEXT_TAGS = {"UUID", "DDRREF", "Stream", "BinaryData"}
 _BINARY_TYPES = {"hex", "base64", "binary"}
 _NUMBER_RE = re.compile(r"[-+]?\d{1,12}(?:\.\d+)?")
+# Attributes FileMaker fills from fixed vocabularies (<Parameter type="RAGAccountName">,
+# datatype="StepText"), never user data. A secret that equals one must not rename it,
+# or the step stops being recognizable.
+_STRUCTURAL_ATTRS = {"hash", "type", "datatype"}
 
 
 class UnsupportedFormat(ValueError):
@@ -219,7 +223,7 @@ class _Rewriter:
                 yield el, None, kind, where
             for name, value in el.attrib.items():
                 # A number in an attribute is structure (an id, bounds, an options bitfield)
-                if name != "hash" and value.strip() and not _NUMBER_RE.fullmatch(value):
+                if name not in _STRUCTURAL_ATTRS and value.strip() and not _NUMBER_RE.fullmatch(value):
                     kind = "text" if _classify(snake(name), None, False) else "name"
                     yield el, name, kind, f"{where} @{name}"
 

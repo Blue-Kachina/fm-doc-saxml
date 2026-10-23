@@ -115,9 +115,12 @@ def test_guard_ignores_a_value_equal_to_a_parameter_type(tmp_path):
     step = entities["scriptSteps"]["scriptStep:OneOfEverything:0025"]
     assert "RAGAccountName" not in step["fmText"] and "[REDACTED:api_key#" in step["fmText"]
     assert [c["text"] for c in step["calculations"] if c["parameter"] == "RAGAccountName"][0].startswith('"[REDACTED:')
-    # Every other copy of the value is one of the structural keys.
+    # Every other copy of the value is one of the structural keys, or the raw/ XML's
+    # <Parameter type> attribute (redacting that would break step recognition).
     text = _all_output(out)
-    structural = text.count('"label": "RAGAccountName"') + text.count('"parameter": "RAGAccountName"')
+    structural = (text.count('"label": "RAGAccountName"') + text.count('"parameter": "RAGAccountName"')
+                  + text.count('type=\\"RAGAccountName\\"'))
+    assert 'type=\\"RAGAccountName\\"' in text
     assert text.count("RAGAccountName") == structural
 
 

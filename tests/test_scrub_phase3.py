@@ -270,6 +270,21 @@ def test_scrub_keeps_utf16_bom_and_crlf(tmp_path):
     assert "ab1" not in text and "[REDACTED:password#1]" in text
 
 
+RAG_SAMPLE = Path(__file__).resolve().parent.parent / "samples" / "by_type" / "second_file" / "EverythingBagel.xml"
+
+
+def test_scrub_keeps_a_parameter_type_equal_to_a_secret(tmp_path):
+    # Configure RAG Account's account name is literally "RAGAccountName", the same text as
+    # its <Parameter type>. The value is redacted; the type is a label and must survive.
+    if not RAG_SAMPLE.exists():
+        pytest.skip("samples/by_type fixture not present")
+    out, _ = _scrub(tmp_path, RAG_SAMPLE)
+    text = out.read_text(encoding="utf-8")
+    assert '<Parameter type="RAGAccountName">' in text
+    assert text.count("RAGAccountName") == text.count('type="RAGAccountName"')
+    assert 'type="[REDACTED:' not in text
+
+
 def test_rescrubbing_the_output_finds_nothing_new(tmp_path):
     out, _ = _scrub(tmp_path, _export(tmp_path))
     again = tmp_path / "again.xml"
