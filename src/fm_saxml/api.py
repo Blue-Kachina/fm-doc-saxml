@@ -30,10 +30,10 @@ from typing import Any, Optional, Union
 import orjson
 from pydantic import BaseModel
 
-from .contract import CONTRACT_VERSION, ROOT_CATALOG
+from .contract import CONTRACT_VERSION, RAW_DIR, ROOT_CATALOG, raw_file_for
 from .contract_migrations import ContractVersionError, file_version, read_contract_file
 from .contract_models import (
-    Backlink, ContractSource, DocsCatalog, EntitiesDoc, ExternalReferencesDoc,
+    Backlink, ContractSource, DocsCatalog, EntitiesDoc, ExternalReferencesDoc, RawXmlDoc,
 )
 from .model.references import ReferenceRecord
 
@@ -42,6 +42,10 @@ DOCS_ROOT_ENV = "FM_SAXML_DOCS_ROOT"
 
 class DocsNotFoundError(FileNotFoundError):
     """No fm-saxml docs where they were looked for."""
+
+
+class RawXmlNotFoundError(LookupError):
+    """These docs have no raw XML for the docId (or none at all)."""
 
 
 # docId prefix -> entities.json collection
@@ -110,6 +114,7 @@ class SolutionDocs:
     def __init__(self, path: Union[str, Path], catalog: Optional[DocsCatalog] = None) -> None:
         self.path = Path(path)
         self.catalog = catalog  # docs.json, when this folder is an output root
+        self._raw: dict[str, dict[str, str]] = {}  # raw/*.json, by file name, read on first use
 
     def __repr__(self) -> str:
         return f"SolutionDocs({str(self.path)!r})"
@@ -172,6 +177,55 @@ class SolutionDocs:
         if "#ind" in doc_id:
             return self.entities.indirection_sites.get(doc_id)
         return None
+
+    def raw_xml(self, doc_id: str) -> str:
+        """The scrubbed XML of a script, step, layout, layout object, theme, custom menu or menu set.
+
+        It's the export's own element (re-serialized, scrubbed like the pages), for tools that
+        build something to paste back into FileMaker. A step's XML is cut from its script's, and
+        a layout object's from its layout's. ``raw/*.json`` is read only when first needed.
+        """
+        file_name = raw_file_for(doc_id)
+        if file_name is None:
+            raise RawXmlNotFoundError(f"{doc_id}: only scripts, steps, layouts, layout objects, themes, "
+                                      "custom menus and menu sets have raw XML")
+        prefix = doc_id.split(":", 1)[0]
+        xml = self._raw_file(file_name)
+        if prefix not in ("scriptStep", "layoutObject"):
+            if doc_id not in xml:
+                raise RawXmlNotFoundError(f"{doc_id} isn't in {self.path / RAW_DIR / file_name}")
+            return xml[doc_id]
+
+        from lxml import etree
+
+        entity = self.get(doc_id)
+        if entity is None:
+            raise RawXmlNotFoundError(f"{doc_id} isn't in these docs")
+        if prefix == "scriptStep":
+            parent_id, match = entity.script_doc_id, ("Step", "index", str(entity.index))
+        else:
+            parent_id, match = entity.layout_doc_id, ("LayoutObject", "id", entity.object_id)
+        parent = etree.fromstring(self.raw_xml(parent_id))
+        tag, attr, value = match
+        for el in parent.iter(tag):
+            if el.get(attr) == value:
+                return etree.tostring(el, encoding="unicode", with_tail=False)
+        raise RawXmlNotFoundError(f"{doc_id}: no <{tag} {attr}=\"{value}\"> in {parent_id}'s raw XML")
+
+    def _raw_file(self, file_name: str) -> dict[str, str]:
+        if file_name not in self._raw:
+            path = self.path / RAW_DIR / file_name
+            if not path.is_file():
+                raise RawXmlNotFoundError(
+                    f"{path} not found: these docs have no raw XML. Build them from the export without "
+                    "--no-raw-xml (a render from model.json has no export to read).")
+            data = orjson.loads(path.read_bytes())
+            major = file_version(data)[0]
+            if major > CONTRACT_VERSION[0]:
+                raise ContractVersionError(f"{path}: docs written by schema {major}.x; "
+                                           f"this fm-saxml reads up to {CONTRACT_VERSION[0]}.x — upgrade fm-saxml")
+            self._raw[file_name] = RawXmlDoc.model_validate(data).xml
+        return self._raw[file_name]
 
     def find(self, kind: str, name: str) -> list[BaseModel]:
         """Every entity of ``kind`` named ``name``, ignoring case. Fields also match ``Table::Field``."""

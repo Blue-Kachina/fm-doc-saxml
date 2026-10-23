@@ -52,6 +52,7 @@ _DECL_RE = re.compile(r"\A\s*(<\?xml[^>]*\?>)(\r?\n)?")
 _ENCODING_ATTR_RE = re.compile(r"""encoding\s*=\s*["']([A-Za-z0-9._-]+)["']""")
 _SKIP_TEXT_TAGS = {"UUID", "DDRREF", "Stream", "BinaryData"}
 _BINARY_TYPES = {"hex", "base64", "binary"}
+_NUMBER_RE = re.compile(r"[-+]?\d{1,12}(?:\.\d+)?")
 
 
 class UnsupportedFormat(ValueError):
@@ -180,12 +181,17 @@ class _Rewriter:
 
     def rewrite(self, root: etree._Element) -> None:
         sites = list(self._sites(root))
+        substituted_with = len(self.scrubber.registry)  # every value known when each site was scrubbed
         for el, attr, kind, where in sites:
             self._update(el, attr, self._scrub(self._get(el, attr), kind, where))
         # A value first detected late in the document must also go from the nodes
-        # before it: substitute again until no new value turns up.
+        # before it: substitute again until no new value turns up. Every site already had
+        # the values known before this pass substituted, so with none new there's nothing to do.
         for _ in range(5):
             known = len(self.scrubber.registry)
+            if known == substituted_with:
+                break
+            substituted_with = known
             for el, attr, kind, _where in sites:
                 value = self._get(el, attr)
                 if kind == "calc":
@@ -193,8 +199,6 @@ class _Rewriter:
                 else:
                     new = self.scrubber.substitute(value)
                 self._update(el, attr, new)
-            if len(self.scrubber.registry) == known:
-                break
 
     def _sites(self, root: etree._Element):
         for el in root.iter():
@@ -214,7 +218,8 @@ class _Rewriter:
                     kind = "text" if _classify(snake(tag.lstrip("_")), None, False) else "name"
                 yield el, None, kind, where
             for name, value in el.attrib.items():
-                if name != "hash" and value.strip():
+                # A number in an attribute is structure (an id, bounds, an options bitfield)
+                if name != "hash" and value.strip() and not _NUMBER_RE.fullmatch(value):
                     kind = "text" if _classify(snake(name), None, False) else "name"
                     yield el, name, kind, f"{where} @{name}"
 
@@ -240,7 +245,9 @@ class _Rewriter:
         stripped = value.strip()
         exact = self.patterns.exact.get(stripped)
         if exact is not None:
-            return value.replace(stripped, exact, 1)
+            # The model pass's result predates values a later file of a batch taught the scrubber
+            new = value.replace(stripped, exact, 1)
+            return self.scrubber.substitute_calc(new) if kind == "calc" else self.scrubber.substitute(new)
         new = self.patterns.replace_tokens(value)
         if kind == "calc":
             # A calc the parser didn't extract: scrub it the same way, in calc mode.

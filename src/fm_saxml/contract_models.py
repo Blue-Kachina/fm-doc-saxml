@@ -183,7 +183,16 @@ DOC_MODELS: dict[str, type[ContractEnvelope]] = {
     "external-references.json": ExternalReferencesDoc,
 }
 
+
+
+class RawXmlDoc(ContractEnvelope):
+    """Each optional ``raw/*.json``: the scrubbed XML of one kind of object, ``{docId: "<element…>"}``."""
+
+    xml: dict[str, str] = {}
+
+
 SCHEMA_ROOT = Path("docs") / "contract"  # relative to the repository root
+RAW_SCHEMA_NAME = "raw-xml.json"  # one schema for every raw/*.json
 
 
 def schema_dir_name() -> str:
@@ -193,7 +202,7 @@ def schema_dir_name() -> str:
 def json_schemas() -> dict[str, dict]:
     """JSON Schema of each contract file, keyed by the schema's file name."""
     out = {}
-    for file_name, model in {ROOT_CATALOG: DocsCatalog, **DOC_MODELS}.items():
+    for file_name, model in {ROOT_CATALOG: DocsCatalog, **DOC_MODELS, RAW_SCHEMA_NAME: RawXmlDoc}.items():
         schema = model.model_json_schema(by_alias=True)
         schema["$schema"] = "https://json-schema.org/draft/2020-12/schema"
         schema["$id"] = f"fm-saxml/contract/{schema_dir_name()}/{file_name.removesuffix('.json')}.schema.json"

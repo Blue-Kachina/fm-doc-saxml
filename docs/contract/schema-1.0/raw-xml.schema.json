@@ -1,0 +1,145 @@
+{
+  "$defs": {
+    "ContractSource": {
+      "description": "The FileMaker file the docs describe. Never a path on the machine that built them.",
+      "properties": {
+        "fmpFileName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fmpfilename"
+        },
+        "fileUuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fileuuid"
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scope"
+        },
+        "fileMakerVersion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Filemakerversion"
+        },
+        "saxmlVersion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Saxmlversion"
+        },
+        "hasDdrInfo": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hasddrinfo"
+        }
+      },
+      "title": "ContractSource",
+      "type": "object"
+    },
+    "Generator": {
+      "description": "What wrote the file. ``None`` on a file upgraded from before the contract existed.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Generator",
+      "type": "object"
+    }
+  },
+  "description": "Each optional ``raw/*.json``: the scrubbed XML of one kind of object, ``{docId: \"<element…>\"}``.",
+  "properties": {
+    "schemaVersion": {
+      "title": "Schemaversion",
+      "type": "string"
+    },
+    "generator": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Generator"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "source": {
+      "$ref": "#/$defs/ContractSource"
+    },
+    "xml": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "default": {},
+      "title": "Xml",
+      "type": "object"
+    }
+  },
+  "required": [
+    "schemaVersion"
+  ],
+  "title": "RawXmlDoc",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fm-saxml/contract/schema-1.0/raw-xml.schema.json"
+}

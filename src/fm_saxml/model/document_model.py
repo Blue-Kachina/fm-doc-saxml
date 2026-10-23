@@ -255,6 +255,9 @@ class DocumentModel(BaseModel):
     # analyze/coverage.py's report, built once: the index, the reports, the batch summary and the
     # console line all read it, and it walks every entity dozens of times.
     _coverage_report: Optional[object] = PrivateAttr(None)
+    # The export this model came from (render/json/raw_xml.RawSource), for raw/*.json. Not
+    # saved: a model loaded from model.json has no export to read.
+    _raw_source: Optional[object] = PrivateAttr(None)
 
     def local_layout_doc_id(self, name: str, fmp_id: Optional[str] = None) -> str:
         """docId of a layout in this file: by FileMaker id when known, else by name."""

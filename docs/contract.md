@@ -104,15 +104,17 @@ batch["Invoices"].entities.layouts
 batch.resolve("ds:EEC9827D-…/field:Clients::Name")   # ResolvedRef(file, doc_id, entity), or None
 
 fm_saxml.find_docs("Invoices")                       # the docs folder, under $FM_SAXML_DOCS_ROOT
+
+docs.raw_xml("script:Post Invoice")                 # scrubbed XML of the export's element (see raw/ below)
 ```
 
 Each file is read on first use, upgraded if an older fm-saxml wrote it, and validated. Loading `entities.json` and `references.json` for a 218 MB export takes about 1.5 seconds.
 
 **Public surface.** These names follow the contract's version policy:
 
-- `fm_saxml`: `load`, `find_docs`, `SolutionDocs`, `BatchDocs`, `ResolvedRef`, `DocsNotFoundError`, `ContractVersionError`
+- `fm_saxml`: `load`, `find_docs`, `SolutionDocs`, `BatchDocs`, `ResolvedRef`, `DocsNotFoundError`, `RawXmlNotFoundError`, `ContractVersionError`
 - `fm_saxml.model`: every class in its `__all__` (the entity classes, `ReferenceRecord`, `ExternalTarget`, `IndirectionSite`, …). Their fields are the contract's keys.
-- `fm_saxml.contract_models`: one model per file (`EntitiesDoc`, `ReferencesDoc`, `BacklinksDoc`, `ExternalReferencesDoc`, `DocsCatalog`)
+- `fm_saxml.contract_models`: one model per file (`EntitiesDoc`, `ReferencesDoc`, `BacklinksDoc`, `ExternalReferencesDoc`, `DocsCatalog`, `RawXmlDoc`)
 - `fm_saxml.contract_migrations.read_contract_file(path)`
 
 Everything else in the package is internal.
@@ -224,6 +226,23 @@ It describes everything this file reaches in other files, so a later run can res
 - `references`: each reference into another file. `sourceScopedDocId` uses this file's scope, and `target.scopedDocId` uses the provisional `ds:` scope.
 
 To resolve a target against the other file, match `target.uuid` first, then `target.fmpId`, then `target.name` (for fields: `target.baseTable` with `target.name`).
+
+## raw/: the export's own XML (optional)
+
+`build` also writes `raw/scripts.json`, `raw/layouts.json`, `raw/themes.json` and `raw/menus.json` (menus and menu sets) next to entities.json. Each is the envelope plus `xml: {docId: "<element…>"}`, with one schema for all four (`raw-xml.schema.json`). They're for tools that build something to paste back into FileMaker: a script's steps for a snippet, a theme's CSS, a menu to edit, a layout as an example. Everything else reads the other files.
+
+| docId | Element |
+|---|---|
+| `script:` | the script's `<Script>` from `StepsForScripts`: its `ScriptReference` and every `<Step>` in order |
+| `layout:` | the whole `<Layout>`, every object's `LocalCSS` included |
+| `theme:` | the whole `<Theme>`: `CSS`, `Metadata` and the `Image` thumbnail |
+| `customMenu:`, `customMenuSet:` | `<CustomMenu>`, `<CustomMenuSet>`; the catalog UUIDs a paste needs are on the entities (`catalogUuid`) |
+
+`docs.raw_xml(doc_id)` returns one element as a string and reads only the file it needs. A step (`scriptStep:`) or a layout object (`layoutObject:`) is cut from its script's or layout's XML, so it isn't stored twice.
+
+- **Scrubbed like the pages**, with the same placeholders, including values found in another file of a batch. Elements whose text was redacted lose their `hash`. `DDR_INFO` isn't included: its step text and ChunkLists repeat what is.
+- **Equivalent, not byte-identical**: each element is re-serialized. agentic-fm's `fm_xml_to_snippet.py` gives the same snippet from it as from the exploder's script file.
+- **Size**: about two-thirds of the export (172 MB for a 218 MB export). Writing it takes about 35 s on that export (the step timed on its own; the whole build takes about two minutes). `--no-raw-xml` leaves `raw/` out. `render` (from model.json) has no export to read, so it never writes it; `raw_xml` then raises `RawXmlNotFoundError`.
 
 ## Changing the contract
 

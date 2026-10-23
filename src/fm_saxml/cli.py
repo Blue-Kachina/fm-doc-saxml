@@ -109,6 +109,11 @@ IncludeJsonOpt = Annotated[bool, typer.Option(
     "--include-json/--no-include-json",
     help="Write the JSON data files (docs.json, entities, references, backlinks, external-references) into the docs dir",
 )]
+RawXmlOpt = Annotated[bool, typer.Option(
+    "--raw-xml/--no-raw-xml",
+    help="Write raw/*.json: the scrubbed XML of every script, layout, theme and custom menu "
+         "(for tools that paste back into FileMaker). Adds about two-thirds of the export's size.",
+)]
 
 # Where converted solutions live, so tools can find them by name (find_docs). See docs/contract.md.
 DOCS_ROOT_ENV = "FM_SAXML_DOCS_ROOT"
@@ -380,6 +385,7 @@ def build(
                            "or the folder name for a multi-file export)")] = None,
     model_out: Annotated[Optional[Path], typer.Option("--model-out", help="Path to write model.json")] = None,
     include_json: IncludeJsonOpt = True,
+    raw_xml: RawXmlOpt = True,
     strict: Annotated[bool, typer.Option("--strict", help="Exit non-zero if there are unresolved references")] = False,
     force: Annotated[bool, typer.Option("--force", "-f", help="Overwrite the output directory without prompting")] = False,
     yes: Annotated[bool, typer.Option("--yes", "-y", help="Assume yes to all interactive prompts")] = False,
@@ -422,7 +428,8 @@ def build(
             _fail("--model-out isn't supported when converting several files.",
                   "Each file's data is in entities.json and references.json inside its own folder.")
         scrubber = _make_scrubber(disable_scrubbing, scrub_level, scrub_keyword, scrub_allow)
-        _build_batch(scan, out, scrubber, solution=solution, include_json=include_json, strict=strict, force=force or yes,
+        _build_batch(scan, out, scrubber, solution=solution, include_json=include_json, raw_xml=raw_xml,
+                     strict=strict, force=force or yes,
                      html=html, webmcp=webmcp, fail_on_secrets=fail_on_secrets, open_when_done=open_when_done,
                      coverage=coverage, fail_on_coverage_gap=fail_on_coverage_gap)
         if serve:
@@ -443,6 +450,8 @@ def build(
         console.print(f"[green]Model JSON written to {model_out}[/green]")
 
     with _staged_output(out) as work:
+        if include_json and raw_xml:
+            _write_raw_xml([(model, work)], scrubber)  # before the pages: it can add to the redaction report
         _render_markdown_with_progress(model, work)
         if include_json:
             from .render.json.writer import build_root_catalog, write_root_catalog, write_split_json
@@ -480,6 +489,7 @@ _RESERVED_BATCH_FOLDERS = {"reports", "_viewer"}
 
 
 def _build_batch(scan, out: Path, scrubber, *, solution: str, include_json: bool, strict: bool, force: bool,
+                 raw_xml: bool = True,
                  html: bool, fail_on_secrets: bool, open_when_done: bool, webmcp: bool = False,
                  coverage: bool = False, fail_on_coverage_gap: bool = False) -> None:
     """Convert every export in a folder into its own subfolder of ``out``, with cross-file links."""
@@ -495,6 +505,9 @@ def _build_batch(scan, out: Path, scrubber, *, solution: str, include_json: bool
     if scrubber is not None:
         hosts = [scrubber.scrub_text(h, "Summary.xml host") for h in hosts]
     with _staged_output(out) as work:
+        if include_json and raw_xml:
+            # After every file is scrubbed, so a value found in a later file is redacted here too
+            _write_raw_xml([(f.model, work / f.folder) for f in files], scrubber)
         _render_batch_with_progress(files, links, work)
         if include_json:
             from .render.json.writer import build_root_catalog, write_root_catalog, write_split_json
@@ -607,6 +620,17 @@ def _analyze_batch(scan, scrubber, folders: dict[str, str], coverage: bool = Fal
     if not files:
         _fail("None of the exports could be converted.", EXPORT_HINT)
     return files, failed, missing, extra
+
+
+def _write_raw_xml(targets, scrubber) -> None:
+    """raw/*.json for each (model, folder), one export at a time (each is reparsed)."""
+    from .render.json.raw_xml import write_raw_xml
+
+    with _progress() as progress:
+        task = progress.add_task("Writing raw XML", total=len(targets))
+        for model, folder in targets:
+            write_raw_xml(model, folder, scrubber)
+            progress.advance(task)
 
 
 def _print_manifest_check(scan):
@@ -1318,8 +1342,12 @@ def _parse_and_scrub(input_xml: Path, scrubber, fragments: Optional[list[Path]],
     """Stages 1-2. Returns what ``_normalize_scrubbed`` needs: (raw, scrub summary, source file, path)."""
     from .parser.saxml_reader import parse_savexml
     from .model.document_model import ScrubSummary
+    from .render.json.raw_xml import RawSource
 
     raw = parse_savexml(input_xml, fragments, coverage=coverage)
+    # For raw/*.json (render/json/raw_xml.py). An attribute, not a RawModel field, so the
+    # scrubber's walk over the record's fields never sees it.
+    raw.raw_source = RawSource(path=input_xml, fragments=list(fragments or []))
 
     xml_errors = [w for w in raw.parse_warnings if w.startswith("XML parse error")]
     if xml_errors:
@@ -1334,6 +1362,7 @@ def _parse_and_scrub(input_xml: Path, scrubber, fragments: Optional[list[Path]],
     if scrubber is not None:
         source_file = scrubber.scrub_text(source_file, "Source file")
         scrub_summary = scrubber.scrub_raw(raw)
+        raw.raw_source.changes = list(scrubber.last_changes)
     else:
         scrub_summary = ScrubSummary(applied=False)
     return raw, scrub_summary, source_file, input_xml
@@ -1362,6 +1391,7 @@ def _normalize_scrubbed(raw, scrub_summary, source_file: str, input_xml: Path, s
 
     step("Validating model")
     model = validate_model(model)
+    model._raw_source = getattr(raw, "raw_source", None)
 
     step(f"Analyzed {input_xml.name}")
     return model

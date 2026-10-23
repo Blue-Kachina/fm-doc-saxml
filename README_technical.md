@@ -67,6 +67,7 @@ pip install -e ".[dev]"
 | `--solution <name>` | `build` | The solution's name in the docs root and `docs.json` (default: the FileMaker file name, or the folder name for a multi-file export) |
 | `--model-out <path>` | `build` | Also write the intermediate `model.json` alongside the Markdown output |
 | `--include-json` / `--no-include-json` | `build`, `render` | Write the JSON contract files (`docs.json`, `entities.json`, `references.json`, `backlinks.json`, `external-references.json`; see [docs/contract.md](docs/contract.md)) into the output dir (default: on) |
+| `--raw-xml` / `--no-raw-xml` | `build` | Write `raw/*.json`: the scrubbed XML of every script, layout, theme and custom menu, for tools that paste back into FileMaker (see [docs/contract.md](docs/contract.md)). Adds about two-thirds of the export's size (default: on) |
 | `--strict` | `build` | Exit non-zero if any reference is left `unresolved` after resolution |
 | `--force` / `-f`, `--yes` / `-y` | `build`, `render` | Skip the overwrite-confirmation prompt |
 | `--open` | `build` | Open the output folder when finished |

@@ -6,7 +6,9 @@ Read converted docs with ``fm_saxml.load(docs_dir)`` or ``fm_saxml.find_docs(nam
 
 __version__ = "0.6.2"
 
-from .api import BatchDocs, DocsNotFoundError, ResolvedRef, SolutionDocs, find_docs, load  # noqa: E402
+from .api import (  # noqa: E402
+    BatchDocs, DocsNotFoundError, RawXmlNotFoundError, ResolvedRef, SolutionDocs, find_docs, load,
+)
 from .contract_migrations import ContractVersionError  # noqa: E402
 
 __all__ = [
@@ -17,5 +19,6 @@ __all__ = [
     "BatchDocs",
     "ResolvedRef",
     "DocsNotFoundError",
+    "RawXmlNotFoundError",
     "ContractVersionError",
 ]

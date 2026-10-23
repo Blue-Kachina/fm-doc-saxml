@@ -40,6 +40,21 @@ ROOT_CATALOG = "docs.json"
 ENVELOPE_KEYS = ("schemaVersion", "generator", "source")
 GENERATOR_NAME = "fm-saxml-converter"
 
+# Optional: the scrubbed XML of scripts, layouts, themes and custom menus (render/json/raw_xml.py).
+# Each file is the envelope plus ``xml: {docId: "<element…>"}``; menus and menu sets share one.
+RAW_DIR = "raw"
+RAW_FILES = {"scripts": "scripts.json", "layouts": "layouts.json", "themes": "themes.json", "menus": "menus.json"}
+_RAW_FILE_BY_PREFIX = {
+    "script": "scripts.json", "scriptStep": "scripts.json",  # a step's XML is cut from its script's
+    "layout": "layouts.json", "layoutObject": "layouts.json",  # an object's from its layout's
+    "theme": "themes.json", "customMenu": "menus.json", "customMenuSet": "menus.json",
+}
+
+
+def raw_file_for(doc_id: str) -> str | None:
+    """The ``raw/`` file that holds a docId's XML, or None for kinds that have none."""
+    return _RAW_FILE_BY_PREFIX.get(doc_id.split(":", 1)[0])
+
 
 def parse_version(text: str) -> tuple[int, ...]:
     """``"1.0"`` -> ``(1, 0)``, ``"0.5.0"`` -> ``(0, 5, 0)``. Compare the tuples, never the strings.
