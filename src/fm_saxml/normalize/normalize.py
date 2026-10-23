@@ -642,7 +642,9 @@ def _normalize_layouts(raw: RawModel, model: DocumentModel) -> None:
     ext = ExternalTargets(model)
 
     for layout in raw.layouts:
-        name = normalize_name(layout.get("name", ""))
+        # As with scripts: the docId uses the trimmed name, the entity keeps the exported one
+        exact_name = layout.get("name", "")
+        name = normalize_name(exact_name)
         if not name:
             continue
         doc_id = model.local_layout_doc_id(name, layout.get("id"))
@@ -671,7 +673,7 @@ def _normalize_layouts(raw: RawModel, model: DocumentModel) -> None:
 
         entity = LayoutEntity(
             docId=doc_id,
-            name=name,
+            name=exact_name,
             fmpId=str(layout.get("id", "")),
             uuid=layout.get("uuid"),
             baseTableOccurrenceDocId=to_doc,
@@ -894,7 +896,10 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
     # First pass — create script entities without step cross-references
     script_entities: list[tuple[dict, ScriptEntity]] = []
     for s in raw.scripts:
-        name = normalize_name(s.get("name", ""))
+        # The docId uses the trimmed name; the entity keeps the exported one, since leading and
+        # trailing spaces (used to indent the Scripts menu) are part of the script's real name.
+        exact_name = s.get("name", "")
+        name = normalize_name(exact_name)
         if not name:
             continue
         doc_id = model.local_script_doc_id(name, s.get("id"))
@@ -902,7 +907,7 @@ def _normalize_scripts(raw: RawModel, model: DocumentModel) -> None:
             doc_id = script_doc_id(f"{name} (#{s.get('id', '') or len(model.entities.scripts)})")
         entity = ScriptEntity(
             docId=doc_id,
-            name=name,
+            name=exact_name,
             fmpId=str(s.get("id", "")),
             uuid=s.get("uuid"),
             folderPath=s.get("folder_path"),
@@ -1014,7 +1019,7 @@ def _step_target_refs(
         l_ext = ext.layout(lr.get("via_to"), lr["name"], lr.get("id"), lr.get("uuid"))
         ld = l_ext.scoped_doc_id if l_ext else (
             (layout_name_map.get(f"#{lr['id']}") if lr.get("id") else None)
-            or layout_name_map.get(lr["name"]) or layout_doc_id(lr["name"])
+            or layout_name_map.get(lr["name"]) or layout_doc_id(normalize_name(lr["name"]))
         )
         refs.append({"kind": "layout", "targetDocId": ld, "role": role, **_ext(l_ext)})
 

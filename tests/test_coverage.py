@@ -145,6 +145,35 @@ def test_two_scripts_with_one_name_are_both_kept(tmp_path):
     assert not build_coverage(model).problems
 
 
+def test_script_and_layout_names_keep_their_exported_spaces(tmp_path):
+    """Leading/trailing spaces indent the Scripts and Layouts menus; they are part of the name. The docId is trimmed."""
+    xml = (FIXTURES / "v2_sample.xml").read_text(encoding="utf-8")
+    xml = xml.replace('name="ContactDetail"', 'name=" ContactDetail  "')
+    scripts = ('<Script id="7" name="  Indented "><Options hidden="False" runwithfullaccess="False"/></Script>'
+               '<Script id="8" name="Caller"><Options hidden="False" runwithfullaccess="False"/></Script>')
+    steps = ('<Script><ScriptReference id="7" name="  Indented "/><ObjectList/></Script>'
+             '<Script><ScriptReference id="8" name="Caller"/><ObjectList>'
+             '<Step index="0" id="1" name="Perform Script" enable="True"><ParameterValues>'
+             '<Parameter type="List"><List name="From list"><ScriptReference id="7" name="  Indented "/>'
+             '</List></Parameter></ParameterValues></Step>'
+             '<Step index="1" id="6" name="Go to Layout" enable="True"><ParameterValues>'
+             '<Parameter type="LayoutReferenceContainer"><LayoutReferenceContainer value="1">'
+             '<LayoutReference name=" ContactDetail  "/></LayoutReferenceContainer></Parameter>'
+             '</ParameterValues></Step></ObjectList></Script>')
+    xml = xml.replace("</ScriptCatalog>", scripts + "</ScriptCatalog>")
+    xml = xml.replace("</StepsForScripts>", steps + "</StepsForScripts>")
+    path = tmp_path / "Export.xml"
+    path.write_text(xml, encoding="utf-8")
+    model = _run_pipeline(path, coverage=True)
+
+    assert model.entities.scripts["script:Indented"].name == "  Indented "
+    assert model.entities.layouts["layout:ContactDetail"].name == " ContactDetail  "
+    caller = model.entities.scripts["script:Caller"]
+    assert caller.referenced_scripts == ["script:Indented"]
+    assert caller.referenced_layouts == ["layout:ContactDetail"]  # matched by name: the ref has no id
+    assert not build_coverage(model).problems
+
+
 def test_custom_menu_sets_use_filemakers_catalog_name(tmp_path):
     xml = (FIXTURES / "v2_sample.xml").read_text(encoding="utf-8")
     xml = xml.replace("CustomMenuSetsCatalog", "CustomMenuSetCatalog")

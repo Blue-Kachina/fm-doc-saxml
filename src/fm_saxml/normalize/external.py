@@ -15,6 +15,7 @@ from ..model.references import ExternalTarget
 from .ids import (
     field_doc_id, layout_doc_id, provisional_scope, script_doc_id, scoped_doc_id, table_doc_id, value_list_doc_id,
 )
+from .names import normalize_name
 
 
 class ExternalTargets:
@@ -53,10 +54,11 @@ class ExternalTargets:
         ``ds:`` scope until the target file's UUID is known.
         """
         kind, name = kw["targetType"], kw["name"]
+        # Script and layout names keep their exported spaces, but their docIds are trimmed
         if kind == "script":
-            local = script_doc_id(name)
+            local = script_doc_id(normalize_name(name))
         elif kind == "layout":
-            local = layout_doc_id(name)
+            local = layout_doc_id(normalize_name(name))
         elif kind == "table":
             local = table_doc_id(name)
         elif kind == "valueList":

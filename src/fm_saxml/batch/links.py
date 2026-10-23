@@ -231,22 +231,28 @@ def find_target(model: DocumentModel, t: ExternalTarget, index: Optional["_Targe
 
 
 class _Lookup:
-    """Entities by uuid, fmpId and (casefolded) name; the first entity wins each key."""
+    """Entities by uuid, fmpId and (casefolded) name; the first entity wins each key.
+
+    Names match exactly first, then trimmed: a script's name keeps the spaces it was exported with.
+    """
 
     def __init__(self, entities) -> None:
         self.uuid: dict[str, str] = {}
         self.fmp_id: dict[str, str] = {}
         self.name: dict[str, str] = {}
+        self.trimmed_name: dict[str, str] = {}
         for e in entities:
             if e.uuid:
                 self.uuid.setdefault(e.uuid, e.doc_id)
             if e.fmp_id:
                 self.fmp_id.setdefault(str(e.fmp_id), e.doc_id)
             self.name.setdefault(e.name.casefold(), e.doc_id)
+            self.trimmed_name.setdefault(e.name.strip().casefold(), e.doc_id)
 
     def find(self, uuid: Optional[str], fmp_id: Optional[str], name: Optional[str]) -> Optional[str]:
         return ((uuid and self.uuid.get(uuid)) or (fmp_id and self.fmp_id.get(str(fmp_id)))
-                or (name and self.name.get(name.casefold())) or None)
+                or (name and (self.name.get(name.casefold()) or self.trimmed_name.get(name.strip().casefold())))
+                or None)
 
 
 class _TargetIndex:

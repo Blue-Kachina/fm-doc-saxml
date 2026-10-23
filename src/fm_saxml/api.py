@@ -99,12 +99,15 @@ def _attr_for(collection: str) -> str:
 
 
 def _names_of(entity: BaseModel) -> list[str]:
-    """The names an entity answers to in find(): its name, plus a field's Table::Field and a theme's display name."""
+    """The names an entity answers to in find(): its name, plus a field's Table::Field and a theme's display name.
+
+    Trimmed like find()'s query: a script's name keeps the spaces it was exported with.
+    """
     out = []
     for attr in ("name", "qualified_name", "display_name"):
         value = getattr(entity, attr, None)
-        if isinstance(value, str) and value:
-            out.append(value.casefold())
+        if isinstance(value, str) and value.strip():
+            out.append(value.strip().casefold())
     return out
 
 
