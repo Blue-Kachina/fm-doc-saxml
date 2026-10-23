@@ -68,6 +68,10 @@ class Scrubber:
         self._pending: list[_Pending] = []
         self._sub_cache: tuple[int, Optional[re.Pattern]] = (-1, None)
         self._allowed_values: set[str] = set()
+        # SaXML <Parameter type> names seen in step calcs. The model keeps them as
+        # structural labels (params[].label, calculations[].parameter), so a redacted
+        # value that happens to equal one can't count as a leak.
+        self._schema_names: set[str] = set()
         self.last_changes: list[tuple[str, str, str]] = []
 
     # ------------------------------------------------------------------
@@ -122,11 +126,14 @@ class Scrubber:
         ]
 
     def guard_values(self) -> dict[str, str]:
-        return self.registry.substitutable_values()
+        return {v: ph for v, ph in self.registry.substitutable_values().items() if v not in self._schema_names}
 
     def _run(self, roots: dict[str, Any]) -> ScrubSummary:
         # Findings recorded since the last run (e.g. the source path) belong to this one.
         walk = collect_slots(roots)
+        self._schema_names.update(
+            c["parameter"] for step in walk.steps for c in step.calcs if isinstance(c.get("parameter"), str)
+        )
         originals = [slot.get() for slot in walk.slots]
         # Structural rules and variable tracing, planned on the original texts.
         structure = plan(walk, self.policy)
