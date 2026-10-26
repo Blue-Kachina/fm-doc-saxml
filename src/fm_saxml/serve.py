@@ -15,7 +15,7 @@ from pathlib import Path
 from .render.html.viewer import VIEWER_DIR
 
 HOST = "127.0.0.1"
-DEFAULT_PORT = 8765
+DEFAULT_PORT = 8766
 
 
 def has_webmcp(docs_dir: Path) -> bool:

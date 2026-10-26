@@ -73,7 +73,7 @@ pip install -e ".[dev]"
 | `--open` | `build` | Open the output folder when finished |
 | `--html` | `build`, `render` | Also write an `index.html` for browsing the docs in a web browser (see [HTML viewer](./docs/html-viewer.md)) |
 | `--webmcp` | `build`, `render` | Make the HTML viewer agent-ready (see [HTML viewer](./docs/html-viewer.md#agent-ready-html---webmcp)). Turns on `--html` |
-| `--serve` / `--port <n>` | `build`, `render` | With `--webmcp`: serve the docs at `http://127.0.0.1:<port>` when done (default 8765). Same as the `serve` command |
+| `--serve` / `--port <n>` | `build`, `render` | With `--webmcp`: serve the docs at `http://127.0.0.1:<port>` when done (default 8766). Same as the `serve` command |
 | `--coverage` | `build`, `parse`, `render` | Also check that everything in the export reached the docs, and write `Reports/coverage.md` (see [Coverage report](#coverage-report)) |
 | `--fail-on-coverage-gap` | `build` | Exit with status 1 if anything in the export didn't reach the docs, or the export has XML the converter doesn't recognise. Turns on `--coverage`. For CI. |
 | `--fail-on-secrets` | `build`, `parse`, `render` | Exit with status 1 (after writing everything) if the export contains hardcoded credentials. For CI. |

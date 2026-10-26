@@ -445,6 +445,17 @@ def test_serve_needs_a_webmcp_build(tmp_path):
     assert result.exit_code == 1 and "--webmcp" in result.output
 
 
+def test_serve_default_port_stays_off_the_companion_servers_8765():
+    import inspect
+
+    from fm_saxml.cli import build, render, serve_command
+    from fm_saxml.serve import DEFAULT_PORT
+
+    assert DEFAULT_PORT == 8766
+    for command in (build, render, serve_command):
+        assert inspect.signature(command).parameters["port"].default == DEFAULT_PORT
+
+
 def _badge(browser, url: str, stub: bool) -> dict:
     context = browser.new_context()
     page = context.new_page()

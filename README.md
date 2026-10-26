@@ -109,7 +109,7 @@ Each file gets its own subfolder, and references from one file into another beco
 | `diff <old> <new>` | Compare two exports and report what changed — see [Comparing exports](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/diff.md) |
 | `rename-check <file or docs folder> <name>...` | What would break if you renamed a field, script, layout, object ...: every place that names it in text — see [Names written in text](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/indirection.md#rename-check) |
 | `scrub <file>` | Write a copy of the XML with secrets redacted — see [Scrubbing](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/scrubbing.md#scrubbing-the-xml-itself-scrub) |
-| `serve <docs folder>` | Serve a `--webmcp` build at `http://127.0.0.1:8765` so browser agents get its tools |
+| `serve <docs folder>` | Serve a `--webmcp` build at `http://127.0.0.1:8766` so browser agents get its tools |
 | `doctor` | Print environment details for bug reports |
 
 ### Common options

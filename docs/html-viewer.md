@@ -16,7 +16,7 @@ fm-saxml build ./MySolution.xml --html
 ## Agent-ready HTML (`--webmcp`)
 
 ```bash
-fm-saxml build ./MySolution.xml --webmcp --serve    # build, then serve at http://127.0.0.1:8765
+fm-saxml build ./MySolution.xml --webmcp --serve    # build, then serve at http://127.0.0.1:8766
 fm-saxml serve ./MySolution_docs                     # serve docs built earlier
 ```
 
@@ -48,7 +48,7 @@ On a script, table or layout page there are also tools for that entity: `list_st
 
 ### Open it from localhost, not from disk
 
-Browsers only give WebMCP to pages served from a web address. A page opened by double-clicking `index.html` (`file://`) doesn't get it, so agents in the browser can't see the tools. `fm-saxml serve <docs folder>` (or `--serve` on `build`/`render`) serves the folder at `http://127.0.0.1:8765` and opens it there. Localhost counts as a secure origin, so WebMCP works.
+Browsers only give WebMCP to pages served from a web address. A page opened by double-clicking `index.html` (`file://`) doesn't get it, so agents in the browser can't see the tools. `fm-saxml serve <docs folder>` (or `--serve` on `build`/`render`) serves the folder at `http://127.0.0.1:8766` and opens it there. Localhost counts as a secure origin, so WebMCP works.
 
 - The server listens on 127.0.0.1 only.
 - It serves nothing outside the folder.

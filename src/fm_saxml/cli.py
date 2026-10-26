@@ -394,7 +394,7 @@ def build(
     html: HtmlOpt = False,
     webmcp: WebMcpOpt = False,
     serve: ServeOpt = False,
-    port: PortOpt = 8765,
+    port: PortOpt = 8766,
     disable_scrubbing: DisableScrubbingOpt = False,
     scrub_level: ScrubLevelOpt = ScrubLevel.SECRETS,
     scrub_keyword: ScrubKeywordOpt = None,
@@ -738,7 +738,7 @@ def render(
     html: HtmlOpt = False,
     webmcp: WebMcpOpt = False,
     serve: ServeOpt = False,
-    port: PortOpt = 8765,
+    port: PortOpt = 8766,
     disable_scrubbing: DisableScrubbingOpt = False,
     scrub_level: ScrubLevelOpt = ScrubLevel.SECRETS,
     scrub_keyword: ScrubKeywordOpt = None,
@@ -793,7 +793,7 @@ def render(
 @app.command("serve")
 def serve_command(
     docs_dir: Annotated[Path, typer.Argument(help="A docs folder built with --webmcp")],
-    port: PortOpt = 8765,
+    port: PortOpt = 8766,
     no_open: Annotated[bool, typer.Option("--no-open", help="Don't open the browser")] = False,
 ) -> None:
     """Serve a --webmcp docs folder at http://127.0.0.1, where browsers give the viewer WebMCP.
