@@ -12,6 +12,7 @@ from fm_saxml.version import (
     REPO_LABEL,
     REPO_URL,
     _find_git_root,
+    _is_own_checkout,
     _format_iso_date,
     get_self_updated_at_display,
     get_self_version_info,
@@ -23,11 +24,11 @@ from fm_saxml.version import (
 # ---------------------------------------------------------------------------
 
 def test_repo_url():
-    assert REPO_URL == "https://github.com/Blue-Kachina/fm-doc-saxml"
+    assert REPO_URL == "https://dev.azure.com/directimpact/SWAT/_git/fm-saxml-converter"
 
 
 def test_repo_label():
-    assert REPO_LABEL == "fm-doc-saxml"
+    assert REPO_LABEL == "fm-saxml-converter"
 
 
 # ---------------------------------------------------------------------------
@@ -52,9 +53,9 @@ def test_version_info_has_all_keys():
         assert key in info, f"missing key {key}"
 
 
-def test_version_info_source_is_git_or_package():
+def test_version_info_source_is_known():
     info = get_self_version_info()
-    assert info["source"] in ("git", "package")
+    assert info["source"] in ("git", "build", "package")
 
 
 def test_version_info_when_in_repo_returns_git():
@@ -93,8 +94,56 @@ def test_display_format_fallback_to_version(monkeypatch):
     import fm_saxml.version as v
 
     monkeypatch.setattr(v, "_find_git_root", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(v, "_build_info", lambda: (None, None))
     display = v.get_self_updated_at_display()
     assert display == f"v{__version__}"
+
+
+# ---------------------------------------------------------------------------
+# Installed inside another project's git repo (e.g. a .venv in a harness)
+# ---------------------------------------------------------------------------
+
+def _host_repo(tmp_path):
+    """A git repo of some other project, with this package in its .venv."""
+    (tmp_path / ".git").mkdir()
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "some-harness"\n', encoding="utf-8")
+    pkg = tmp_path / ".venv" / "Lib" / "site-packages" / "fm_saxml"
+    pkg.mkdir(parents=True)
+    return pkg
+
+
+def test_is_own_checkout(tmp_path):
+    assert not _is_own_checkout(tmp_path)
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "some-harness"\n', encoding="utf-8")
+    assert not _is_own_checkout(tmp_path)
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "fm-saxml-converter"\n', encoding="utf-8")
+    assert _is_own_checkout(tmp_path)
+
+
+def test_host_repo_head_is_not_reported(tmp_path, monkeypatch):
+    """The .git found above site-packages belongs to another project: ignore it."""
+    import fm_saxml.version as v
+
+    pkg = _host_repo(tmp_path)
+    monkeypatch.setattr(v, "__file__", str(pkg / "version.py"))
+    monkeypatch.setattr(v, "_git", lambda *_a, **_k: pytest.fail("asked the host repo's git"))
+    monkeypatch.setattr(v, "_build_info", lambda: (None, None))
+    info = v.get_self_version_info()
+    assert info["source"] == "package"
+    assert v.get_self_updated_at_display() == f"v{__version__}"
+
+
+def test_build_info_used_outside_a_checkout(tmp_path, monkeypatch):
+    import fm_saxml.version as v
+
+    pkg = _host_repo(tmp_path)
+    monkeypatch.setattr(v, "__file__", str(pkg / "version.py"))
+    monkeypatch.setattr(v, "_build_info", lambda: ("8460954126dec1f8f31de2c646c156b755213e2f",
+                                                   "2026-10-26T10:00:00-04:00"))
+    info = v.get_self_version_info()
+    assert info["source"] == "build"
+    assert info["commit_short"] == "8460954"
+    assert v.get_self_updated_at_display() == "2026-10-26 14:00 UTC (commit 8460954)"
 
 
 # ---------------------------------------------------------------------------
@@ -168,6 +217,6 @@ def test_index_template_includes_creation_details(tmp_path):
 
     index_text = (out_dir / "index.md").read_text(encoding="utf-8")
     assert "## Creation Details" in index_text
-    assert "[fm-doc-saxml](https://github.com/Blue-Kachina/fm-doc-saxml) Updated At" in index_text
+    assert f"[{REPO_LABEL}]({REPO_URL}) Updated At" in index_text
     # Old section name should be gone
     assert "## Timestamps" not in index_text

@@ -6,13 +6,15 @@ single git commit.
 
 Strategy (in order of preference):
 
-1. **Local git HEAD.** If the package's source tree is inside a git
-   repository (typical for editable installs from a clone, or when running
-   tests from a checkout), read the HEAD commit hash and commit timestamp
-   via ``git`` and report those.
-2. **Package version fallback.** When no git repo is reachable (e.g. the
-   package was installed from a wheel into ``site-packages``), fall back to
-   the ``__version__`` constant.
+1. **Local git HEAD.** If the package runs from its own checkout (editable
+   installs from a clone, or tests run from a checkout), read the HEAD commit
+   hash and commit timestamp via ``git`` and report those. A git repository
+   that merely contains the install (a ``.venv`` inside some other project)
+   doesn't count: its HEAD says nothing about this package.
+2. **Build info.** A wheel built from a checkout carries ``_build_info.py``
+   (written by ``hatch_build.py``) with the commit it was built from.
+3. **Package version fallback.** Otherwise (e.g. a wheel built from an
+   sdist), fall back to the ``__version__`` constant.
 
 The detection is best-effort and never raises — if anything fails (no git
 binary, timeout, permission error, detached repo, etc.) it returns a
@@ -35,11 +37,12 @@ class VersionInfo(TypedDict):
     commit_short: Optional[str]
     commit_date_iso: Optional[str]
     commit_date_display: Optional[str]
-    source: str  # "git" or "package"
+    source: str  # "git", "build" or "package"
 
 
-REPO_URL = "https://github.com/Blue-Kachina/fm-doc-saxml"
-REPO_LABEL = "fm-doc-saxml"
+REPO_URL = "https://dev.azure.com/directimpact/SWAT/_git/fm-saxml-converter"
+REPO_LABEL = "fm-saxml-converter"
+PACKAGE_NAME = "fm-saxml-converter"
 _GIT_TIMEOUT_SECONDS = 2.0
 _MAX_PARENT_WALK = 8
 
@@ -55,21 +58,23 @@ def get_self_version_info() -> VersionInfo:
         "source": "package",
     }
 
+    commit_hash = commit_iso = None
     repo_root = _find_git_root(Path(__file__).resolve().parent)
-    if repo_root is None:
-        return info
-
-    commit_hash = _git(["rev-parse", "HEAD"], repo_root)
+    if repo_root is not None and _is_own_checkout(repo_root):
+        commit_hash = _git(["rev-parse", "HEAD"], repo_root)
+        if commit_hash:
+            commit_iso = _git(["log", "-1", "--format=%cI"], repo_root)
+            info["source"] = "git"
     if not commit_hash:
-        return info
-
-    commit_iso = _git(["log", "-1", "--format=%cI"], repo_root)
+        commit_hash, commit_iso = _build_info()
+        if not commit_hash:
+            return info
+        info["source"] = "build"
 
     info["commit_hash"] = commit_hash
     info["commit_short"] = commit_hash[:7]
     info["commit_date_iso"] = commit_iso
     info["commit_date_display"] = _format_iso_date(commit_iso)
-    info["source"] = "git"
     return info
 
 
@@ -82,7 +87,7 @@ def get_self_updated_at_display() -> str:
         - ``"v0.1.0"``                                — fell back to package
     """
     info = get_self_version_info()
-    if info["source"] == "git":
+    if info["source"] in ("git", "build"):
         if info["commit_date_display"] and info["commit_short"]:
             return f"{info['commit_date_display']} (commit {info['commit_short']})"
         if info["commit_short"]:
@@ -105,6 +110,24 @@ def _find_git_root(start: Path) -> Optional[Path]:
             return None
         cur = parent
     return None
+
+
+def _is_own_checkout(root: Path) -> bool:
+    """True when ``root`` is a checkout of this package: its pyproject.toml names it."""
+    try:
+        text = (root / "pyproject.toml").read_text(encoding="utf-8")
+    except OSError:
+        return False
+    return f'name = "{PACKAGE_NAME}"' in text
+
+
+def _build_info() -> tuple[Optional[str], Optional[str]]:
+    """The commit (and its date) a wheel was built from, if the build recorded it."""
+    try:
+        from . import _build_info  # type: ignore[attr-defined]
+    except ImportError:
+        return None, None
+    return getattr(_build_info, "COMMIT", None) or None, getattr(_build_info, "COMMIT_DATE", None) or None
 
 
 def _git(args: list[str], cwd: Path) -> Optional[str]:

@@ -42,8 +42,8 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Blue-Kachina/fm-doc-saxml"
-Issues = "https://github.com/Blue-Kachina/fm-doc-saxml/issues"
+Homepage = "https://dev.azure.com/directimpact/SWAT/_git/fm-saxml-converter"
+Repository = "https://dev.azure.com/directimpact/SWAT/_git/fm-saxml-converter"
 
 [project.scripts]
 fm-saxml = "fm_saxml.cli:main"
@@ -54,9 +54,13 @@ path = "src/fm_saxml/__init__.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/fm_saxml"]
 
+# Records the git commit in fm_saxml/_build_info.py (see hatch_build.py)
+[tool.hatch.build.targets.wheel.hooks.custom]
+path = "hatch_build.py"
+
 # Ship only the package, tests and licence; planning docs and samples stay out of the sdist
 [tool.hatch.build.targets.sdist]
-only-include = ["src", "tests", "README.md", "LICENSE"]
+only-include = ["src", "tests", "README.md", "LICENSE", "hatch_build.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
