@@ -16,9 +16,9 @@ def _raw() -> RawModel:
     raw.table_occurrences = [
         {"id": "10", "name": "Local", "base_table_id": "1"},
         {
-            "id": "11", "name": "idiClients",
-            "external_data_source": "idiClients",
-            "external_base_table": "idiClients",
+            "id": "11", "name": "ExtClients",
+            "external_data_source": "ExtClients",
+            "external_base_table": "ExtClients",
         },
         {"id": "12", "name": "Orphan", "base_table_id": "999"},
     ]
@@ -33,13 +33,13 @@ def model():
 
 def test_external_to_is_not_flagged_unresolved(model):
     flagged = {w.entity_doc_id for w in model.warnings if w.code == "UNRESOLVED_TO_TABLE"}
-    assert "to:idiClients" not in flagged
+    assert "to:ExtClients" not in flagged
 
 
 def test_external_to_has_no_local_base_table_doc_id(model):
-    to = model.entities.table_occurrences["to:idiClients"]
+    to = model.entities.table_occurrences["to:ExtClients"]
     assert to.base_table_doc_id == ""
-    assert to.external_data_source == "idiClients"
+    assert to.external_data_source == "ExtClients"
 
 
 def test_genuinely_missing_base_table_is_still_flagged(model):

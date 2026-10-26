@@ -15,24 +15,24 @@ from fm_saxml.analyze.warnings import generate_warnings
 def _raw() -> RawModel:
     raw = RawModel(file_name="t.xml")
     raw.tables = [{"id": "129", "name": "Contrat"}]
-    raw.fields = [{"table_name": "Contrat", "name": "Code_client", "id": "1"}]
+    raw.fields = [{"table_name": "Contrat", "name": "ClientCode", "id": "1"}]
     raw.table_occurrences = [
         {"id": "1", "name": "Contrat", "base_table_id": "129"},
         # external TO whose base table id (129) collides with the local table's id
-        {"id": "2", "name": "idiClients", "base_table_id": "129", "external_data_source": "idiClients"},
+        {"id": "2", "name": "ExtClients", "base_table_id": "129", "external_data_source": "ExtClients"},
     ]
     raw.scripts = [{
         "id": "1", "name": "S", "steps": [
             {"index": 0, "step_type_id": "1", "name": "Set Field",
-             "field_refs": [{"name": "Code_client", "table": "idiClients"}]},
+             "field_refs": [{"name": "ClientCode", "table": "ExtClients"}]},
             {"index": 1, "step_type_id": "1", "name": "Perform Script",
-             "script_ref": {"name": "Open Script", "data_source": "idiClients"}},
+             "script_ref": {"name": "Open Script", "data_source": "ExtClients"}},
             {"index": 2, "step_type_id": "1", "name": "Go to Related Record",
-             "layout_ref": {"name": "Coordonnees", "via_to": "idiClients"}},
+             "layout_ref": {"name": "ContactCard", "via_to": "ExtClients"}},
             {"index": 3, "step_type_id": "1", "name": "Set Field",
-             "field_refs": [{"name": "Code_client", "table": "Missing"}]},
+             "field_refs": [{"name": "ClientCode", "table": "Missing"}]},
             {"index": 4, "step_type_id": "1", "name": "Set Variable",
-             "calculation": "idiClients::Nom"},
+             "calculation": "ExtClients::Nom"},
         ]}]
     return raw
 
@@ -47,24 +47,24 @@ def _conf(model, step):
 
 
 def test_external_to_does_not_take_a_local_base_table(model):
-    to = model.entities.table_occurrences["to:idiClients"]
+    to = model.entities.table_occurrences["to:ExtClients"]
     assert to.base_table_doc_id == ""
-    assert to.external_data_source == "idiClients"
-    assert "to:idiClients" not in model.entities.tables["table:Contrat"].table_occurrences
+    assert to.external_data_source == "ExtClients"
+    assert "to:ExtClients" not in model.entities.tables["table:Contrat"].table_occurrences
 
 
 def test_field_via_external_to_is_external_not_linked_locally(model):
     assert _conf(model, 0) == ["external"]
-    # must not steal the local Contrat::Code_client field
-    assert not any(b["sourceDocId"].startswith("scriptStep") for b in model.backlinks.get("field:Contrat::Code_client", []))
+    # must not steal the local Contrat::ClientCode field
+    assert not any(b["sourceDocId"].startswith("scriptStep") for b in model.backlinks.get("field:Contrat::ClientCode", []))
 
 
 def test_external_script_and_layout_are_external_and_namespaced(model):
     assert _conf(model, 1) == ["external"]
     assert _conf(model, 2) == ["external"]
     targets = {r.target_doc_id for r in model.references if r.confidence == "external"}
-    assert "ds:idiClients/script:Open Script" in targets
-    assert "ds:idiClients/layout:Coordonnees" in targets
+    assert "ds:ExtClients/script:Open Script" in targets
+    assert "ds:ExtClients/layout:ContactCard" in targets
 
 
 def test_calculation_ref_via_external_to_is_external(model):
@@ -79,9 +79,9 @@ def test_genuinely_missing_reference_stays_unresolved(model):
 def test_extractor_reads_external_signals():
     step = _parse_step(etree.fromstring("""
     <Step index="1" id="1" name="Perform Script"><ParameterValues><Parameter type="List"><List>
-      <DataSourceReference id="3" name="idiClients"/><ScriptReference id="9" name="Open Script"/>
+      <DataSourceReference id="3" name="ExtClients"/><ScriptReference id="9" name="Open Script"/>
     </List></Parameter></ParameterValues></Step>"""), 0)
-    assert step["script_ref"]["data_source"] == "idiClients"
+    assert step["script_ref"]["data_source"] == "ExtClients"
 
     local = _parse_step(etree.fromstring("""
     <Step index="1" id="1" name="Perform Script"><ParameterValues><Parameter type="List"><List>
@@ -91,22 +91,22 @@ def test_extractor_reads_external_signals():
 
     rel = _parse_step(etree.fromstring("""
     <Step index="1" id="74" name="Go to Related Record"><ParameterValues><Parameter type="Related">
-      <TableOccurrenceReference id="2" name="idiClients"/>
-      <LayoutReferenceContainer value="5"><LayoutReference id="4" name="Coordonnees"/></LayoutReferenceContainer>
+      <TableOccurrenceReference id="2" name="ExtClients"/>
+      <LayoutReferenceContainer value="5"><LayoutReference id="4" name="ContactCard"/></LayoutReferenceContainer>
     </Parameter></ParameterValues></Step>"""), 0)
-    assert rel["layout_ref"]["via_to"] == "idiClients"
+    assert rel["layout_ref"]["via_to"] == "ExtClients"
 
 
 def test_extractor_flags_external_table_occurrence():
     db = etree.fromstring("""<Database><TableOccurrenceCatalog>
-      <TableOccurrence id="2" name="idiClients" type="External"><BaseTableSourceReference type="ExternalDataSourceReference">
-        <DataSourceReference id="3" name="idiClients"/><BaseTableReference id="129" name="idiClients"/>
+      <TableOccurrence id="2" name="ExtClients" type="External"><BaseTableSourceReference type="ExternalDataSourceReference">
+        <DataSourceReference id="3" name="ExtClients"/><BaseTableReference id="129" name="ExtClients"/>
       </BaseTableSourceReference></TableOccurrence>
       <TableOccurrence id="1" name="Contrat" type="Local"><BaseTableSourceReference>
         <BaseTableReference id="129" name="Contrat"/></BaseTableSourceReference></TableOccurrence>
     </TableOccurrenceCatalog></Database>""")
     got = {t["name"]: t["external_data_source"] for t in extract_table_occurrences(db)}
-    assert got == {"idiClients": "idiClients", "Contrat": None}
+    assert got == {"ExtClients": "ExtClients", "Contrat": None}
 
 
 # ---------------------------------------------------------------------------
@@ -118,25 +118,25 @@ def _rich_raw() -> RawModel:
     raw.fmp_file_name = "main.fmp12"
     raw.file_uuid = "FILE-UUID"
     raw.external_data_sources = [
-        {"name": "idiClients", "id": "3", "uuid": "DS-UUID", "type": "FileMaker", "paths": ["file:idiClients"]},
+        {"name": "ExtClients", "id": "3", "uuid": "DS-UUID", "type": "FileMaker", "paths": ["file:ExtClients"]},
     ]
     raw.table_occurrences[1].update({
         "external_data_source_id": "3", "external_data_source_uuid": "DS-UUID",
         "external_base_table": "Clients", "external_base_table_id": "129", "external_base_table_uuid": "BT-UUID",
     })
     raw.scripts[0]["steps"][0]["field_refs"] = [
-        {"id": "155", "uuid": "F-UUID", "name": "Code_client", "table": "idiClients"}]
+        {"id": "155", "uuid": "F-UUID", "name": "ClientCode", "table": "ExtClients"}]
     raw.scripts[0]["steps"][1]["script_ref"] = {
-        "id": "350", "uuid": "S-UUID", "name": "Open Script", "data_source": "idiClients"}
+        "id": "350", "uuid": "S-UUID", "name": "Open Script", "data_source": "ExtClients"}
     raw.scripts[0]["steps"][2]["layout_ref"] = {
-        "id": "36", "uuid": "L-UUID", "name": "Coordonnees", "via_to": "idiClients"}
+        "id": "36", "uuid": "L-UUID", "name": "ContactCard", "via_to": "ExtClients"}
     raw.layouts = [{"id": "20", "name": "Lay", "layout_objects": [
         {"id": "5", "type": "Field", "field": {
-            "table_name": "idiClients", "field_name": "Nom", "field_id": "7", "field_uuid": "N-UUID"}}]}]
+            "table_name": "ExtClients", "field_name": "Nom", "field_id": "7", "field_uuid": "N-UUID"}}]}]
     raw.relationships = [{
-        "id": "1", "left_table_name": "Contrat", "right_table_name": "idiClients",
-        "predicates": [{"left_table_name": "Contrat", "left_field_name": "Code_client",
-                        "right_table_name": "idiClients", "right_field_name": "Code_client",
+        "id": "1", "left_table_name": "Contrat", "right_table_name": "ExtClients",
+        "predicates": [{"left_table_name": "Contrat", "left_field_name": "ClientCode",
+                        "right_table_name": "ExtClients", "right_field_name": "ClientCode",
                         "right_field_id": "155", "right_field_uuid": "RF-UUID", "operator": "="}]}]
     return raw
 
@@ -159,26 +159,26 @@ def test_file_identity_and_data_source_catalog_are_kept(rich):
     assert rich.source.file_uuid == "FILE-UUID"
     assert rich.source.fmp_file_name == "main.fmp12"
     ds = rich.external_data_sources[0]
-    assert (ds.name, ds.fmp_id, ds.uuid, ds.paths) == ("idiClients", "3", "DS-UUID", ["file:idiClients"])
+    assert (ds.name, ds.fmp_id, ds.uuid, ds.paths) == ("ExtClients", "3", "DS-UUID", ["file:ExtClients"])
 
 
 def test_external_to_keeps_its_base_table_in_the_other_file(rich):
-    to = rich.entities.table_occurrences["to:idiClients"]
+    to = rich.entities.table_occurrences["to:ExtClients"]
     assert (to.external_base_table, to.external_base_table_id, to.external_base_table_uuid) == ("Clients", "129", "BT-UUID")
     assert to.base_table_doc_id == ""
 
 
 def test_script_step_targets_carry_ids_and_uuids(rich):
     field = _ext_targets(rich, "scriptStep:S:0000", "field")[0]
-    assert (field.name, field.fmp_id, field.uuid) == ("Code_client", "155", "F-UUID")
-    assert (field.table_occurrence, field.base_table, field.base_table_uuid) == ("idiClients", "Clients", "BT-UUID")
-    assert (field.data_source, field.data_source_id, field.data_source_uuid) == ("idiClients", "3", "DS-UUID")
+    assert (field.name, field.fmp_id, field.uuid) == ("ClientCode", "155", "F-UUID")
+    assert (field.table_occurrence, field.base_table, field.base_table_uuid) == ("ExtClients", "Clients", "BT-UUID")
+    assert (field.data_source, field.data_source_id, field.data_source_uuid) == ("ExtClients", "3", "DS-UUID")
 
     script = _ext_targets(rich, "scriptStep:S:0001", "script")[0]
     assert (script.name, script.fmp_id, script.uuid, script.data_source_uuid) == ("Open Script", "350", "S-UUID", "DS-UUID")
 
     layout = _ext_targets(rich, "scriptStep:S:0002", "layout")[0]
-    assert (layout.name, layout.uuid, layout.table_occurrence, layout.base_table) == ("Coordonnees", "L-UUID", "idiClients", "Clients")
+    assert (layout.name, layout.uuid, layout.table_occurrence, layout.base_table) == ("ContactCard", "L-UUID", "ExtClients", "Clients")
 
 
 def test_layout_object_field_from_other_file_is_an_external_reference(rich):
@@ -188,7 +188,7 @@ def test_layout_object_field_from_other_file_is_an_external_reference(rich):
 
 def test_relationship_predicate_into_other_file_is_an_external_reference(rich):
     (t,) = _ext_targets(rich, "relationship:")
-    assert (t.name, t.fmp_id, t.uuid, t.base_table) == ("Code_client", "155", "RF-UUID", "Clients")
+    assert (t.name, t.fmp_id, t.uuid, t.base_table) == ("ClientCode", "155", "RF-UUID", "Clients")
 
 
 def test_external_references_json_is_self_contained(rich, tmp_path):
@@ -209,12 +209,12 @@ def test_extractor_reads_data_source_catalog():
     from fm_saxml.parser.extractors.external_data_sources import extract_external_data_sources
 
     container = etree.fromstring("""<AddAction><ExternalDataSourceCatalog>
-      <ExternalDataSource name="idiClients" type="FileMaker" id="3">
-        <File><UniversalPathList>file:idiClients</UniversalPathList></File>
+      <ExternalDataSource name="ExtClients" type="FileMaker" id="3">
+        <File><UniversalPathList>file:ExtClients</UniversalPathList></File>
         <UUID modifications="2">EEC9827D</UUID>
       </ExternalDataSource></ExternalDataSourceCatalog></AddAction>""")
     assert extract_external_data_sources(container) == [
-        {"name": "idiClients", "id": "3", "uuid": "EEC9827D", "type": "FileMaker", "paths": ["file:idiClients"]}]
+        {"name": "ExtClients", "id": "3", "uuid": "EEC9827D", "type": "FileMaker", "paths": ["file:ExtClients"]}]
 
 
 # ---------------------------------------------------------------------------
@@ -227,7 +227,7 @@ def test_scope_helpers_round_trip_and_handle_slashes_in_names():
     uuid = "87139397-FED7-453D-A8E6-746F8DC6B771"
     assert file_scope(uuid, "a.fmp12") == uuid
     assert file_scope(None, "a.fmp12") == "file:a.fmp12"
-    assert provisional_scope("EEC9827D-DC30", "idiClients") == "ds:EEC9827D-DC30"
+    assert provisional_scope("EEC9827D-DC30", "ExtClients") == "ds:EEC9827D-DC30"
     assert provisional_scope(None, "we/ird") == "ds:we%2Fird"
 
     # docIds may contain "/" (script names can): only the leading scope is split off
@@ -253,9 +253,9 @@ def test_scope_falls_back_to_fmp_file_name():
 def test_external_targets_get_scoped_doc_ids_everywhere(rich):
     field = _ext_targets(rich, "scriptStep:S:0000", "field")[0]
     # target's own docId (base table in the OTHER file + field), and its provisional scoped form
-    assert field.target_doc_id == "field:Clients::Code_client"
+    assert field.target_doc_id == "field:Clients::ClientCode"
     assert field.scope == "ds:DS-UUID"
-    assert field.scoped_doc_id == "ds:DS-UUID/field:Clients::Code_client"
+    assert field.scoped_doc_id == "ds:DS-UUID/field:Clients::ClientCode"
 
     script = _ext_targets(rich, "scriptStep:S:0001", "script")[0]
     assert script.scoped_doc_id == "ds:DS-UUID/script:Open Script"
@@ -270,8 +270,8 @@ def test_external_targets_get_scoped_doc_ids_everywhere(rich):
     obj = next(iter(rich.entities.layout_objects.values()))
     assert obj.field_doc_id == "ds:DS-UUID/field:Clients::Nom"
     pred = next(iter(rich.entities.relationships.values())).predicates[0]
-    assert pred.right_field_doc_id == "ds:DS-UUID/field:Clients::Code_client"
-    assert pred.left_field_doc_id == "field:Contrat::Code_client"  # local side stays unscoped
+    assert pred.right_field_doc_id == "ds:DS-UUID/field:Clients::ClientCode"
+    assert pred.left_field_doc_id == "field:Contrat::ClientCode"  # local side stays unscoped
 
 
 def test_external_references_json_carries_scopes(rich, tmp_path):
@@ -290,8 +290,8 @@ def test_markdown_shows_external_targets_readably(rich):
     from fm_saxml.render.markdown.link_resolver import LinkResolver
 
     links = LinkResolver(rich)
-    assert links.title_for("ds:DS-UUID/script:Open Script") == "Open Script (idiClients)"
-    assert links.title_for("ds:DS-UUID/field:Clients::Code_client") == "Clients::Code_client (idiClients)"
+    assert links.title_for("ds:DS-UUID/script:Open Script") == "Open Script (ExtClients)"
+    assert links.title_for("ds:DS-UUID/field:Clients::ClientCode") == "Clients::ClientCode (ExtClients)"
 
 
 # ---------------------------------------------------------------------------
@@ -340,7 +340,7 @@ def test_custom_menu_links_to_scripts_and_submenus():
         {"id": "1", "name": "Main", "items": [
             {"name": "Show", "action_type": "script", "script_ref": {"name": "Show All", "id": "84"}},
             {"name": "Ext", "action_type": "script",
-             "script_ref": {"name": "Open Script", "id": "9", "data_source": "idiClients"}},
+             "script_ref": {"name": "Open Script", "id": "9", "data_source": "ExtClients"}},
             {"name": "Sub", "action_type": "submenu", "submenu_name": "Sub"}]},
         {"id": "2", "name": "Sub", "items": []},
     ]
@@ -348,5 +348,5 @@ def test_custom_menu_links_to_scripts_and_submenus():
     got = {(r.target_doc_id, r.confidence) for r in m.references if r.source_doc_id == "customMenu:Main"}
     assert ("script:Show All", "exact") in got
     assert ("customMenu:Sub", "exact") in got
-    assert ("ds:idiClients/script:Open Script", "external") in got
+    assert ("ds:ExtClients/script:Open Script", "external") in got
     assert any(b["sourceDocId"] == "customMenu:Main" for b in m.backlinks["script:Show All"])

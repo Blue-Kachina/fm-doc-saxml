@@ -442,7 +442,7 @@ def _local_style(elem: etree._Element) -> dict[str, str | None] | None:
     """``<LocalCSS type name displayName>``: which style the object or part uses.
 
     ``ThemeCustomStyle`` names a theme's named style (``displayName`` as FileMaker shows it);
-    ``ObjectCustomStyle`` is a local change on top of it. The CSS text isn't kept: DGC_UAT holds
+    ``ObjectCustomStyle`` is a local change on top of it. The CSS text isn't kept: LargeSampleD holds
     24 MB of it, so it waits for raw XML (backlog B3) with the theme's CSS.
     """
     css = find_child(elem, "LocalCSS")

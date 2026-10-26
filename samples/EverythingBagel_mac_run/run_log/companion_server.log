@@ -4,8 +4,8 @@
 2026-10-21T16:22:11 INFO Endpoints: GET /health  GET /clipboard  GET /webviewer/status  GET /preview/<name>  GET|POST /plugin/<path>  POST /explode  POST /context  POST /clipboard  POST /trigger  POST /debug  POST /webviewer/start  POST /webviewer/stop  POST /webviewer/push  POST /preview/<name>
 2026-10-21T16:22:11 INFO Press Ctrl-C to stop.
 2026-10-21T16:22:15 INFO 127.0.0.1 - "GET /health HTTP/1.1" 200 -
-2026-10-21T16:29:10 INFO Running fmparse.sh: solution='EverythingBagel' export='/Users/francoisdube/Desktop/EverythingBagel.xml' cwd='/Users/francoisdube/Documents/Projets DIS/IDI2/TQ - Team Quality/Exploration/test_custom-harness-2/tools/agentic-fm/'
-2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==> Using fm-xml-export-exploder from: /Users/francoisdube/bin/fm-xml-export-exploder
+2026-10-21T16:29:10 INFO Running fmparse.sh: solution='EverythingBagel' export='/Users/colleague/Desktop/EverythingBagel.xml' cwd='/Users/colleague/Documents/Projects/harness/tools/agentic-fm/'
+2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==> Using fm-xml-export-exploder from: /Users/colleague/bin/fm-xml-export-exploder
 2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==> Created archive folder: xml_exports/EverythingBagel/2026-10-21
 2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==> Copied file: EverythingBagel.xml -> xml_exports/EverythingBagel/2026-10-21/
 2026-10-21T16:29:10 INFO [fmparse.sh stdout] ==> Created agent/xml_parsed/

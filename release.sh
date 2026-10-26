@@ -13,7 +13,7 @@
 #      wheel in a throwaway venv (--version must match, doctor must pass).
 #   5. After confirmation: commit the bump, push master, wait for CI to pass,
 #      push an annotated vX.Y.Z tag and follow the Release workflow (which
-#      builds the executables, creates the GitHub Release and publishes to PyPI).
+#      publishes to PyPI).
 #
 # Requires: git, uv, curl, and gh (authenticated) for the CI/release steps.
 
@@ -223,7 +223,7 @@ echo "  This will:"
 [[ "$current" != "$VERSION" ]] && echo "    - commit the version bump on $MAIN_BRANCH"
 echo "    - push $MAIN_BRANCH to $REMOTE and wait for CI"
 echo "    - create and push tag $TAG, which triggers the Release workflow"
-echo "      (executables, GitHub Release and PyPI publish if enabled)"
+echo "      (PyPI publish if enabled)"
 echo "  ${BOLD}PyPI releases are permanent; $VERSION can never be re-uploaded.${RESET}"
 confirm "Proceed?" || die "Aborted. Nothing was pushed."
 

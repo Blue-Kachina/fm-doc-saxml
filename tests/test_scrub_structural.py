@@ -105,7 +105,7 @@ def test_credential_named_variable():
 
 
 def test_credential_named_variable_holding_a_parameter_name():
-    # qbo_getOauth_refreshToken: the literal names the form field; the token comes from a field
+    # api_getOauth_refreshToken: the literal names the form field; the token comes from a field
     source = '"refresh_token=" & qboSettings::refreshToken'
     raw, summary = run(("S", [set_var(0, "$refreshToken", source)]))
     assert raw.scripts[0]["steps"][0]["calculations"][0]["text"] == source

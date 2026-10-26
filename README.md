@@ -24,7 +24,7 @@ A FileMaker `SaveAsXML` export contains everything about a solution, but the raw
 ## Requirements
 
 - A FileMaker Pro `Save a Copy as XML` export
-- Python 3.11+ (not needed if you use the standalone executable)
+- Python 3.11+
 
 ## Quick start
 
@@ -34,39 +34,13 @@ A FileMaker `SaveAsXML` export contains everything about a solution, but the raw
    ```bash
    fm-saxml MySolution.xml
    ```
-
-   (On Windows you can also drag the XML file onto `fm-saxml.exe`.)
 3. Open the new `MySolution_docs` folder that appears next to your XML file.
 
 Add `--open` to have the folder opened for you. Run `fm-saxml doctor` if something doesn't work and include its output in any bug report.
 
 ## Installation
 
-**Easiest — no Python needed:** download the `fm-saxml` executable for Windows, macOS or Linux from the project's Releases page.
-
-<details>
-<summary>macOS and Linux: making the download runnable</summary>
-
-A file downloaded through a browser isn't marked as executable, and on macOS Gatekeeper blocks it because the build isn't signed by an Apple developer ID. In Terminal, in the folder you downloaded it to:
-
-```bash
-chmod +x fm-saxml-macos                              # make it executable (Linux: fm-saxml-linux)
-xattr -d com.apple.quarantine fm-saxml-macos         # macOS only: clear the download quarantine flag
-./fm-saxml-macos --version
-```
-
-Or download it with `curl`, which skips the quarantine flag:
-
-```bash
-curl -L -o fm-saxml https://github.com/Blue-Kachina/fm-doc-saxml/releases/latest/download/fm-saxml-macos
-chmod +x fm-saxml
-```
-
-The macOS executable is for Apple Silicon Macs. On an Intel Mac, install with Python instead (below).
-
-</details>
-
-**With Python 3.11+:**
+Install with pipx (or uv):
 
 ```bash
 pipx install fm-saxml-converter      # or run without installing: uvx --from fm-saxml-converter fm-saxml MySolution.xml
@@ -84,7 +58,6 @@ Check your version with `fm-saxml --version`, then upgrade the same way you inst
 | `uv tool install` | `uv tool upgrade fm-saxml-converter` |
 | `pip` | `pip install -U fm-saxml-converter` |
 | `uvx` | `uvx --from fm-saxml-converter@latest fm-saxml ...` |
-| Executable | Download the new file from the Releases page |
 
 When a newer version exists, `fm-saxml` prints a one-line notice after a run (checked at most once a day, never blocks, silent in CI and when output is piped). Disable it with `FM_SAXML_NO_UPDATE_CHECK=1`.
 

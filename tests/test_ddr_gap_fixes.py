@@ -87,13 +87,13 @@ def test_button_script_reference_detects_external_file():
     <LayoutObject id="230" type="Button" name="" kind="10">
       <Button>
         <action>
-          <DataSourceReference id="3" name="idiDemandes"/>
+          <DataSourceReference id="3" name="ExtRequests"/>
           <ScriptReference id="11" name="CreerDevis[]" UUID="xyz"/>
         </action>
       </Button>
     </LayoutObject>""")
     obj = _parse_layout_object(lo, "Body", 0)
-    assert obj["button_script"]["data_source"] == "idiDemandes"
+    assert obj["button_script"]["data_source"] == "ExtRequests"
 
 
 def test_non_script_button_has_no_button_script():
@@ -139,7 +139,7 @@ def _raw() -> RawModel:
             },
             {
                 "id": "11", "type": "Button", "name": "",
-                "button_script": {"id": "2", "uuid": None, "name": "Other File Script", "data_source": "idiDemandes"},
+                "button_script": {"id": "2", "uuid": None, "name": "Other File Script", "data_source": "ExtRequests"},
             },
         ],
     }]
@@ -185,4 +185,4 @@ def test_external_button_script_is_tagged_external_not_unresolved(model):
     ref = next(r for r in model.references if r.source_doc_id == obj.doc_id and r.relationship_type == "triggersScript")
     assert ref.confidence == "external"
     assert ref.external_target is not None
-    assert ref.external_target.data_source == "idiDemandes"
+    assert ref.external_target.data_source == "ExtRequests"

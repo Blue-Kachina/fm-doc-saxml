@@ -34,6 +34,6 @@
     layouts....................... 0.000s
     integrations.................. 0.000s
     health........................ 0.000s
-  JSON: /Users/francoisdube/Documents/Projets DIS/IDI2/TQ - Team Quality/Exploration/test_custom-harness-2/tools/agentic-fm/agent/sandbox/EverythingBagel - solution-profile.json
-  Markdown: /Users/francoisdube/Documents/Projets DIS/IDI2/TQ - Team Quality/Exploration/test_custom-harness-2/tools/agentic-fm/agent/sandbox/EverythingBagel - solution-profile.md
-  HTML: /Users/francoisdube/Documents/Projets DIS/IDI2/TQ - Team Quality/Exploration/test_custom-harness-2/tools/agentic-fm/agent/sandbox/EverythingBagel - solution-profile.html
+  JSON: /Users/colleague/Documents/Projects/harness/tools/agentic-fm/agent/sandbox/EverythingBagel - solution-profile.json
+  Markdown: /Users/colleague/Documents/Projects/harness/tools/agentic-fm/agent/sandbox/EverythingBagel - solution-profile.md
+  HTML: /Users/colleague/Documents/Projects/harness/tools/agentic-fm/agent/sandbox/EverythingBagel - solution-profile.html

@@ -54,5 +54,9 @@ path = "src/fm_saxml/__init__.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/fm_saxml"]
 
+# Ship only the package, tests and licence; planning docs and samples stay out of the sdist
+[tool.hatch.build.targets.sdist]
+only-include = ["src", "tests", "README.md", "LICENSE"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

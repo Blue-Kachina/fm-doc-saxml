@@ -140,8 +140,8 @@ VALUE_LISTS = """
       <ValueListReference id="1" name="Remote"/>
       <Source value="External"/>
       <External>
-        <DataSourceReference id="3" name="idiClients" UUID="ds-uuid"><UniversalPathList>file:idiClients</UniversalPathList></DataSourceReference>
-        <ValueListReference id="83" name="ChargeCompte_list" UUID="vl-uuid"/>
+        <DataSourceReference id="3" name="ExtClients" UUID="ds-uuid"><UniversalPathList>file:ExtClients</UniversalPathList></DataSourceReference>
+        <ValueListReference id="83" name="AccountList_list" UUID="vl-uuid"/>
       </External>
     </ValueList>
     <ValueList>
@@ -174,8 +174,8 @@ def _value_lists() -> dict[str, dict]:
 def test_external_value_list_names_its_file_and_list():
     vl = _value_lists()["Remote"]
     assert vl["list_type"] == "external"
-    assert vl["external"]["data_source"] == "idiClients"
-    assert vl["external"]["name"] == "ChargeCompte_list"
+    assert vl["external"]["data_source"] == "ExtClients"
+    assert vl["external"]["name"] == "AccountList_list"
 
 
 def test_field_value_list_keeps_related_only_and_show_sort_flags():
@@ -458,7 +458,7 @@ def test_filemaker_step_text_is_used_and_scrubbed(tmp_path):
 
 
 def test_portal_allow_deletion_is_bit_4():
-    # disRenewalUniverse "Contrat - Fiche": the portal with 277 allows deletion, those with 281 don't
+    # ClientSolution "Contract - Detail": the portal with 277 allows deletion, those with 281 don't
     def portal(flags: int) -> dict:
         return _parse_layout_object(etree.fromstring(
             f'<LayoutObject id="1" type="Portal"><Portal><Options index="1" show="2">{flags}</Options></Portal></LayoutObject>'),

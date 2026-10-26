@@ -254,11 +254,11 @@ def test_on_off_step_keeps_its_state_when_filemakers_text_leaves_it_out():
 
 
 @pytest.mark.parametrize("path_list,expected", [
-    ("<UniversalPathList>file:disRecrutement\rfile:idiRecrutement</UniversalPathList>",
-     ["file:disRecrutement", "file:idiRecrutement"]),
+    ("<UniversalPathList>file:ExtHiringA\rfile:ExtHiringB</UniversalPathList>",
+     ["file:ExtHiringA", "file:ExtHiringB"]),
     ('<UniversalPathList membercount="2"><ObjectList><Location><![CDATA[$file]]></Location>'
      "<Location>file:Backup</Location></ObjectList></UniversalPathList>", ["$file", "file:Backup"]),
-    ("<UniversalPathList>file:idiClients</UniversalPathList>", ["file:idiClients"]),
+    ("<UniversalPathList>file:ExtClients</UniversalPathList>", ["file:ExtClients"]),
 ])
 def test_data_source_paths_are_split(path_list, expected):
     xml = (f'<AddAction><ExternalDataSourceCatalog><ExternalDataSource id="1" name="Other" type="FileMaker">'

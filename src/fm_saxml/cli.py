@@ -25,8 +25,9 @@ from typer.core import TyperGroup
 class _DefaultToBuildGroup(TyperGroup):
     """Let ``fm-saxml export.xml`` mean ``fm-saxml build export.xml``.
 
-    Also makes drag-and-drop onto the executable work, since the OS passes
-    the dropped file as the only argument.
+    Also makes drag-and-drop onto the ``fm-saxml`` launcher (e.g. the
+    ``fm-saxml.exe`` that pip/pipx install on Windows) work, since the OS
+    passes the dropped file as the only argument.
     """
 
     def parse_args(self, ctx, args):

@@ -2,10 +2,8 @@ name: Release
 
 # Push a tag like v0.2.0 to:
 #   1. verify the tag matches the package version,
-#   2. build standalone executables for each OS and attach them to a GitHub Release,
-#   3. publish to PyPI via Trusted Publishing (no stored token) once the
+#   2. publish to PyPI via Trusted Publishing (no stored token) once the
 #      PUBLISH_TO_PYPI repo variable is set to "true".
-# See pypi_first_steps.md for the one-time setup.
 
 on:
   push:
@@ -24,48 +22,8 @@ jobs:
             exit 1
           fi
 
-  executables:
-    needs: verify
-    permissions:
-      contents: write
-    strategy:
-      matrix:
-        include:
-          - os: windows-latest
-            asset: fm-saxml-windows.exe
-            built: dist/fm-saxml.exe
-          - os: macos-latest
-            asset: fm-saxml-macos
-            built: dist/fm-saxml
-          - os: ubuntu-latest
-            asset: fm-saxml-linux
-            built: dist/fm-saxml
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Build
-        run: |
-          python -m pip install . pyinstaller
-          pyinstaller --onefile --name fm-saxml \
-            --collect-data fm_saxml \
-            --collect-submodules fm_saxml \
-            src/fm_saxml/__main__.py
-        shell: bash
-      - name: Smoke test
-        run: ${{ matrix.built }} doctor
-        shell: bash
-      - name: Rename
-        run: mv "${{ matrix.built }}" "${{ matrix.asset }}"
-        shell: bash
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ matrix.asset }}
-
   pypi:
-    needs: [verify, executables]
+    needs: verify
     if: ${{ vars.PUBLISH_TO_PYPI == 'true' }}
     runs-on: ubuntu-latest
     environment: pypi

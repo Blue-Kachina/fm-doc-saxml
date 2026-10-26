@@ -65,7 +65,7 @@ class SourceInfo(BaseModel):
     source_modified_at: Optional[datetime] = Field(None, alias="sourceModifiedAt")
     # Identity of the FileMaker file this export describes. A later multi-file
     # run uses these to pair an export with the data sources that name it.
-    fmp_file_name: Optional[str] = Field(None, alias="fmpFileName")  # e.g. "idiClients.fmp12"
+    fmp_file_name: Optional[str] = Field(None, alias="fmpFileName")  # e.g. "ExtClients.fmp12"
     file_uuid: Optional[str] = Field(None, alias="fileUuid")
     # Prefix that makes this file's docIds globally unique: "<scope>/<docId>".
     # The file UUID when known, else "file:<fmp file name>". See normalize/ids.py.
@@ -92,7 +92,7 @@ class ExternalDataSource(BaseModel):
     fmp_id: Optional[str] = Field(None, alias="fmpId")
     uuid: Optional[str] = None
     type: str = "FileMaker"
-    paths: list[str] = []  # e.g. ["file:idiClients"]
+    paths: list[str] = []  # e.g. ["file:ExtClients"]
     pairing: Optional[DataSourcePairingInfo] = None  # set only in a batch build
 
     model_config = ConfigDict(populate_by_name=True)

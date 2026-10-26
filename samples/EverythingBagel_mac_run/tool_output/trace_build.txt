@@ -22,4 +22,4 @@
     0 references found
 
 ==> Done! 3 total references
-  Output: /Users/francoisdube/Documents/Projets DIS/IDI2/TQ - Team Quality/Exploration/test_custom-harness-2/tools/agentic-fm/agent/context/EverythingBagel/xref.index
+  Output: /Users/colleague/Documents/Projects/harness/tools/agentic-fm/agent/context/EverythingBagel/xref.index

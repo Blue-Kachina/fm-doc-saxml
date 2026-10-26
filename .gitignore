@@ -16,9 +16,7 @@ build/
 saxml2doc/
 *_docs/
 
-# Local scratch files and client exports (EverythingBagel.xml is a tracked fixture)
+# Local scratch files (EverythingBagel.xml is a tracked fixture)
 _*.txt
 _ddr_*.py
-NEXUS_saxml.xml
-disRenewalUniverse.xml
 samples/has_indirection/

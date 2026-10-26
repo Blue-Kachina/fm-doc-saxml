@@ -11,7 +11,7 @@
        wheel in a throwaway venv (--version must match, doctor must pass).
     5. After confirmation: commit the bump, push master, wait for CI to pass,
        push an annotated vX.Y.Z tag and follow the Release workflow (which
-       builds the executables, creates the GitHub Release and publishes to PyPI).
+       publishes to PyPI).
 
     Requires: git, uv, and gh (authenticated) for the CI/release steps.
 
@@ -297,7 +297,7 @@ try {
     if ($needsBump) { Write-Host "    - commit the version bump on $MainBranch" }
     Write-Host "    - push $MainBranch to $Remote and wait for CI"
     Write-Host "    - create and push tag $tag, which triggers the Release workflow"
-    Write-Host '      (executables, GitHub Release and PyPI publish if enabled)'
+    Write-Host '      (PyPI publish if enabled)'
     Write-Host "  PyPI releases are permanent; $Version can never be re-uploaded." -ForegroundColor Yellow
     if (-not (Confirm-Step 'Proceed?')) { Stop-Release 'Aborted. Nothing was pushed.' }
 
