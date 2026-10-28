@@ -1,7 +1,8 @@
 """Structure-aware rules: where a calc sits says it is a credential, whatever it looks like.
 
 * A ``<Parameter type="Password">`` calc (Re-Login, Reset Account Password, Add Account,
-  Execute SQL's ODBC password, …).
+  Execute SQL's ODBC password, …). A blank one (``""``) is redacted too: otherwise
+  the output says the step needs no password.
 * Configure AI Account / Configure RAG Account calcs.
 * Set Variable into a credential-named variable (``$apiKey``, ``$$SMTP_PASSWORD``).
 * Set Field / Insert Calculated Result into a credential-named field (``Users::Password``),
@@ -42,6 +43,9 @@ _PRIORITY = 15  # after known key shapes (10), before generic keyword rules (20)
 _MAX_TRACE_DEPTH = 4
 _SCHEME_ONLY_RE = re.compile(r"\s*(?:Bearer|Basic|Token|Digest|OAuth)?\s*", re.I)
 _FIELD_NAME_RE = re.compile(r"::\s*([^\"&;)\]¶]+)")
+# Spots that only ever hold a password: a blank value is redacted too, or the output
+# says "no password needed here".
+ALWAYS_SECRET_DETECTORS = frozenset({"password_parameter", "encrypted_password"})
 
 
 @dataclass
@@ -186,7 +190,7 @@ class Planner:
             start, end = tok.content_span
             if _unknown_function(use) and not secret_shaped(text[start:end]):
                 continue
-            if _meaningful(text[start:end]):
+            if use.detector in ALWAYS_SECRET_DETECTORS or _meaningful(text[start:end]):
                 key = id(slot) if slot is not None else 0
                 self.plan.hits[key].append(Hit(start, end, use.category, use.detector, _PRIORITY))
 
@@ -233,4 +237,13 @@ def local_hits(text: str, policy: ScrubPolicy) -> list[Hit]:
     """Positional hits resolvable within one calc (no script context, no flags)."""
     planner = Planner(None, policy)
     planner.analyze(None, text, None)
+    return planner.plan.hits.get(0, [])
+
+
+def password_parameter_hits(text: str, policy: ScrubPolicy) -> list[Hit]:
+    """What the ``<Parameter type="Password">`` rule redacts in ``text``, blank literals included."""
+    planner = Planner(None, policy)
+    tokens = tokenize(text)
+    use = Use(classify(tokens), _code_tokens(tokens), "password", "password_parameter", "Password")
+    planner._resolve(use, None, None, tokens, text, 0)
     return planner.plan.hits.get(0, [])

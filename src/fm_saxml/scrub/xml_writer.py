@@ -15,6 +15,10 @@ How the edits get from the model back into the XML:
      which covers the copies in ``DDR_INFO``: ChunkList chunks and rendered StepText;
    * values known to be secret are substituted, and anything the parser doesn't
      extract (comment steps, step text) is run through the detectors.
+   Spots that only ever hold a password are redacted even when blank, found by
+   position since ``""`` matches every other empty string: a ``<Parameter
+   type="Password">`` calc with its ChunkList and StepText copies, and every account's
+   ``<PasswordEncrypted><Data>``.
    Binary streams (``<Stream type="Hex">`` …) are never touched.
 3. ``hash`` attributes are removed from every changed element and its ancestors,
    and from anything that refers to a removed hash. A digest of the original
@@ -37,10 +41,11 @@ from typing import Optional
 from lxml import etree
 
 from ..model.document_model import ScrubSummary
-from .calc_lexer import COMMENT, STRING, tokenize
+from .calc_lexer import COMMENT, STRING, Token, tokenize
 from .engine import Scrubber
 from .guard import Leak, find_leaks_in_text
 from .placeholders import PLACEHOLDER_RE
+from .structural import password_parameter_hits
 from .walker import _classify, snake
 
 SUPPORTED_ROOT = "FMSaveAsXML"
@@ -57,6 +62,8 @@ _NUMBER_RE = re.compile(r"[-+]?\d{1,12}(?:\.\d+)?")
 # datatype="StepText"), never user data. A secret that equals one must not rename it,
 # or the step stops being recognizable.
 _STRUCTURAL_ATTRS = {"hash", "type", "datatype"}
+# StepText renders a password parameter as `Password: "…"` (also "New Password:", "Old Password:").
+_STEP_TEXT_BLANK_PASSWORD_RE = re.compile(r'Password:\s*"(\s*)"')
 
 
 class UnsupportedFormat(ValueError):
@@ -144,13 +151,18 @@ class _Edits:
         tokens: dict[str, str] = {}
         for kind, old, new in changes:
             key = old.strip()
+            if kind == "calc" and _blank_literals_only(key):
+                # A blank password ("") looks like every other "" in the file: placed by
+                # position instead (_Rewriter._blank_passwords).
+                continue
             current = self.exact.get(key)
             # The same text redacted differently in two places: keep the more redacted one.
             if current is None or _placeholder_count(new) > _placeholder_count(current):
                 self.exact[key] = new.strip()
             if kind == "calc":
                 for a, b in zip(tokenize(old), tokenize(new)):
-                    if a.kind in (STRING, COMMENT) and a.text != b.text and len(a.text) > 2:
+                    # A blank literal ("", " ") is no token to replace everywhere.
+                    if a.kind in (STRING, COMMENT) and a.text != b.text and _content(old, a).strip():
                         tokens.setdefault(a.text, b.text)
         self.tokens = sorted(tokens.items(), key=lambda kv: len(kv[0]), reverse=True)
 
@@ -163,6 +175,26 @@ class _Edits:
 
 def _placeholder_count(s: str) -> int:
     return len(PLACEHOLDER_RE.findall(s))
+
+
+def _ddr_entries(root: etree._Element, owner: etree._Element, kind: str):
+    """The DDR_INFO entries ``owner``'s own ``<DDRREF kind=...>key</DDRREF>`` points at."""
+    for ref in owner.iterchildren("{*}DDRREF"):
+        key = (ref.text or "").strip()
+        if ref.get("kind") == kind and key:
+            yield from root.iter("{*}" + key)
+
+
+def _blank_literals_only(calc: str) -> bool:
+    tokens = tokenize(calc)
+    strings = [t for t in tokens if t.kind == STRING]
+    return bool(strings) and not any(t.kind == COMMENT for t in tokens) and \
+        not any(_content(calc, t).strip() for t in strings)
+
+
+def _content(text: str, tok: Token) -> str:
+    start, end = tok.content_span
+    return text[start:end]
 
 
 @dataclass
@@ -203,6 +235,58 @@ class _Rewriter:
                 else:
                     new = self.scrubber.substitute(value)
                 self._update(el, attr, new)
+        self._blank_passwords(root)
+
+    def _blank_passwords(self, root: etree._Element) -> None:
+        """Spots that only ever hold a password are redacted even when blank, or the
+        output says which steps and accounts need none. ``""`` is the same text as every
+        other empty string in the file, so these are found by position, not by value."""
+        where = 'XML <Parameter type="Password">'
+        for param in root.iter("{*}Parameter"):
+            if param.get("type") != "Password":
+                continue
+            for text_el in param.iter("{*}Text"):
+                calc = text_el.getparent()
+                if calc is None or etree.QName(calc).localname != "Calculation":
+                    continue
+                value = text_el.text or ""
+                spans = [(h.start, h.end) for h in password_parameter_hits(value, self.scrubber.policy)
+                         if not value[h.start:h.end].strip()]
+                if not spans:
+                    continue
+                self._update(text_el, None, self._fill(value, spans, where))
+                # Its copies in DDR_INFO: the tokenized calc and the step's rendered text.
+                for entry in _ddr_entries(root, calc, "ChunkList"):
+                    for chunk in entry.iter("{*}Chunk"):
+                        text = chunk.text or ""
+                        blanks = [t.content_span for t in tokenize(text)
+                                  if t.kind == STRING and not _content(text, t).strip()]
+                        if blanks:
+                            self._update(chunk, None, self._fill(text, blanks, where))
+                step = next(param.iterancestors("{*}Step"), None)
+                for entry in _ddr_entries(root, step, "StepText") if step is not None else []:
+                    text = entry.text or ""
+                    blanks = [m.span(1) for m in _STEP_TEXT_BLANK_PASSWORD_RE.finditer(text)]
+                    if blanks:
+                        self._update(entry, None, self._fill(text, blanks, where))
+        for data in root.iter("{*}Data"):
+            parent = data.getparent()
+            if parent is None or etree.QName(parent).localname != "PasswordEncrypted":
+                continue
+            value = data.text or ""
+            if PLACEHOLDER_RE.fullmatch(value.strip()):
+                continue  # already scrubbed
+            # A key of its own: an empty one must not share a label with an empty Re-Login
+            # password ([Guest]'s is always empty). NUL can't occur in XML, so it never matches text.
+            ph = self.scrubber.redact_in_place(f"\0PasswordEncrypted\0{value}", "password",
+                                               "encrypted_password", "XML <PasswordEncrypted><Data>")
+            self._update(data, None, ph)
+
+    def _fill(self, value: str, spans: list[tuple[int, int]], where: str) -> str:
+        for start, end in sorted(spans, reverse=True):
+            ph = self.scrubber.redact_in_place(value[start:end], "password", "password_parameter", where)
+            value = value[:start] + ph + value[end:]
+        return value
 
     def _sites(self, root: etree._Element):
         for el in root.iter():
@@ -211,6 +295,8 @@ class _Rewriter:
             tag = etree.QName(el).localname
             parent = el.getparent()
             parent_tag = etree.QName(parent).localname if parent is not None else ""
+            if tag == "Data" and parent_tag == "PasswordEncrypted":
+                continue  # always redacted whole (_blank_passwords)
             where = f"XML <{parent_tag}><{tag}>" if parent_tag else f"XML <{tag}>"
             binary = tag in _SKIP_TEXT_TAGS or (el.get("type") or "").lower() in _BINARY_TYPES
             if el.text and el.text.strip() and not binary:

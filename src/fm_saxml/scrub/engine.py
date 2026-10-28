@@ -27,10 +27,10 @@ from .detectors.entropy import looks_random
 from .detectors.known_keys import has_pem_marker
 from .placeholders import PLACEHOLDER_RE, PlaceholderRegistry
 from .policy import CREDENTIAL_CATEGORIES, ScrubPolicy, category_from_name
-from .structural import Flag, local_hits, plan
+from .structural import ALWAYS_SECRET_DETECTORS, Flag, local_hits, plan
 from .walker import Slot, collect_slots, rebuild_step_texts
 
-ENGINE_VERSION = "3"
+ENGINE_VERSION = "4"
 
 _PREVIEW_RADIUS = 40
 _SCHEME_WORD_RE = re.compile(r"\s*(?:Bearer|Basic|Token|Digest|OAuth)?\s*", re.I)
@@ -124,6 +124,15 @@ class Scrubber:
                                  "note": self.substitute(f.note)})
             for f in findings
         ]
+
+    def redact_in_place(self, key: str, category: str, detector: str, location: str) -> str:
+        """The placeholder for a value redacted because of where it sits, blank or not.
+
+        ``key`` names the value in the registry: the value itself, so it shares a label
+        with the same value elsewhere, or a key of its own so it never does."""
+        ph = self.registry.placeholder(key, category, detector)
+        self._pending.append(_Pending(category, detector, location, ph, None, preview=ph))
+        return ph
 
     def guard_values(self) -> dict[str, str]:
         return {v: ph for v, ph in self.registry.substitutable_values().items() if v not in self._schema_names}
@@ -287,7 +296,8 @@ class Scrubber:
         hits = [h for h in hits if not h.flag]
         for h in sorted(hits, key=lambda h: (h.priority, h.start - h.end, h.start)):
             value = text[h.start:h.end]
-            if not value.strip() or any(h.start < e and s < h.end for s, e in taken):
+            blank = not value.strip() and h.detector not in ALWAYS_SECRET_DETECTORS
+            if blank or any(h.start < e and s < h.end for s, e in taken):
                 continue
             if self.policy.is_allowed(value) or value in self._allowed_values:
                 continue

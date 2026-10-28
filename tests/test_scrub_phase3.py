@@ -1,6 +1,7 @@
 """Phase 3 scrubbing: fingerprint placeholders, strict PII, the allow marker, `fm-saxml scrub`."""
 
 import difflib
+import re
 from pathlib import Path
 
 import pytest
@@ -300,6 +301,59 @@ def test_scrub_report_and_fail_on_secrets(tmp_path):
                                  "--report", str(report), "--fail-on-secrets"])
     assert result.exit_code == 1
     assert "[REDACTED:password#1]" in report.read_text(encoding="utf-8")
+
+
+GUEST_ACCOUNT = """<AccountName>admin</AccountName>
+            <Authentication>
+              <AccountName>[Guest]</AccountName>
+              <PasswordEncrypted>
+                <Context>Bw0yub4QLJXANA==</Context>
+                <Data></Data>
+              </PasswordEncrypted>
+            </Authentication>"""
+
+
+def _blank_password_export(tmp_path: Path) -> Path:
+    src = _export(tmp_path)
+    xml = src.read_text(encoding="utf-8")
+    xml = xml.replace('<![CDATA["ab1"]]>', '<![CDATA[""]]>').replace("&quot;ab1&quot;", "&quot;&quot;")
+    xml = xml.replace("<AccountName>admin</AccountName>", GUEST_ACCOUNT)
+    src.write_text(xml, encoding="utf-8")
+    return src
+
+
+def test_scrub_redacts_a_blank_password_where_a_password_always_goes(tmp_path):
+    src = _blank_password_export(tmp_path)
+    out, _ = _scrub(tmp_path, src)
+    text = out.read_text(encoding="utf-8")
+
+    relogin = PLACEHOLDER_RE.search(text[text.index('<Parameter type="Password">'):]).group()
+    assert f'<Text><![CDATA["{relogin}"]]></Text>' in text      # calc
+    assert f'<Chunk type="NoRef">&quot;{relogin}&quot;</Chunk>' in text  # its ChunkList copy
+    assert f"Password: &quot;{relogin}&quot; ]" in text           # StepText
+    assert 'hash="FFFF"' not in text and 'hash="DDDD"' not in text
+    # Every other blank literal is just a blank literal.
+    assert 'Contact::FirstName &amp; " " &amp; Contact::LastName' in text or \
+        'Contact::FirstName & " " & Contact::LastName' in text
+    # An account's stored password is redacted even when empty, under a label of its own,
+    # or [Guest]'s (always empty) would say the Re-Login password is empty too.
+    data = re.search(r"<Data>(.*?)</Data>", text).group(1)
+    assert PLACEHOLDER_RE.fullmatch(data) and data != relogin
+    assert "<Context>Bw0yub4QLJXANA==</Context>" in text
+
+
+def test_build_redacts_a_blank_password_parameter(tmp_path):
+    from fm_saxml.parser.saxml_reader import parse_savexml
+    summary = Scrubber().scrub_raw(parse_savexml(_blank_password_export(tmp_path)))
+    assert [f.detector for f in summary.findings if f.action == "redacted"].count("password_parameter") >= 1
+
+
+def test_rescrubbing_blank_passwords_changes_nothing(tmp_path):
+    out, _ = _scrub(tmp_path, _blank_password_export(tmp_path))
+    again = tmp_path / "again.xml"
+    result = runner.invoke(app, ["scrub", str(out), "-o", str(again), "-f"])
+    assert result.exit_code == 0, result.output
+    assert again.read_bytes() == out.read_bytes()
 
 
 def test_scrub_refuses_other_formats(tmp_path):
