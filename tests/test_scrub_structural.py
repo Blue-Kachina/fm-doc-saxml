@@ -55,6 +55,58 @@ def test_mbs_register_keeps_selector():
 
 
 # ---------------------------------------------------------------------------
+# <Function Missing>: a plugin function exported without its plugin installed
+# ---------------------------------------------------------------------------
+
+def test_function_missing_redacts_secret_shaped_arguments_only():
+    out = calc('<Function Missing> ("smtp.example.com";587;"svc@example.com";"y8L9k7fp")')
+    assert out == '<Function Missing> ("smtp.example.com";587;"svc@example.com";"[REDACTED:secret#1]")'
+
+
+def test_function_missing_email_gets_its_own_label_at_standard():
+    out = Scrubber(ScrubPolicy(level="standard")).scrub_calc(
+        '<Function Missing> ( "smtp.example.com" ; 587 ; "svc@example.com" ; "y8L9k7fp" )')
+    assert out == '<Function Missing> ( "smtp.example.com" ; 587 ; "[EMAIL#1]" ; "[REDACTED:secret#1]" )'
+
+
+@pytest.mark.parametrize("source,secret", [
+    ('Let ( $pw = "letlocal42" ; <Function Missing> ( $curl ; $pw ) )', "letlocal42"),
+    ('<Function Missing> ( "https://api.example.com/v1" ; "Bearer " & "zz9tokenpart" )', "zz9tokenpart"),
+    ('If ( $ok ; <Function Missing> ( "a passphrase with spaces" ) )', "a passphrase with spaces"),
+])
+def test_function_missing_redacts_through_lets_and_expressions(source, secret):
+    out = calc(source)
+    assert secret not in out and "[REDACTED:secret#" in out
+
+
+@pytest.mark.parametrize("source", [
+    '<Function Missing> ( "https://api.example.com/v1" ; "10.0.0.1:8080" ; "42" ; "" )',
+    '<Function Missing> ( $curl ; Table::Field ; Get ( AccountName ) )',
+    'Missing ( "notapluginsecret" )',           # a custom function named Missing is not the marker
+    '"<Function Missing>" & "notapluginsecret"',
+])
+def test_function_missing_leaves_non_secrets(source):
+    assert calc(source) == source
+
+
+def test_function_missing_traces_variables_without_flagging_dead_ends():
+    raw, summary = run(("S", [
+        set_var(0, "$x", '"tracedpw88"'),
+        set_var(1, "$r", '<Function Missing> ( "smtp.example.com" ; Users::Login ; $x ; $fromCaller )'),
+    ]))
+    assert "tracedpw88" not in dump(raw)
+    assert [f.detector for f in summary.redactions] == ["missing_function_traced"]
+    assert not summary.flagged
+
+
+def test_known_key_placeholder_names_its_provider():
+    stripe = "sk_live_" + "Z" * 24  # built here: a whole key shape in the source trips secret scanning
+    anthropic = "sk-ant-api03-" + "Q" * 40
+    out = calc(f'"{stripe}" & "{anthropic}" & "sk-proj-{"R" * 20}"')
+    assert out == '"[REDACTED:stripe_key#1]" & "[REDACTED:anthropic_key#1]" & "[REDACTED:openai_key#1]"'
+
+
+# ---------------------------------------------------------------------------
 # Structural rules and tracing over a whole model
 # ---------------------------------------------------------------------------
 

@@ -6,6 +6,12 @@ that no keyword or key shape reveals. Each argument is classified as a literal (
 a variable (trace it back to where it was set), a field reference (flag it: the secret lives
 in data, not in this file) or an expression (redact its literals).
 
+A plugin function exported without its plugin installed is written as
+``<Function Missing> ( "smtp.example.com" ; 587 ; "user@example.com" ; "pw" )``: the name
+is gone, so no argument position is known. Every string argument is treated as a possible
+secret, except those shaped like a number, email, hostname or plain URL; those are left to
+the level's own detectors (``[EMAIL#n]``, ``[HOST#n]``), which keeps the call readable.
+
 Function list adapted from the FileMaker XML Scrubber (Andrew Kear, CC BY 4.0).
 """
 
@@ -28,7 +34,23 @@ CRYPT_KEY_ARGS = {
 # MBS("<selector>"; …): selectors that *set* a secret pass it as the last argument.
 _MBS_SECRET_SELECTOR_RE = re.compile(r"password|passphrase|bearer|token|secret|api_?key|privatekey|licen[cs]e", re.I)
 _PLUGIN_REGISTER_RE = re.compile(r"^[A-Za-z][A-Za-z0-9]*_Register$")
-_PREFILTER_RE = re.compile(r"JSONSetElement|Crypt|MBS|_Register", re.I)
+_PREFILTER_RE = re.compile(r"JSONSetElement|Crypt|MBS|_Register|Missing\s*>", re.I)
+
+MISSING_FUNCTION = "missing_function"
+# Argument shapes that describe where a secret goes rather than being one.
+_NOT_SECRET_SHAPE_RE = re.compile(
+    r"[-+]?\d+(?:\.\d+)?"                                           # number
+    r"|[^\s@\"]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+"                 # email
+    r"|(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}(?::\d+)?"                   # hostname
+    r"|\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?"                            # IPv4
+    r"|[a-z][a-z0-9+.-]*://[^\s@?#\"]+",                            # URL without userinfo or query
+    re.I,
+)
+
+
+def secret_shaped(value: str) -> bool:
+    """Whether a ``<Function Missing>`` string argument could be the secret."""
+    return not _NOT_SECRET_SHAPE_RE.fullmatch(value.strip())
 
 
 @dataclass
@@ -57,12 +79,21 @@ def _code_tokens(tokens: list[Token]) -> list[Token]:
 
 
 def find_calls(tokens: list[Token]) -> list[Call]:
-    """Every ``Name ( a ; b ; … )`` call, nested ones included. ``[k ; v]`` groups stay one argument."""
+    """Every ``Name ( a ; b ; … )`` call, nested ones included. ``[k ; v]`` groups stay one argument.
+
+    A ``<Function Missing> ( … )`` call is named ``<Function Missing>``.
+    """
     sig = _code_tokens(tokens)
     calls = []
     for i in range(len(sig) - 1):
-        if sig[i].kind != NAME or sig[i + 1].kind != OP or sig[i + 1].text != "(":
+        if sig[i + 1].kind != OP or sig[i + 1].text != "(":
             continue
+        if sig[i].kind == NAME:
+            name = sig[i].text
+        else:
+            name = _missing_marker(sig, i)
+            if name is None:
+                continue
         args: list[list[Token]] = []
         cur: list[Token] = []
         depth = 0
@@ -81,8 +112,20 @@ def find_calls(tokens: list[Token]) -> list[Call]:
                 continue
             cur.append(tok)
         args.append(cur)
-        calls.append(Call(sig[i].text, args))
+        calls.append(Call(name, args))
     return calls
+
+
+def _missing_marker(sig: list[Token], i: int) -> Optional[str]:
+    """``<Function Missing>`` ending at ``sig[i]`` (the ``>``), as one name."""
+    if sig[i].text != ">" or i < 2 or sig[i - 1].kind != NAME or sig[i - 1].text.lower() != "missing":
+        return None
+    j = i - 2
+    while j >= 0 and sig[j].kind == NAME:
+        j -= 1
+    if j < 0 or j == i - 2 or sig[j].text != "<":
+        return None
+    return "<" + " ".join(t.text for t in sig[j + 1:i]) + ">"
 
 
 def classify(tokens: list[Token]) -> str:
@@ -164,6 +207,10 @@ def credential_uses(tokens: list[Token], text: str, policy: ScrubPolicy) -> list
         elif _PLUGIN_REGISTER_RE.match(call.name):
             for a in args:
                 uses.append(Use(classify(a), a, "license", "plugin_register", call.name))
+
+        elif call.name.startswith("<"):
+            for a in args:
+                uses.append(Use(classify(a), a, "secret", MISSING_FUNCTION, call.name))
     return uses
 
 

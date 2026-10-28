@@ -6,7 +6,8 @@
 * Set Variable into a credential-named variable (``$apiKey``, ``$$SMTP_PASSWORD``).
 * Set Field / Insert Calculated Result into a credential-named field (``Users::Password``),
   and Set Field By Name whose target names one.
-* Positional credential arguments (see ``positional.py``).
+* Positional credential arguments (see ``positional.py``), including every secret-shaped
+  string passed to a ``<Function Missing>`` (a plugin not installed at export time).
 
 The value is handled by shape: a literal is redacted where it is; a ``$variable`` is
 traced back to the Set Variable that assigned it (earlier in the same script, or
@@ -27,7 +28,7 @@ from typing import Optional
 from .calc_lexer import NAME, STRING, Token, tokenize
 from .detectors import Hit
 from .policy import ScrubPolicy, category_from_name
-from .positional import Use, _code_tokens, classify, credential_uses, local_assignment
+from .positional import MISSING_FUNCTION, Use, _code_tokens, classify, credential_uses, local_assignment, secret_shaped
 from .walker import Slot, StepCtx, Walk
 
 SET_VARIABLE, SET_FIELD, INSERT_CALCULATED_RESULT, SET_FIELD_BY_NAME = "141", "76", "77", "147"
@@ -68,6 +69,10 @@ def _step_kind(ctx: StepCtx) -> str:
 def _has_call(tokens: list[Token]) -> bool:
     toks = _code_tokens(tokens)
     return any(a.kind == NAME and b.text == "(" for a, b in zip(toks, toks[1:]))
+
+
+def _unknown_function(use: Use) -> bool:
+    return use.detector.startswith(MISSING_FUNCTION)
 
 
 def _meaningful(content: str) -> bool:
@@ -169,7 +174,8 @@ class Planner:
                 self._hit_strings(Use("literal", [local], use.category, use.detector, use.via), slot, text)
             elif use.kind == "var":
                 self._trace(name, use, slot, ctx, depth)
-        elif use.kind == "field":
+        # Any argument of a <Function Missing> may be a field: no grounds to say it holds a credential.
+        elif use.kind == "field" and not _unknown_function(use):
             self._flag(slot, use, f"{use.via} reads its value from field {use.ref}. Nothing to redact in this "
                                   "file, but that field holds a credential.")
 
@@ -178,6 +184,8 @@ class Planner:
             if tok.kind != STRING:
                 continue
             start, end = tok.content_span
+            if _unknown_function(use) and not secret_shaped(text[start:end]):
+                continue
             if _meaningful(text[start:end]):
                 key = id(slot) if slot is not None else 0
                 self.plan.hits[key].append(Hit(start, end, use.category, use.detector, _PRIORITY))
@@ -201,8 +209,8 @@ class Planner:
             vtokens = self._tokenize(vslot, vtext)
             traced = Use(classify(vtokens), _code_tokens(vtokens), use.category, f"{use.detector}_traced", use.via)
             self._resolve(traced, vslot, vslot.ctx, vtokens, vtext, depth + 1)
-        if not found:
-            where = "anywhere in this file" if norm.startswith("$$") else "earlier in this script"
+        if not found and not _unknown_function(use):
+            where ="anywhere in this file" if norm.startswith("$$") else "earlier in this script"
             self._flag(slot, use, f"{var} is passed to {use.via}, but no Set Variable assigning it was found "
                                   f"{where}. It may come from a calling script or a script parameter.")
 

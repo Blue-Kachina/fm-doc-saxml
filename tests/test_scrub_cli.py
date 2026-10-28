@@ -61,9 +61,26 @@ def test_build_scrubs_every_output_file(tmp_path):
     assert "Scrubbed" in result.output
 
     report = (out / "Reports" / "redactions.md").read_text(encoding="utf-8")
-    assert "[REDACTED:api_key#1]" in report and "[HOST#1]" in report
+    assert "| `[REDACTED:openai_key#1]` | api_key | openai |" in report and "[HOST#1]" in report
     assert "redactions.md" in (out / "Reports" / "summary.md").read_text(encoding="utf-8")
     assert orjson.loads(model.read_bytes())["scrubbing"]["applied"] is True
+
+
+def test_build_warns_about_function_missing_arguments(tmp_path):
+    xml = (FIXTURES / "small_sample_v2.xml").read_text(encoding="utf-8").replace(
+        '<Step enable="True" id="70" index="2" name="New Record/Request"/>',
+        '<Step enable="True" id="70" index="2" name="New Record/Request"/>'
+        '<Step enable="True" id="141" index="4" name="Set Variable"><Calculation><![CDATA['
+        '<Function Missing> ("smtp.example.com";587;"svc@example.com";"y8L9k7fp")]]></Calculation></Step>',
+    )
+    path = tmp_path / "Plugin.xml"
+    path.write_text(xml, encoding="utf-8")
+    out = tmp_path / "docs"
+    result = runner.invoke(app, ["build", str(path), "-o", str(out)])
+    assert result.exit_code == 0, result.output
+    assert "y8L9k7fp" not in _all_output(out)
+    assert "smtp.example.com" in _all_output(out)
+    assert "argument(s) to <Function Missing> redacted" in " ".join(result.output.split())
 
 
 def test_disable_scrubbing_writes_values_as_is(tmp_path):

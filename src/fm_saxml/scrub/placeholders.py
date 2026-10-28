@@ -43,7 +43,21 @@ MIN_SALT_LENGTH = 16
 _FINGERPRINT_LENGTH = 6
 
 
-def label_for(category: str) -> str:
+# A key whose shape names its provider says so: [REDACTED:stripe_key#1] rather than
+# [REDACTED:api_key#1]. Like a card's issuer digits, the provider is not the secret.
+_PROVIDER_LABELS = {
+    "openai": "openai_key", "anthropic": "anthropic_key", "google_api_key": "google_api_key",
+    "google_oauth_secret": "google_oauth_secret", "xai": "xai_key", "groq": "groq_key",
+    "aws_access_key_id": "aws_access_key", "github": "github_token", "gitlab": "gitlab_token",
+    "slack": "slack_token", "stripe": "stripe_key", "sendgrid": "sendgrid_key", "ottofms": "ottofms_key",
+    "huggingface": "huggingface_token", "npm": "npm_token", "shopify": "shopify_token", "jwt": "jwt",
+    "slack_webhook": "slack_webhook", "discord_webhook": "discord_webhook", "teams_webhook": "teams_webhook",
+}
+
+
+def label_for(category: str, detector: str = "") -> str:
+    if category == "api_key" and detector in _PROVIDER_LABELS:
+        return f"REDACTED:{_PROVIDER_LABELS[detector]}"
     if category in CREDENTIAL_CATEGORIES:
         return f"REDACTED:{category}"
     return _LABELS.get(category, "REDACTED:credential")
@@ -88,11 +102,11 @@ class PlaceholderRegistry:
             return None
         return hmac.new(self._key, b"fm-saxml/salt-id", hashlib.sha256).hexdigest()[:8]
 
-    def placeholder(self, value: str, category: str) -> str:
+    def placeholder(self, value: str, category: str, detector: str = "") -> str:
         known = self._by_value.get(value)
         if known:
             return known[0]
-        label = label_for(category)
+        label = label_for(category, detector)
         if self._key:
             digest = hmac.new(self._key, value.encode("utf-8"), hashlib.sha256).hexdigest()
             n = _FINGERPRINT_LENGTH

@@ -21,7 +21,8 @@ _MIXED = r"(?=[A-Za-z0-9]*\d)(?=[A-Za-z0-9]*[A-Za-z])"
 # (detector id, pattern, capture group holding the secret)
 KNOWN_KEYS: tuple[tuple[str, str, int], ...] = (
     ("openai", _B + r"sk-proj-[\w-]{10,}", 0),
-    ("openai", _B + r"sk-(?:ant-)?[\w-]{20,}", 0),          # also Anthropic sk-ant-
+    ("anthropic", _B + r"sk-ant-[\w-]{20,}", 0),
+    ("openai", _B + r"sk-(?!ant-)[\w-]{20,}", 0),
     ("google_api_key", _B + r"AIza[\w-]{30,}", 0),
     ("google_oauth_secret", _B + r"GOCSPX-[\w-]{20,}", 0),
     ("xai", _B + r"xai-[\w-]{10,}", 0),

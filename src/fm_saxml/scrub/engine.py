@@ -322,7 +322,7 @@ class Scrubber:
         for h in accepted:
             value = text[h.start:h.end]
             category = self.registry.category_of(value) if h.detector == "known_value" else h.category
-            ph = self.registry.placeholder(value, category)
+            ph = self.registry.placeholder(value, category, h.detector)
             out.append(text[pos:h.start])
             length += h.start - pos
             marks.append((length, category, h.detector, ph))

@@ -1515,6 +1515,13 @@ def _print_scrubbing(scrubbing, report: str = "Reports/redactions.md") -> None:
             )
         if scrubbing.allowed:
             console.print(f"[dim]{len(scrubbing.allowed)} item(s) marked fm-saxml:allow were left as written.[/dim]")
+        missing = sum(1 for f in scrubbing.redactions if f.detector.startswith("missing_function"))
+        if missing:
+            console.print(
+                f"[yellow]{missing} argument(s) to <Function Missing> redacted: a plugin wasn't installed when "
+                "this file was exported, so which argument is the secret is unknown. Re-export with the "
+                "plugin installed for precise scrubbing.[/yellow]"
+            )
     elif scrubbing is not None:
         console.print("[bold yellow]Scrubbing was disabled: output may contain credentials and personal data.[/bold yellow]")
 
