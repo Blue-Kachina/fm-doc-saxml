@@ -14,7 +14,7 @@ import re
 from functools import lru_cache
 from typing import Iterable
 
-from ..policy import ScrubPolicy, category_from_name
+from ..policy import NON_SECRET_SUFFIXES, ScrubPolicy, category_from_name
 from . import Hit
 
 _COMMON_WORDS = {
@@ -39,11 +39,25 @@ _SCHEME_RE = re.compile(r"[A-Za-z][A-Za-z-]*")
 def _prose_re(keyword_alt: str) -> re.Pattern:
     return re.compile(
         r"(?<![\w$:])((?:" + keyword_alt + r")[\w-]*)"     # the credential word, not a Table::field name
-        r"[^\r\n=:]{0,24}?"                                 # "for the staging server"
+        r"([^\r\n=:;]{0,24}?)"                              # "for the staging server", but not past a
+                                                            # "; " (step text: "Plain Password; User Name: …")
         r"(?:\s(?:is|was|=)\s|\s?(?<!:)[:=](?!:)\s?)"       # "is" / ":" / "=", but not "::"
         r"[\"'“]?([^\s\"'“”,;()<>]{3,})",                   # the value token
         re.I,
     )
+
+
+_CLOSERS = {")": "(", "]": "[", "}": "{"}
+
+
+def _strip_trailing(value: str) -> str:
+    """Trailing punctuation off the value token, but not a bracket the value opened: ``{abc}``."""
+    while value and value[-1] in _TRAILING_PUNCT:
+        opener = _CLOSERS.get(value[-1])
+        if opener and value.count(opener) >= value.count(value[-1]):
+            break
+        value = value[:-1]
+    return value
 
 
 # An attribute name and its "=", as markup in a string writes it: type=  type=\  (before \"…\")
@@ -59,7 +73,7 @@ def _is_markup(text: str, m: re.Match, value: str) -> bool:
     """
     if _ATTRIBUTE_RE.fullmatch(value):
         return True
-    sep = m.start(2) - 1
+    sep = m.start(3) - 1
     while sep > m.end(1) and text[sep] in "\"'“":
         sep -= 1
     return (text[sep] == ":" and sep > m.end(1) and text[sep - 1].isalnum()
@@ -77,14 +91,17 @@ def detect(text: str, policy: ScrubPolicy) -> Iterable[Hit]:
     if not policy.keyword_re.search(text):
         return
     for m in _prose_re(policy.keyword_alt).finditer(text):
-        start, end = m.span(2)
-        value = m.group(2)
-        stripped = value.rstrip(_TRAILING_PUNCT)
+        start, end = m.span(3)
+        value = m.group(3)
+        stripped = _strip_trailing(value)
         end -= len(value) - len(stripped)
         value = stripped
         # A reference or a placeholder is where the secret lives, not the secret;
         # "Authorization: Bearer " names the scheme, the token comes after it.
         if not value or value.startswith(("$", "[")) or "::" in value or "(" in value:
+            continue
+        # No letter or digit: a mask, not a value (step text shows "Password: ••••••••").
+        if not any(c.isalnum() for c in value):
             continue
         if value.lower() in _AUTH_SCHEMES:
             continue
@@ -101,4 +118,8 @@ def detect(text: str, policy: ScrubPolicy) -> Iterable[Hit]:
         if _looks_secret(value):
             yield Hit(start, end, category, "comment_credential", 45)
         elif value.isalpha() and len(value) >= 6 and value.lower() not in _COMMON_WORDS:
+            # "OAuth 2.0 Provider: Google": the label ends in a word naming something else.
+            label = re.findall(r"[A-Za-z]+", m.group(2))
+            if label and label[-1].lower() in NON_SECRET_SUFFIXES:
+                continue
             yield Hit(start, end, category, "comment_review", 46, flag=True)

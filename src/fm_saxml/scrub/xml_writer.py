@@ -18,7 +18,9 @@ How the edits get from the model back into the XML:
    Spots that only ever hold a password are redacted even when blank, found by
    position since ``""`` matches every other empty string: a ``<Parameter
    type="Password">`` calc with its ChunkList and StepText copies, and every account's
-   ``<PasswordEncrypted><Data>``.
+   ``<PasswordEncrypted><Data>``. An ODBC data source's ``<DSN Password="…">`` (Execute
+   SQL, Import Records, Convert File) isn't in the model at all: its calc is redacted
+   here, blank or not.
    Binary streams (``<Stream type="Hex">`` …) are never touched.
 3. ``hash`` attributes are removed from every changed element and its ancestors,
    and from anything that refers to a removed hash. A digest of the original
@@ -45,7 +47,7 @@ from .calc_lexer import COMMENT, STRING, Token, tokenize
 from .engine import Scrubber
 from .guard import Leak, find_leaks_in_text
 from .placeholders import PLACEHOLDER_RE
-from .structural import password_parameter_hits
+from .structural import CHANGE_PASSWORD, CHANGE_PASSWORD_PARAMS, password_parameter_hits
 from .walker import _classify, snake
 
 SUPPORTED_ROOT = "FMSaveAsXML"
@@ -185,6 +187,15 @@ def _ddr_entries(root: etree._Element, owner: etree._Element, kind: str):
             yield from root.iter("{*}" + key)
 
 
+def _always_password(param: etree._Element) -> bool:
+    """A ``<Parameter type="Password">``, or Change Password's ``type="Old"`` / ``"New"``."""
+    kind = param.get("type")
+    if kind == "Password":
+        return True
+    step = next(param.iterancestors("{*}Step"), None)
+    return kind in CHANGE_PASSWORD_PARAMS and step is not None and step.get("id") == CHANGE_PASSWORD
+
+
 def _blank_literals_only(calc: str) -> bool:
     tokens = tokenize(calc)
     strings = [t for t in tokens if t.kind == STRING]
@@ -243,7 +254,7 @@ class _Rewriter:
         other empty string in the file, so these are found by position, not by value."""
         where = 'XML <Parameter type="Password">'
         for param in root.iter("{*}Parameter"):
-            if param.get("type") != "Password":
+            if not _always_password(param):
                 continue
             for text_el in param.iter("{*}Text"):
                 calc = text_el.getparent()
@@ -282,6 +293,16 @@ class _Rewriter:
                                                "encrypted_password", "XML <PasswordEncrypted><Data>")
             self._update(data, None, ph)
 
+    def _dsn_password(self, value: str, where: str) -> str:
+        """``Password="&quot;s3cret&quot;"``: a calc, redacted the way a Password parameter is.
+        Only a bare value (no calc syntax) is taken whole; a ``$variable`` or field is left."""
+        spans = [(h.start, h.end) for h in password_parameter_hits(value, self.scrubber.policy)
+                 if not PLACEHOLDER_RE.fullmatch(value[h.start:h.end])]
+        if not spans and not any(t.kind == STRING for t in tokenize(value)) \
+                and value.strip() and not re.search(r"[$:()&\"]", value):
+            spans = [(0, len(value))]
+        return self._fill(value, spans, where)
+
     def _fill(self, value: str, spans: list[tuple[int, int]], where: str) -> str:
         for start, end in sorted(spans, reverse=True):
             ph = self.scrubber.redact_in_place(value[start:end], "password", "password_parameter", where)
@@ -308,8 +329,12 @@ class _Rewriter:
                     kind = "text" if _classify(snake(tag.lstrip("_")), None, False) else "name"
                 yield el, None, kind, where
             for name, value in el.attrib.items():
+                if tag == "DSN" and name == "Password":
+                    step = next(el.iterancestors("{*}Step"), None)
+                    of = f" ({step.get('name')})" if step is not None and step.get("name") else ""
+                    yield el, name, "dsn_password", f"XML <DSN> @Password{of}"
                 # A number in an attribute is structure (an id, bounds, an options bitfield)
-                if name not in _STRUCTURAL_ATTRS and value.strip() and not _NUMBER_RE.fullmatch(value):
+                elif name not in _STRUCTURAL_ATTRS and value.strip() and not _NUMBER_RE.fullmatch(value):
                     kind = "text" if _classify(snake(name), None, False) else "name"
                     yield el, name, kind, f"{where} @{name}"
 
@@ -332,6 +357,8 @@ class _Rewriter:
             el.set(attr, new)
 
     def _scrub(self, value: str, kind: str, where: str) -> str:
+        if kind == "dsn_password":
+            return self._dsn_password(value, where)
         stripped = value.strip()
         exact = self.patterns.exact.get(stripped)
         if exact is not None:

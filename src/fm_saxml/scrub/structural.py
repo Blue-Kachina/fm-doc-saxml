@@ -3,7 +3,8 @@
 * A ``<Parameter type="Password">`` calc (Re-Login, Reset Account Password, Add Account,
   Execute SQL's ODBC password, …). A blank one (``""``) is redacted too: otherwise
   the output says the step needs no password.
-* Configure AI Account / Configure RAG Account calcs.
+* Configure AI Account / Configure RAG Account calcs, except the account name.
+* Send Mail's SMTP password, OAuth private key and OAuth client secret.
 * Set Variable into a credential-named variable (``$apiKey``, ``$$SMTP_PASSWORD``).
 * Set Field / Insert Calculated Result into a credential-named field (``Users::Password``),
   and Set Field By Name whose target names one.
@@ -34,11 +35,20 @@ from .walker import Slot, StepCtx, Walk, snake
 
 SET_VARIABLE, SET_FIELD, INSERT_CALCULATED_RESULT, SET_FIELD_BY_NAME = "141", "76", "77", "147"
 AI_ACCOUNT_STEPS = {"212", "227"}  # Configure AI Account, Configure RAG Account
+SEND_MAIL = "63"
+CHANGE_PASSWORD, CHANGE_PASSWORD_PARAMS = "83", ("Old", "New")  # <Parameter type="Old"> / "New"
 _STEP_IDS_BY_NAME = {
     "set variable": SET_VARIABLE, "set field": SET_FIELD,
     "insert calculated result": INSERT_CALCULATED_RESULT, "set field by name": SET_FIELD_BY_NAME,
-    "configure ai account": "212", "configure rag account": "227",
+    "configure ai account": "212", "configure rag account": "227", "send mail": SEND_MAIL,
+    "change password": CHANGE_PASSWORD,
 }
+# The account name (<Parameter type="LLMAccountName">, "RAGAccountName") is what other AI
+# steps refer to the account by, not a secret. A calc of unknown parameter is still redacted.
+_AI_NOT_SECRET_RE = re.compile(r"account\s*name|endpoint|url|model", re.I)
+# Send Mail's <Parameter type="Email"> calcs, by element: (category, what it is).
+_MAIL_SECRETS = {"password": ("password", "SMTP password"), "privatekey": ("secret", "OAuth private key"),
+                 "clientsecret": ("secret", "OAuth client secret")}
 _PRIORITY = 15  # after known key shapes (10), before generic keyword rules (20)
 _MAX_TRACE_DEPTH = 4
 _SCHEME_ONLY_RE = re.compile(r"\s*(?:Bearer|Basic|Token|Digest|OAuth)?\s*", re.I)
@@ -172,10 +182,14 @@ class Planner:
         calc = ctx.calc or {}
         param = (calc.get("parameter") or "").strip()
         kind = _step_kind(ctx)
-        if param.lower() == "password":
+        if param.lower() == "password" or (kind == CHANGE_PASSWORD and param in CHANGE_PASSWORD_PARAMS):
             return "password", "password_parameter", f"{ctx.name} password"
-        if kind in AI_ACCOUNT_STEPS:
+        if kind in AI_ACCOUNT_STEPS and not _AI_NOT_SECRET_RE.search(param):
             return "api_key", "ai_account", ctx.name
+        if kind == SEND_MAIL and param == "Email":
+            secret = _MAIL_SECRETS.get((calc.get("slot") or "").lower())
+            if secret:
+                return secret[0], "mail_credential", f"{ctx.name} {secret[1]}"
         if kind == SET_VARIABLE:
             var = ctx.variable
             if var and calc.get("slot") != "repetition" and self.policy.is_credential_name(var):

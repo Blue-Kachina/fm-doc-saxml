@@ -30,7 +30,7 @@ from .policy import CREDENTIAL_CATEGORIES, ScrubPolicy, category_from_name
 from .structural import ALWAYS_SECRET_DETECTORS, Flag, local_hits, plan
 from .walker import Slot, collect_slots, rebuild_step_texts
 
-ENGINE_VERSION = "4"
+ENGINE_VERSION = "5"
 
 _PREVIEW_RADIUS = 40
 _SCHEME_WORD_RE = re.compile(r"\s*(?:Bearer|Basic|Token|Digest|OAuth)?\s*", re.I)

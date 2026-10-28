@@ -7,7 +7,7 @@ from lxml import etree
 
 from fm_saxml.parser.extractors.scripts import _parse_step
 from fm_saxml.parser.saxml_reader import RawModel
-from fm_saxml.scrub import ScrubPolicy, Scrubber
+from fm_saxml.scrub import PLACEHOLDER_RE, ScrubPolicy, Scrubber
 
 from .test_step_calculations import SET_VARIABLE
 
@@ -224,6 +224,40 @@ def test_configure_ai_account():
     assert "plainKeyValue" not in dump(raw)
 
 
+@pytest.mark.parametrize("step_id,name,key_param,name_param", [
+    ("212", "Configure AI Account", "LLMAPIKey", "LLMAccountName"),
+    ("227", "Configure RAG Account", "RAGAPIKey", "RAGAccountName"),
+])
+def test_ai_account_name_is_kept(step_id, name, key_param, name_param):
+    ai = step(0, name, [(key_param, None, '"plainKeyValue"'), (name_param, None, '"myAccount"')], step_id)
+    raw, summary = run(("S", [ai]))
+    texts = [c["text"] for c in raw.scripts[0]["steps"][0]["calculations"]]
+    assert "plainKeyValue" not in texts[0] and texts[1] == '"myAccount"'
+    assert [f.detector for f in summary.redactions] == ["ai_account"]
+
+
+def test_send_mail_secrets_are_redacted_and_the_rest_kept():
+    smtp = step(0, "Send Mail", [("Email", "Server", '"smtp.example.com"'), ("Email", "UserName", '"svc_mailer"'),
+                                 ("Email", "Password", '"ab1"')], "63")
+    google = step(1, "Send Mail", [("Email", "PrivateKey", '"pk"')], "63")
+    microsoft = step(2, "Send Mail", [("Email", "ClientSecret", '"cs"')], "63")
+    raw, summary = run(("S", [smtp, google, microsoft]))
+    steps = raw.scripts[0]["steps"]
+    assert [c["text"] for c in steps[0]["calculations"][:2]] == ['"smtp.example.com"', '"svc_mailer"']
+    assert steps[0]["calculations"][2]["text"] == '"[REDACTED:password#1]"'  # short: only structure can know
+    assert steps[1]["calculations"][0]["text"] == '"[REDACTED:secret#1]"'
+    assert steps[2]["calculations"][0]["text"] == '"[REDACTED:secret#2]"'
+    assert {f.detector for f in summary.redactions} == {"mail_credential"}
+
+
+def test_change_password_old_and_new_are_password_parameters():
+    change = step(0, "Change Password", [("Old", None, '"o1"'), ("New", None, '"n1"')], "83")
+    raw, summary = run(("S", [change]))
+    texts = [c["text"] for c in raw.scripts[0]["steps"][0]["calculations"]]
+    assert texts == ['"[REDACTED:password#1]"', '"[REDACTED:password#2]"']
+    assert {f.detector for f in summary.redactions} == {"password_parameter"}
+
+
 # ---------------------------------------------------------------------------
 # Prose in comments
 # ---------------------------------------------------------------------------
@@ -250,6 +284,23 @@ def test_prose_plain_word_is_flagged_not_changed():
 def test_ordinary_prose_is_left_alone(prose):
     raw, summary = run(("S", [set_var(0, "$x", prose)]))
     assert not summary.findings
+
+
+@pytest.mark.parametrize("text", [
+    # FileMaker's step text: the user name follows "Plain Password; "
+    'Send Mail [ Authentication Type: Plain Password; User Name: "svc_mailer9" ]',
+    'Print PDF [ From: Source; Password: •••••••• ]',  # FileMaker's own mask
+    'Send Mail [ Send via OAuth 2.0; OAuth 2.0 Provider: Google ]',
+])
+def test_filemaker_step_text_labels_are_not_credentials(text):
+    scrubber = Scrubber()
+    assert scrubber.scrub_text(text) == text
+    assert not scrubber._finalize()
+
+
+def test_prose_value_keeps_a_bracket_it_opened():
+    out = Scrubber().scrub_text('Re-Login [ Password: "{needs_to_be_redacted}" ]')
+    assert PLACEHOLDER_RE.fullmatch(out.split('"')[1])  # the closing brace went with the value
 
 
 # ---------------------------------------------------------------------------

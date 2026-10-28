@@ -119,9 +119,9 @@ def test_guard_fails_when_a_value_survives_in_a_name(tmp_path):
 RAG_SAMPLE = Path(__file__).resolve().parent.parent / "samples" / "by_type" / "second_file" / "EverythingBagel.xml"
 
 
-def test_guard_ignores_a_value_equal_to_a_parameter_type(tmp_path):
-    # Configure RAG Account's literal account name is "RAGAccountName", the same text as its
-    # <Parameter type="RAGAccountName">. The type stays as a structural label and isn't a leak.
+def test_rag_account_name_is_kept_and_its_key_redacted(tmp_path):
+    # Configure RAG Account's literal account name is "RAGAccountName". Other AI steps refer
+    # to the account by that name: only the API key (none in this sample) is a secret.
     if not RAG_SAMPLE.exists():
         pytest.skip("samples/by_type fixture not present")
     out = tmp_path / "docs"
@@ -130,15 +130,11 @@ def test_guard_ignores_a_value_equal_to_a_parameter_type(tmp_path):
 
     entities = orjson.loads((out / "entities.json").read_bytes())
     step = entities["scriptSteps"]["scriptStep:OneOfEverything:0025"]
-    assert "RAGAccountName" not in step["fmText"] and "[REDACTED:api_key#" in step["fmText"]
-    assert [c["text"] for c in step["calculations"] if c["parameter"] == "RAGAccountName"][0].startswith('"[REDACTED:')
-    # Every other copy of the value is one of the structural keys, or the raw/ XML's
-    # <Parameter type> attribute (redacting that would break step recognition).
-    text = _all_output(out)
-    structural = (text.count('"label": "RAGAccountName"') + text.count('"parameter": "RAGAccountName"')
-                  + text.count('type=\\"RAGAccountName\\"'))
-    assert 'type=\\"RAGAccountName\\"' in text
-    assert text.count("RAGAccountName") == structural
+    assert step["fmText"] == 'Configure RAG Account  [ Account Name:"RAGAccountName" ]'
+    texts = {c["parameter"]: c["text"] for c in step["calculations"]}
+    assert texts["RAGAccountName"] == '"RAGAccountName"'
+    assert "RAGAPIKey" not in texts or texts["RAGAPIKey"].startswith('"[REDACTED:api_key#')
+    assert 'type=\\"RAGAccountName\\"' in _all_output(out)
 
 
 def test_guard_respects_allow_list(tmp_path):

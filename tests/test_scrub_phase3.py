@@ -275,14 +275,15 @@ RAG_SAMPLE = Path(__file__).resolve().parent.parent / "samples" / "by_type" / "s
 
 
 def test_scrub_keeps_a_parameter_type_equal_to_a_secret(tmp_path):
-    # Configure RAG Account's account name is literally "RAGAccountName", the same text as
-    # its <Parameter type>. The value is redacted; the type is a label and must survive.
-    if not RAG_SAMPLE.exists():
-        pytest.skip("samples/by_type fixture not present")
-    out, _ = _scrub(tmp_path, RAG_SAMPLE)
+    # A Re-Login password that is literally "Boolean", the same text as the step's
+    # <Parameter type="Boolean">. The value is redacted; the type is a label and must survive.
+    src = _export(tmp_path)
+    xml = src.read_text(encoding="utf-8").replace('<![CDATA["ab1"]]>', '<![CDATA["Boolean"]]>')
+    src.write_text(xml.replace("&quot;ab1&quot;", "&quot;Boolean&quot;"), encoding="utf-8")
+    out, _ = _scrub(tmp_path, src)
     text = out.read_text(encoding="utf-8")
-    assert '<Parameter type="RAGAccountName">' in text
-    assert text.count("RAGAccountName") == text.count('type="RAGAccountName"')
+    assert '<Parameter type="Boolean">' in text
+    assert '<![CDATA["Boolean"]]>' not in text and "&quot;Boolean&quot;" not in text
     assert 'type="[REDACTED:' not in text
 
 
@@ -346,6 +347,42 @@ def test_build_redacts_a_blank_password_parameter(tmp_path):
     from fm_saxml.parser.saxml_reader import parse_savexml
     summary = Scrubber().scrub_raw(parse_savexml(_blank_password_export(tmp_path)))
     assert [f.detector for f in summary.findings if f.action == "redacted"].count("password_parameter") >= 1
+
+
+EXECUTE_SQL = """            <Step hash="GGGG" index="3" id="117" name="Execute SQL" enable="True">
+              <UUID>00000000-0000-0000-CCCC-000000000002</UUID>
+              <OwnerID></OwnerID>
+              <Options>0</Options>
+              <ParameterValues membercount="1">
+                <Parameter type="SQL">
+                  <SQL index="0" suppress="True" Save="True" HasODBCAuthCalc="True" DSN="True">
+                    <DSN name="Warehouse" UserName="&quot;svc_reader&quot;" Password="&quot;{pw}&quot;"></DSN>
+                    <Calculation>
+                      <Text><![CDATA[SELECT 1]]></Text>
+                    </Calculation>
+                  </SQL>
+                </Parameter>
+              </ParameterValues>
+            </Step>
+"""
+
+
+@pytest.mark.parametrize("pw", ["dsnSecret42", "x", ""])
+def test_scrub_redacts_an_odbc_data_source_password(tmp_path, pw):
+    src = _export(tmp_path)
+    xml = src.read_text(encoding="utf-8").replace(RELOGIN, RELOGIN + EXECUTE_SQL.replace("{pw}", pw))
+    src.write_text(xml, encoding="utf-8")
+    out, _ = _scrub(tmp_path, src)
+    text = out.read_text(encoding="utf-8")
+    dsn = re.search(r"<DSN [^>]*>", text).group()
+    assert re.search(r'Password="&quot;\[REDACTED:password#\d+\]&quot;"', dsn), dsn
+    assert 'name="Warehouse" UserName="&quot;svc_reader&quot;"' in dsn
+    if pw:
+        assert pw not in dsn
+    assert 'hash="GGGG"' not in text
+    again = tmp_path / "again.xml"
+    assert runner.invoke(app, ["scrub", str(out), "-o", str(again), "-f"]).exit_code == 0
+    assert again.read_bytes() == out.read_bytes()
 
 
 def test_rescrubbing_blank_passwords_changes_nothing(tmp_path):
