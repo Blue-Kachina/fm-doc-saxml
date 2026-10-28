@@ -105,6 +105,36 @@ def comparable(text: str) -> str:
     return _WS.sub(" ", text.replace("“", '"').replace("”", '"')).strip().casefold()
 
 
+_STRING_RE = re.compile(r'"(?:[^"\\]|\\.)*"')
+# A scrub placeholder ([REDACTED:secret#5], [HOST#2], ...: scrub.placeholders.PLACEHOLDER_RE),
+# as comparable() leaves it. Not imported from there: scrub imports the model.
+_PLACEHOLDER_RE = re.compile(r"\[[a-z_:]+#[0-9a-f]+\]")
+_MASKED = '"\0"'
+
+
+def calc_shown(calc: str, text: str) -> bool:
+    """Whether ``calc`` appears in step ``text``, both already passed through comparable().
+
+    The calc and FileMaker's text for its step are separate strings, so a literal may be
+    redacted in one and not the other. A literal holding a placeholder matches any literal."""
+    if calc in text:
+        return True
+    if not _PLACEHOLDER_RE.search(calc) and not _PLACEHOLDER_RE.search(text):
+        return False
+    shown = _STRING_RE.sub(lambda m: _MASKED if _PLACEHOLDER_RE.search(m.group()) else m.group(), text)
+    parts, pos = [], 0
+    for m in _STRING_RE.finditer(calc):
+        parts.append(re.escape(calc[pos:m.start()]))
+        lit = m.group()
+        if _PLACEHOLDER_RE.search(lit):
+            parts.append(_STRING_RE.pattern)
+        else:
+            parts.append(f"(?:{re.escape(lit)}|{re.escape(_MASKED)})")
+        pos = m.end()
+    parts.append(re.escape(calc[pos:]))
+    return re.search("".join(parts), shown) is not None
+
+
 def step_text(step: Any) -> str:
     """The full text of one step. May contain newlines (multi-line calcs and comments).
 
@@ -148,7 +178,7 @@ def _omitted_params(step: Any, text: str) -> list[str]:
         calc = _calc_text(step, item.get("calc"))
         if not calc or not calc.strip() or (item.get("label") == "Repetition" and calc.strip() == "1"):
             continue
-        if comparable(calc) not in shown:
+        if not calc_shown(comparable(calc), shown):
             formatted = format_param(step, item)
             if formatted:
                 out.append(formatted)

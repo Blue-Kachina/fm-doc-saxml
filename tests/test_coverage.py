@@ -213,3 +213,15 @@ def test_filemaker_text_gets_the_parameters_it_leaves_out():
     step["calculations"] = [{"text": "Get ( CurrentTimeStamp )"}]
     step["fm_text"] = "Set Variable [ $t; Value:Get ( CurrentTimestamp ) ]"  # FileMaker fixes the case
     assert "also" not in step_text(step)
+
+
+def test_a_literal_redacted_in_only_one_copy_still_matches():
+    step = {"name": "Set Field", "enabled": True,
+            "fm_text": 'Set Field [ T::F; <Function Missing>( T::A ; "AuthType" ; "Auto" ) ]',
+            "params": [{"kind": "calc", "label": "Calculation", "calc": 0}],
+            "calculations": [{"text": '<Function Missing>( T::A ; "[REDACTED:secret#5]" ; "[REDACTED:secret#6]" )'}]}
+    assert "also" not in step_text(step)
+    step["fm_text"], step["calculations"][0]["text"] = step["calculations"][0]["text"], step["fm_text"][18:-2]
+    assert "also" not in step_text(step)  # and the other way round
+    step["fm_text"] = 'Set Field [ T::F; <Function Missing>( T::B ; "[REDACTED:secret#5]" ; "Auto" ) ]'
+    assert "also" in step_text(step)  # code outside the literals still has to match

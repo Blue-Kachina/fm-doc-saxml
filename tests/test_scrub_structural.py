@@ -287,3 +287,31 @@ def test_markup_after_a_credential_word_is_left_alone(source):
 def test_credentials_in_prose_are_still_redacted():
     assert "swordfish99" not in calc('/* password: swordfish99 */ 1')
     assert "Zx81-q9" not in calc('/* apikey:Zx81-q9 for staging */ 1')  # glued to the keyword itself
+
+
+# ---------------------------------------------------------------------------
+# FileMaker's own step text (fm_text) gets the same redactions as the calcs it repeats
+# ---------------------------------------------------------------------------
+
+def test_function_missing_redaction_reaches_filemaker_step_text():
+    s = step(0, "Set Field", [("Calculation", None, '<Function Missing>( _05LIT::AccountName ; "AuthType" ; "Auto" )')],
+             "76", field="TmpN1")
+    s["fm_text"] = 'Set Field [ Users::TmpN1; <Function Missing>( _05LIT::AccountName ; "AuthType" ; "Auto" ) ]'
+    raw, _ = run(("S", [s]))
+    out = raw.scripts[0]["steps"][0]
+    assert '"AuthType"' not in dump(raw) and '"Auto"' not in dump(raw)
+    calc_text = out["calculations"][0]["text"]
+    assert calc_text in out["fm_text"]  # same placeholders in both
+
+
+def test_traced_and_password_redactions_reach_filemaker_step_text():
+    src = set_var(0, "$x", '"tracedpw88"')
+    src["fm_text"] = 'Set Variable [ $x; Value:"tracedpw88" ]'
+    relogin = step(1, "Re-Login", [("Name", None, '"CreateModify"'), ("Password", None, '"abc"')], "138")
+    relogin["fm_text"] = 'Re-Login [ Account Name: "CreateModify"; Password: "abc"; With dialog: Off ]'
+    use = set_var(2, "$r", '<Function Missing> ( "smtp.example.com" ; $x )')
+    raw, _ = run(("S", [src, relogin, use]))
+    steps = raw.scripts[0]["steps"]
+    assert "tracedpw88" not in dump(raw) and '"abc"' not in dump(raw)
+    assert steps[1]["fm_text"] == ('Re-Login [ Account Name: "CreateModify"; Password: "[REDACTED:password#1]"; '
+                                   'With dialog: Off ]')

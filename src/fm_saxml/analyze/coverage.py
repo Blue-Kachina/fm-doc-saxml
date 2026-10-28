@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from typing import Callable, Optional
 
 from ..model.document_model import DocumentModel
-from ..model.step_text import COMMENT_STEP, comparable, step_text
+from ..model.step_text import COMMENT_STEP, calc_shown, comparable, step_text
 
 
 @dataclass
@@ -124,7 +124,7 @@ def _calcs_shown(m: DocumentModel) -> int:
             calc_text = comparable(calc.text)
             if not calc_text or (calc.slot == "repetition" and calc_text == "1"):
                 continue
-            if calc_text in text:
+            if calc_shown(calc_text, text):
                 shown += 1
     return shown
 

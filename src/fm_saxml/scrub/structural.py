@@ -30,7 +30,7 @@ from .calc_lexer import NAME, STRING, Token, tokenize
 from .detectors import Hit
 from .policy import ScrubPolicy, category_from_name
 from .positional import MISSING_FUNCTION, Use, _code_tokens, classify, credential_uses, local_assignment, secret_shaped
-from .walker import Slot, StepCtx, Walk
+from .walker import Slot, StepCtx, Walk, snake
 
 SET_VARIABLE, SET_FIELD, INSERT_CALCULATED_RESULT, SET_FIELD_BY_NAME = "141", "76", "77", "147"
 AI_ACCOUNT_STEPS = {"212", "227"}  # Configure AI Account, Configure RAG Account
@@ -113,7 +113,39 @@ class Planner:
             if slot.ctx is not None and not per_param:
                 continue  # a step's raw_text / joined copies: covered via the per-parameter calcs
             self.analyze(slot, slot.get(), slot.ctx if per_param else None)
+        self._mirror_to_fm_text(walk)
         return self.plan
+
+    def _mirror_to_fm_text(self, walk: Walk) -> None:
+        """Redact in each step's ``fm_text`` the literals planned for its per-parameter calcs.
+
+        FileMaker's step text repeats the calcs, but unlike the joined copies it isn't rebuilt
+        from them, and a value like ``"Auto"`` is too short for pass 2 to replace everywhere.
+        Blank literals aren't mirrored: every ``""`` in the step would match."""
+        fm_texts = {id(s.container): s for s in walk.slots
+                    if s.kind == "calc" and s.ctx is not None and s.container is s.ctx.step
+                    and snake(str(s.key)) == "fm_text"}
+        wanted: dict[int, dict[str, Hit]] = defaultdict(dict)
+        for slot in self.calc_slots.values():
+            fm = fm_texts.get(id(slot.ctx.step))
+            if fm is None:
+                continue
+            text = slot.get()
+            for hit in self.plan.hits.get(id(slot), []):
+                if hit.end > hit.start:
+                    wanted[id(fm)].setdefault(text[hit.start:hit.end], hit)
+        for fm in fm_texts.values():
+            values = wanted.get(id(fm))
+            if not values:
+                continue
+            text = fm.get()
+            for tok in self._tokenize(fm, text):
+                if tok.kind != STRING:
+                    continue
+                start, end = tok.content_span
+                hit = values.get(text[start:end])
+                if hit is not None:
+                    self.plan.hits[id(fm)].append(Hit(start, end, hit.category, hit.detector, _PRIORITY))
 
     def analyze(self, slot: Optional[Slot], text: str, ctx: Optional[StepCtx]) -> None:
         if not text:
