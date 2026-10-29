@@ -181,24 +181,83 @@ def test_failed_build_keeps_the_old_docs(tmp_path, monkeypatch):
     assert _siblings(out) == []
 
 
-def test_swap_that_cannot_move_the_old_folder_keeps_both(tmp_path, monkeypatch):
-    out = tmp_path / "docs"
-    _build(BAGEL, "-o", out)
+def _lock(monkeypatch, *paths: Path) -> None:
+    """Make renaming any of ``paths`` fail, every time."""
     real_replace = os.replace
 
     def locked(src, dst):
-        if Path(src) == out:
+        if Path(src) in paths:
             raise PermissionError(13, "The process cannot access the file")
         return real_replace(src, dst)
     monkeypatch.setattr(cli.os, "replace", locked)
-    monkeypatch.setattr(cli, "_SWAP_DELAYS", (0, 0))
+    monkeypatch.setattr(cli, "_SWAP_DELAYS", (0,) * 5)
+
+
+def test_swap_that_cannot_move_the_old_folder_replaces_its_contents(tmp_path, monkeypatch):
+    out = tmp_path / "docs"
+    _build(BAGEL, "-o", out)
+    (out / "stale.md").write_text("from an older build", encoding="utf-8")
+    _lock(monkeypatch, out)
+    result = runner.invoke(app, [*BUILD, str(BAGEL), "-o", str(out)])
+    assert result.exit_code == 0, result.output
+    said = " ".join(result.output.split())  # the console wraps long lines
+    assert "its contents were replaced instead of the folder" in said
+    assert not (out / "stale.md").exists() and (out / "docs.json").is_file()
+    assert _siblings(out) == []
+
+
+def test_swap_with_a_file_held_in_the_old_folder_keeps_both(tmp_path, monkeypatch):
+    out = tmp_path / "docs"
+    _build(BAGEL, "-o", out)
+    (out / "stale.md").write_text("from an older build", encoding="utf-8")
+    before = sorted(p.relative_to(out) for p in out.rglob("*"))
+    _lock(monkeypatch, out, out / "entities.json")
     result = runner.invoke(app, [*BUILD, str(BAGEL), "-o", str(out)])
     assert result.exit_code == 1
-    said = " ".join(result.output.split())  # the console wraps long lines
-    assert "Could not replace" in said and "the new docs are in" in said
+    said = " ".join(result.output.split())
+    assert "Could not replace" in said and "entities.json is in use by another program" in said
+    assert "the new docs are in" in said and "the previous ones are unchanged" in said
+    assert sorted(p.relative_to(out) for p in out.rglob("*")) == before
     staged = out.with_name(f"{out.name}.tmp-{os.getpid()}")
-    assert (staged / "docs.json").is_file() and (out / "docs.json").is_file()
+    assert _siblings(out) == [staged.name] and (staged / "docs.json").is_file()
     shutil.rmtree(staged)
+
+
+def test_swap_contents_puts_everything_back_when_a_new_entry_cannot_move_in(tmp_path, monkeypatch):
+    out = tmp_path / "docs"
+    _build(BAGEL, "-o", out)
+    (out / "stale.md").write_text("from an older build", encoding="utf-8")
+    before = sorted(p.relative_to(out) for p in out.rglob("*"))
+    staged = out.with_name(f"{out.name}.tmp-{os.getpid()}")
+    _lock(monkeypatch, out, staged / "index.md")
+    result = runner.invoke(app, [*BUILD, str(BAGEL), "-o", str(out)])
+    assert result.exit_code == 1
+    assert "index.md is in use by another program" in " ".join(result.output.split())
+    assert sorted(p.relative_to(out) for p in out.rglob("*")) == before
+    assert _siblings(out) == [staged.name]
+    assert (staged / "docs.json").is_file() and (staged / "index.md").is_file()
+    shutil.rmtree(staged)
+
+
+@pytest.mark.skipif(sys.platform != "win32",
+                    reason="only Windows refuses to rename a folder that a program uses as its current folder")
+def test_rebuild_while_a_program_has_the_docs_as_its_current_folder(tmp_path, monkeypatch):
+    """A terminal or File Explorer window in the docs folder: the folder stays, its contents are replaced."""
+    import subprocess
+
+    out = tmp_path / "docs"
+    _build(BAGEL, "-o", out)
+    (out / "stale.md").write_text("from an older build", encoding="utf-8")
+    monkeypatch.setattr(cli, "_SWAP_DELAYS", (0,))
+    holder = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"], cwd=out)
+    try:
+        result = runner.invoke(app, [*BUILD, str(BAGEL), "-o", str(out)])
+    finally:
+        holder.kill()
+        holder.wait()
+    assert result.exit_code == 0, result.output
+    assert not (out / "stale.md").exists() and (out / "docs.json").is_file()
+    assert _siblings(out) == []
 
 
 def _lock_staged(monkeypatch, out: Path, times: int) -> list[int]:

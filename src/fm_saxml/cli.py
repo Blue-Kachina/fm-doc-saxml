@@ -351,11 +351,11 @@ class _staged_output:
         return False
 
 
-def _replace_with_retry(src: Path, dst: Path) -> Optional[OSError]:
-    """``os.replace``, retried on the ``_SWAP_DELAYS`` schedule. The last error, if it never worked."""
+def _replace_with_retry(src: Path, dst: Path, delays: Optional[tuple] = None) -> Optional[OSError]:
+    """``os.replace``, retried on ``delays`` (default ``_SWAP_DELAYS``). The last error, if it never worked."""
     import time
 
-    for delay in (*_SWAP_DELAYS, None):
+    for delay in (*(_SWAP_DELAYS if delays is None else delays), None):
         try:
             os.replace(src, dst)
             return None
@@ -363,6 +363,55 @@ def _replace_with_retry(src: Path, dst: Path) -> Optional[OSError]:
             if delay is None:
                 return exc
             time.sleep(delay)
+    return None
+
+
+_HOLDERS = ("a terminal or File Explorer window open in that folder, an fm-saxml serve of these docs, "
+            "an editor, or antivirus or the search indexer")
+
+
+def _move_entries(names: list[str], src: Path, dst: Path) -> bool:
+    """Move ``src/<name>`` to ``dst/<name>`` for each name, quickly retried. False if any stayed behind."""
+    return all(_replace_with_retry(src / name, dst / name, _SWAP_DELAYS[:4]) is None for name in names)
+
+
+def _swap_contents(work: Path, out: Path) -> Optional[Path]:
+    """Fallback for an ``out`` folder that can't be renamed: swap what is inside it instead.
+
+    Windows refuses to rename a folder that some program is using as its current folder
+    (a terminal or File Explorer window in it), though everything inside can still move.
+    The old entries go to a sibling folder, the new ones move in, then the old ones are
+    deleted. Returns None when it worked; otherwise the entry that couldn't be moved,
+    with everything put back where it was.
+    """
+    aside = out.with_name(f"{out.name}.old-{os.getpid()}")
+    if aside.exists():
+        shutil.rmtree(aside, ignore_errors=True)
+    aside.mkdir()
+    def put_back(moved_in: list[str]) -> None:
+        _move_entries(moved_in, out, work)
+        _move_entries(moved_out, aside, out)
+        try:
+            aside.rmdir()       # stays (not empty) only if putting the old entries back failed
+        except OSError:
+            pass
+
+    moved_out: list[str] = []
+    for entry in sorted(out.iterdir()):
+        if _replace_with_retry(entry, aside / entry.name, _SWAP_DELAYS[:4]) is not None:
+            put_back([])
+            return entry
+        moved_out.append(entry.name)
+    moved_in: list[str] = []
+    for entry in sorted(work.iterdir()):
+        if _replace_with_retry(entry, out / entry.name, _SWAP_DELAYS[:4]) is not None:
+            put_back(moved_in)
+            return entry
+        moved_in.append(entry.name)
+    work.rmdir()
+    shutil.rmtree(aside, ignore_errors=True)
+    if aside.exists():
+        console.print(f"[yellow]Couldn't delete the previous docs at {aside}; remove that folder by hand.[/yellow]")
     return None
 
 
@@ -374,9 +423,16 @@ def _swap_into_place(work: Path, out: Path) -> None:
             shutil.rmtree(aside, ignore_errors=True)
         exc = _replace_with_retry(out, aside)
         if exc is not None:
-            _fail(f"Could not replace {out}: {exc.strerror or exc}.",
-                  f"A program probably has a file in it open. Close it and build again; "
-                  f"the new docs are in {work}.")
+            held = _swap_contents(work, out)
+            if held is None:
+                console.print(f"[dim]{out} is in use by another program, so its contents were replaced "
+                              f"instead of the folder.[/dim]")
+                return
+            previous = (f"some of the previous docs are still in {aside}: move them back into {out}"
+                        if aside.exists() else "the previous ones are unchanged")
+            _fail(f"Could not replace {out}: {exc.strerror or exc}. {held} is in use by another program.",
+                  f"Usually that is {_HOLDERS}. Close it and build again; "
+                  f"the new docs are in {work}, and {previous}.")
     exc = _replace_with_retry(work, out)
     if exc is not None:
         # Undo the first half, so the previous docs are where readers expect them.
