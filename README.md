@@ -139,24 +139,33 @@ Analyzing: 12 file(s)
 [3/12] Analyzing Invoices...
 [3/12] Analyzing Invoices (4.2s)
 Analyzing done (37.5s)
+Writing HTML viewer: 5300/21193 pages (40.1s)
 Done (52.1s)
 ```
+
+A stage that counts pages or files prints how far it got at most every 5 seconds, as in the `Writing HTML viewer` line.
 
 `--progress json` prints the same events as one JSON object per line on stdout, for a program that wants to show the progress (the agentic-fm companion does). The build's other output (summaries, warnings) is still printed around them, so skip any line that isn't a JSON object with an `event` key.
 
 ```json
 {"event": "file_done", "stage": "analyze", "file": "Invoices", "index": 3, "total": 12, "elapsed": 41.7, "seconds": 4.2}
+{"event": "stage_progress", "stage": "write_viewer", "file": "Accounting", "index": 1, "total": 1, "elapsed": 61.3, "done": 5300, "units": 21193, "unit": "pages"}
 ```
 
 | Field | Meaning |
 |---|---|
-| `event` | `stage_start`, `file_start`, `file_done`, `stage_done`, or `done` (once, at the end of a successful build) |
-| `stage` | `read`, `scrub`, `analyze`, `write_raw` or `write_pages`, in that order (no `write_raw` with `--no-raw-xml` or `--no-include-json`); `null` for `done` |
-| `file` | The export's name (its FileMaker file name) for `file_start` and `file_done`; otherwise `null` |
+| `event` | `stage_start`, `file_start`, `stage_progress`, `file_done`, `stage_done`, or `done` (once, at the end of a successful build) |
+| `stage` | `read`, `scrub`, `analyze`, `write_raw`, `write_pages`, `write_viewer` or `check`, in that order (no `write_raw` with `--no-raw-xml` or `--no-include-json`, `write_viewer` only with `--html` or `--webmcp`, `check` only when scrubbing is on); `null` for `done` |
+| `file` | The export's name (its FileMaker file name) for `file_start`, `stage_progress` and `file_done`; otherwise `null`. `write_viewer` and `check` run once over the whole output, so their one file is the solution (the `--solution` name, or the file's name for a single file) |
 | `index` | This file's number in the stage, from 1; `0` for `stage_start` and `done`; `total` for `stage_done` |
 | `total` | Files in the stage (`1` for a single-file build); `0` for `done` |
 | `elapsed` | Seconds since the build started, to 0.1 |
 | `seconds` | `file_done` and `stage_done` only: how long that file or stage took |
+| `done` | `stage_progress`, and `stage_done` of `write_pages`, `write_viewer` and `check`: pages or files finished so far in the stage (the final count in `stage_done`) |
+| `units` | `stage_progress` only: how many the stage expects. `write_pages`'s is an estimate, so it may end a little above or below |
+| `unit` | With `done`: `pages` (`write_pages`, `write_viewer`: the viewer's pages are the Markdown pages) or `files` (`check`: the text files the scrubbing guard scans, none when nothing was redacted) |
+
+`stage_progress` comes at most once a second, and only when `done` has changed. `write_viewer` and `check` can take minutes on a large solution (tens of thousands of pages).
 
 A file that can't be read in a multi-file build still gets its `file_done` in `read`, and is left out of the later stages (their `total` is lower).
 

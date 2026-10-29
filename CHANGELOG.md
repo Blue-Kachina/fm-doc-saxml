@@ -5,6 +5,8 @@
 ### Added
 
 - `build --progress rich|plain|json`. `plain` prints one line per stage and per file (`[3/12] Analyzing Invoices (4.2s)`); `json` prints one JSON object per line (`event`, `stage`, `file`, `index`, `total`, `elapsed`, and `seconds` when a file or stage ends), for tools that show a build's progress. Without the flag, a terminal still gets the Rich bars, and a pipe or file now gets `plain` lines instead of the bars' final state. The fields are in the README, under "Progress in scripts and pipes".
+- `build --progress` reports two more stages, after `write_pages`: `write_viewer` (Writing HTML viewer, with `--html` or `--webmcp`) and `check` (Checking redactions: the scrubbing guard, when scrubbing is on). On a large solution they took minutes with no sign of life. Each has a Rich bar with its pages or files.
+- `--progress json` and `plain` report how far a stage that counts pages or files has got (`write_pages`, `write_viewer`, `check`): a `stage_progress` event with `done`, `units` and `unit`, at most once a second in `json` and every 5 seconds in `plain` (`Writing HTML viewer: 5300/21193 pages (40.1s)`). Their `stage_done` also carries `done` and `unit`.
 
 ### Changed
 

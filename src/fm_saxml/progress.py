@@ -10,8 +10,9 @@ The pipeline calls one reporter the same way in every mode::
 
 ``plain`` and ``json`` write straight to ``sys.stdout`` (not through Rich, which wraps long
 lines and, with ``TERM=dumb``, holds output back), one line per event, flushed at once.
-Rich-only extras (``group``/``step`` for the single-file 7-step bar, ``unit_done`` for the
-per-page tick) do nothing in the other modes.
+Rich-only extras (``group``/``step`` for the single-file 7-step bar) do nothing in the other
+modes. ``unit_done`` (one page or file of a stage with ``units``) ticks the Rich bar, and in
+the other modes becomes a ``stage_progress`` event, throttled.
 """
 
 from __future__ import annotations
@@ -21,7 +22,7 @@ import sys
 import time
 from contextlib import contextmanager
 from enum import Enum
-from typing import Iterator, Optional
+from typing import Callable, Iterator, Optional
 
 from rich.console import Console
 from rich.progress import (
@@ -47,7 +48,14 @@ STAGE_LABELS = {
     "analyze": "Analyzing",
     "write_raw": "Writing raw XML",
     "write_pages": "Writing pages",
+    "write_viewer": "Writing HTML viewer",
+    "check": "Checking redactions",
 }
+# What a stage with ``units`` counts.
+STAGE_UNITS = {"write_pages": "pages", "write_viewer": "pages", "check": "files"}
+# The Rich bar's description once such a stage ends.
+_RICH_DONE_LABELS = {"write_pages": "Wrote {} pages", "write_viewer": "Wrote {} viewer pages",
+                     "check": "Checked {} files"}
 # What the Rich bar says before its first file.
 _RICH_STAGE_LABELS = {**STAGE_LABELS, "analyze": "Analyzing files"}
 
@@ -124,7 +132,7 @@ class Reporter:
         """Rich: advance the ``group`` bar."""
 
     def unit_done(self) -> None:
-        """Rich: one of the stage's ``units`` (a page) is written."""
+        """One of the stage's ``units`` (a page, a file) is finished."""
 
 
 class RichReporter(Reporter):
@@ -172,8 +180,9 @@ class RichReporter(Reporter):
         if self._grouped:
             return
         if self._units is not None and self._progress is not None:
+            done_label = _RICH_DONE_LABELS.get(self._stage, "Done: {}")
             self._progress.update(self._task, completed=self._written, total=self._written,
-                                  description=f"Wrote {self._written} pages")
+                                  description=done_label.format(self._written))
         self._units = None
         self._close()
 
@@ -198,27 +207,42 @@ class RichReporter(Reporter):
 
 
 class _EventReporter(Reporter):
-    """Turns the calls into events with N of M and timings; subclasses write them."""
+    """Turns the calls into events with N of M and timings; subclasses write them.
 
-    def __init__(self) -> None:
-        self._started = time.monotonic()
+    ``stage_progress`` goes out at most once per ``interval`` seconds, and only from a
+    ``unit_done``, so never when nothing changed. ``clock`` and ``interval`` are for tests.
+    """
+
+    interval = 1.0
+
+    def __init__(self, *, clock: Callable[[], float] = time.monotonic, interval: Optional[float] = None) -> None:
+        self._clock = clock
+        if interval is not None:
+            self.interval = interval
+        self._started = clock()
         self._stage: Optional[str] = None
         self._stage_started = 0.0
         self._total = 0
         self._index = 0
+        self._file: Optional[str] = None
         self._file_started = 0.0
+        self._units: Optional[int] = None
+        self._done = 0
+        self._reported_at = 0.0
 
-    def _emit(self, event: str, *, file: Optional[str] = None, seconds: Optional[float] = None) -> None:
+    def _emit(self, event: str, *, file: Optional[str] = None, seconds: Optional[float] = None,
+              **extra) -> None:
         obj = {
             "event": event,
             "stage": self._stage if event != "done" else None,
             "file": file,
             "index": self._index if event != "done" else 0,
             "total": self._total if event != "done" else 0,
-            "elapsed": round(time.monotonic() - self._started, 1),
+            "elapsed": round(self._clock() - self._started, 1),
         }
         if seconds is not None:
             obj["seconds"] = round(seconds, 1)
+        obj.update(extra)
         self.write(obj)
 
     def write(self, obj: dict) -> None:
@@ -231,35 +255,54 @@ class _EventReporter(Reporter):
         sys.stdout.flush()
 
     def stage_start(self, stage, total, *, label=None, units=None):
-        self._stage, self._total, self._index = stage, total, 0
-        self._stage_started = time.monotonic()
+        self._stage, self._total, self._index, self._file = stage, total, 0, None
+        self._units, self._done = units, 0
+        self._stage_started = self._reported_at = self._clock()
         self._emit("stage_start")
 
     def file_start(self, name, *, label=None):
         self._index += 1
-        self._file_started = time.monotonic()
+        self._file = name
+        self._file_started = self._clock()
         self._emit("file_start", file=name)
 
     def file_done(self, name):
-        self._emit("file_done", file=name, seconds=time.monotonic() - self._file_started)
+        self._emit("file_done", file=name, seconds=self._clock() - self._file_started)
+
+    def unit_done(self):
+        if self._units is None:
+            return
+        self._done += 1
+        now = self._clock()
+        if now - self._reported_at >= self.interval:
+            self._reported_at = now
+            self._emit("stage_progress", file=self._file, done=self._done, units=self._units,
+                       unit=STAGE_UNITS.get(self._stage or "", "pages"))
 
     def stage_done(self):
         self._index = self._total
-        self._emit("stage_done", seconds=time.monotonic() - self._stage_started)
+        extra = {}
+        if self._units is not None:
+            extra = {"done": self._done, "unit": STAGE_UNITS.get(self._stage or "", "pages")}
+        self._emit("stage_done", seconds=self._clock() - self._stage_started, **extra)
+        self._units = None
 
     def done(self):
         self._emit("done")
 
 
 class JsonReporter(_EventReporter):
-    """One JSON object per line: ``event``, ``stage``, ``file``, ``index``, ``total``, ``elapsed`` (+ ``seconds``)."""
+    """One JSON object per line: ``event``, ``stage``, ``file``, ``index``, ``total``, ``elapsed`` (+ ``seconds``,
+    and ``done``/``units``/``unit`` for a stage that counts pages or files)."""
 
     def write(self, obj):
         self._line(json.dumps(obj))
 
 
 class PlainReporter(_EventReporter):
-    """One line per event, e.g. ``[3/12] Analyzing Invoices (4.2s)``."""
+    """One line per event, e.g. ``[3/12] Analyzing Invoices (4.2s)``; progress every 5 s at most."""
+
+    interval = 5.0
 
     def write(self, obj):
         event = obj["event"]
@@ -270,6 +313,9 @@ class PlainReporter(_EventReporter):
             text = f"[{obj['index']}/{obj['total']}] {label} {obj['file']}..."
         elif event == "file_done":
             text = f"[{obj['index']}/{obj['total']}] {label} {obj['file']} ({obj['seconds']}s)"
+        elif event == "stage_progress":
+            seconds = round(self._clock() - self._stage_started, 1)
+            text = f"{label}: {obj['done']}/{obj['units']} {obj['unit']} ({seconds}s)"
         elif event == "stage_done":
             text = f"{label} done ({obj['seconds']}s)"
         else:

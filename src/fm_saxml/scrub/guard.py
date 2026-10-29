@@ -14,7 +14,7 @@ import re
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import Callable, Iterable, Optional
 
 # .js: the --html viewer copies every page, and --webmcp the model data, into scripts under _viewer/.
 LEAK_LIMIT = 50  # per scan: enough to show what leaked and where
@@ -83,8 +83,12 @@ _READ_THREADS = 8
 _READ_CHUNK = 256
 
 
-def find_leaks(paths: Iterable[Path], values: dict[str, str], limit: int = LEAK_LIMIT) -> list[Leak]:
-    """Every occurrence of a guarded value in ``paths``. ``values`` maps value -> placeholder."""
+def find_leaks(paths: Iterable[Path], values: dict[str, str], limit: int = LEAK_LIMIT,
+               on_file: Optional[Callable[[Path], None]] = None) -> list[Leak]:
+    """Every occurrence of a guarded value in ``paths``. ``values`` maps value -> placeholder.
+
+    ``on_file(path)`` is called (in this thread) after each file is scanned, for progress.
+    """
     if not values:
         return []
     pattern, lookup = _pattern(values)
@@ -94,6 +98,8 @@ def find_leaks(paths: Iterable[Path], values: dict[str, str], limit: int = LEAK_
         for start in range(0, len(paths), _READ_CHUNK):
             chunk = paths[start:start + _READ_CHUNK]
             for path, text in zip(chunk, pool.map(_read_or_none, chunk)):
+                if on_file is not None:
+                    on_file(path)
                 if text is None:
                     continue
                 for m in pattern.finditer(text):
@@ -103,12 +109,16 @@ def find_leaks(paths: Iterable[Path], values: dict[str, str], limit: int = LEAK_
     return leaks
 
 
-def guard_output(target: Path, values: dict[str, str]) -> list[Leak]:
-    """Scan one written file, or every text file under a written directory."""
+def guarded_files(target: Path) -> list[Path]:
+    """What ``guard_output`` scans: one written file, or every text file under a written directory."""
     if target.is_file():
-        files = [target]
-    elif target.is_dir():
-        files = [p for p in sorted(target.rglob("*")) if p.is_file() and p.suffix.lower() in _TEXT_SUFFIXES]
-    else:
-        files = []
-    return find_leaks(files, values)
+        return [target]
+    if target.is_dir():
+        return [p for p in sorted(target.rglob("*")) if p.is_file() and p.suffix.lower() in _TEXT_SUFFIXES]
+    return []
+
+
+def guard_output(target: Path, values: dict[str, str],
+                 on_file: Optional[Callable[[Path], None]] = None) -> list[Leak]:
+    """Scan one written file, or every text file under a written directory."""
+    return find_leaks(guarded_files(target), values, on_file=on_file)

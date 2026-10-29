@@ -12,6 +12,7 @@ from __future__ import annotations
 import html
 import json
 import re
+from collections.abc import Callable
 from importlib import resources
 from pathlib import Path
 from urllib.parse import unquote
@@ -28,17 +29,27 @@ _KIND_PREFIX_RE = re.compile(r"^[^:]+:\s+")
 _SECTION_LINK_RE = re.compile(r"^- \[([^\]]+)\]\(([^)/]+/[^)]+\.md)\)$", re.MULTILINE)
 
 
-def render_html_viewer(output_dir: Path, webmcp_files: list[dict] | None = None) -> int:
+def viewer_pages(output_dir: Path) -> list[Path]:
+    """The Markdown pages the viewer shows, in its order: each becomes one page script."""
+    return sorted(
+        (p for p in output_dir.rglob("*.md") if p.relative_to(output_dir).parts[0] != VIEWER_DIR),
+        key=lambda p: p.relative_to(output_dir).as_posix().lower(),
+    )
+
+
+def render_html_viewer(output_dir: Path, webmcp_files: list[dict] | None = None,
+                       md_files: list[Path] | None = None,
+                       on_page: Callable[[], None] | None = None) -> int:
     """Write ``index.html`` plus ``_viewer/`` over the Markdown already in ``output_dir``.
 
     ``webmcp_files`` (one entry per file, from ``webmcp.write_webmcp_data``) turns on the
     WebMCP tools: ``_viewer/webmcp.js`` is added and the manifest lists the files' data.
+    ``md_files`` is ``viewer_pages(output_dir)`` when the caller already has it; ``on_page``
+    is called after each page script is written, for progress.
     Returns the number of pages the viewer can show.
     """
-    md_files = sorted(
-        (p for p in output_dir.rglob("*.md") if p.relative_to(output_dir).parts[0] != VIEWER_DIR),
-        key=lambda p: p.relative_to(output_dir).as_posix().lower(),
-    )
+    if md_files is None:
+        md_files = viewer_pages(output_dir)
 
     pages = []
     root_meta: dict[str, str] = {}
@@ -54,6 +65,8 @@ def render_html_viewer(output_dir: Path, webmcp_files: list[dict] | None = None)
             f"FMDocs.page({_js_literal(rel)},{_js_literal(meta)},{_js_literal(body)});\n",
         )
         pages.append({"p": rel, "t": _page_title(path, meta, body), "f": js_name})
+        if on_page is not None:
+            on_page()
 
     root_heading = _HEADING_RE.search(root_body)
     title = root_meta.get("title") or (root_heading.group(1).strip() if root_heading else output_dir.name)
