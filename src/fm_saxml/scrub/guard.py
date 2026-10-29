@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Iterable
 
 # .js: the --html viewer copies every page, and --webmcp the model data, into scripts under _viewer/.
+LEAK_LIMIT = 50  # per scan: enough to show what leaked and where
 _TEXT_SUFFIXES = {".md", ".json", ".txt", ".html", ".js", ".csv", ".xml", ".yaml", ".yml"}
 
 
@@ -56,7 +57,7 @@ def _read(path: Path) -> str:
     return data.decode("utf-8-sig", errors="replace")
 
 
-def find_leaks_in_text(path: Path, text: str, values: dict[str, str], limit: int = 50) -> list[Leak]:
+def find_leaks_in_text(path: Path, text: str, values: dict[str, str], limit: int = LEAK_LIMIT) -> list[Leak]:
     if not values:
         return []
     pattern, lookup = _pattern(values)
@@ -82,7 +83,7 @@ _READ_THREADS = 8
 _READ_CHUNK = 256
 
 
-def find_leaks(paths: Iterable[Path], values: dict[str, str], limit: int = 50) -> list[Leak]:
+def find_leaks(paths: Iterable[Path], values: dict[str, str], limit: int = LEAK_LIMIT) -> list[Leak]:
     """Every occurrence of a guarded value in ``paths``. ``values`` maps value -> placeholder."""
     if not values:
         return []

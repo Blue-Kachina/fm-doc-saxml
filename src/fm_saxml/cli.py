@@ -6,7 +6,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Callable, Optional
 
 import typer
 from rich.console import Console
@@ -252,22 +252,38 @@ def _guard_output(scrubber, *targets: Optional[Path]) -> None:
     """Fail the run if any value the scrubber redacted still appears in a written file."""
     if scrubber is None:
         return
-    from .scrub import guard_output
+    from .scrub.guard import LEAK_LIMIT as GUARD_LEAK_LIMIT, guard_output
 
     values = scrubber.guard_values()
     leaks = [leak for t in targets if t is not None for leak in guard_output(t, values)]
     if not leaks:
         return
+    by_placeholder: dict[str, list] = {}
+    for leak in leaks:
+        by_placeholder.setdefault(leak.placeholder, []).append(leak)
+    value_of = {ph: v for v, ph in values.items()}
+    shown = "at least " if len(leaks) >= GUARD_LEAK_LIMIT else ""
     err_console.print(
-        f"[bold red]Scrubbing guard failed:[/bold red] {len(leaks)} redacted value(s) still appear in the output."
+        f"[bold red]Scrubbing guard failed:[/bold red] {len(by_placeholder)} redacted value(s) still appear in the "
+        f"output ({shown}{len(leaks)} place(s))."
     )
-    for leak in leaks[:10]:
+    named = False
+    for ph, found in by_placeholder.items():
         # The path itself can hold the value (a page named after a script named after a password).
-        err_console.print(f"  {scrubber.substitute(str(leak.path))}:{leak.line}  (the value behind {leak.placeholder})")
-    if len(leaks) > 10:
-        err_console.print(f"  ... and {len(leaks) - 10} more")
+        first = found[0]
+        files = len({leak.path for leak in found})
+        kind = scrubber.object_kind(value_of.get(ph, ""))
+        named = named or kind is not None
+        also = f" It is also the name of a {kind}, and names are never rewritten." if kind else ""
+        err_console.print(f"  The value behind {ph}: {len(found)} place(s) in {files} file(s), first at "
+                          f"{scrubber.substitute(str(first.path))}:{first.line}.{also}")
+    if named:
+        err_console.print(
+            "[dim]A value that is also an object's name: if it isn't a secret, exclude it with --scrub-allow; "
+            "if it is, rename the object in FileMaker and export again.[/dim]"
+        )
     err_console.print(
-        "[dim]These files were written but are not safe to share. This is a bug in fm-saxml: please report it. "
+        "[dim]These files are not safe to share. Otherwise this is a bug in fm-saxml: please report it. "
         "If a match is a false positive, exclude the value with --scrub-allow.[/dim]"
     )
     raise typer.Exit(2)
@@ -297,17 +313,22 @@ def _solution_name(input_xml: Path, scan, source) -> str:
 
 # A rebuild writes next to its output folder, then swaps the two, so a reader never sees a
 # half-written folder. On Windows a folder can't be renamed while a program has a file in
-# it open: the swap retries for a few seconds, then gives up and leaves the new docs staged.
-_SWAP_ATTEMPTS = 15
-_SWAP_DELAY = 0.2
+# it open, and antivirus or the search indexer opens freshly written files for a while
+# (tens of seconds for a large solution): each rename backs off and retries for about
+# half a minute, then gives up, leaving the previous docs in place and the new ones staged.
+_SWAP_DELAYS = (0.1, 0.2, 0.5, 1.0) + (2.0,) * 13
 
 
 class _staged_output:
-    """``with _staged_output(out) as work:`` write into ``work``; on success it replaces ``out``."""
+    """``with _staged_output(out, guard) as work:`` write into ``work``; on success it replaces ``out``.
 
-    def __init__(self, out: Path) -> None:
+    ``guard`` checks the staged folder before the swap, so docs it rejects never replace good ones.
+    """
+
+    def __init__(self, out: Path, guard: Optional[Callable[[Path], None]] = None) -> None:
         self.out = out
         self.work = out.with_name(f"{out.name}.tmp-{os.getpid()}")
+        self.guard = guard
 
     def __enter__(self) -> Path:
         if self.work.exists():
@@ -319,29 +340,56 @@ class _staged_output:
         if exc_type is not None:
             shutil.rmtree(self.work, ignore_errors=True)
             return False
+        if self.guard is not None:
+            try:
+                self.guard(self.work)
+            except typer.Exit:
+                kept = f"{self.out} was left as it was" if self.out.exists() else f"Nothing was written to {self.out}"
+                err_console.print(f"[dim]{kept}. The rejected docs are in {self.work}: "
+                                  "delete that folder once you've looked.[/dim]")
+                raise
         _swap_into_place(self.work, self.out)
         return False
 
 
-def _swap_into_place(work: Path, out: Path) -> None:
+def _replace_with_retry(src: Path, dst: Path) -> Optional[OSError]:
+    """``os.replace``, retried on the ``_SWAP_DELAYS`` schedule. The last error, if it never worked."""
     import time
 
+    for delay in (*_SWAP_DELAYS, None):
+        try:
+            os.replace(src, dst)
+            return None
+        except OSError as exc:
+            if delay is None:
+                return exc
+            time.sleep(delay)
+    return None
+
+
+def _swap_into_place(work: Path, out: Path) -> None:
     aside = None
     if out.exists():
         aside = out.with_name(f"{out.name}.old-{os.getpid()}")
         if aside.exists():
             shutil.rmtree(aside, ignore_errors=True)
-        for attempt in range(_SWAP_ATTEMPTS):
-            try:
-                os.replace(out, aside)
-                break
-            except OSError as exc:
-                if attempt == _SWAP_ATTEMPTS - 1:
-                    _fail(f"Could not replace {out}: {exc.strerror or exc}.",
-                          f"A program probably has a file in it open. Close it and build again; "
-                          f"the new docs are in {work}.")
-                time.sleep(_SWAP_DELAY)
-    os.replace(work, out)
+        exc = _replace_with_retry(out, aside)
+        if exc is not None:
+            _fail(f"Could not replace {out}: {exc.strerror or exc}.",
+                  f"A program probably has a file in it open. Close it and build again; "
+                  f"the new docs are in {work}.")
+    exc = _replace_with_retry(work, out)
+    if exc is not None:
+        # Undo the first half, so the previous docs are where readers expect them.
+        if aside is not None and _replace_with_retry(aside, out) is None:
+            previous = f"The previous docs are back in {out}. "
+        elif aside is not None:
+            previous = f"The previous docs are in {aside}: rename it to {out.name} to restore them. "
+        else:
+            previous = ""
+        _fail(f"Could not move the new docs into {out}: {exc.strerror or exc}.",
+              f"A program (often antivirus or the search indexer) is holding a file open in {work}. "
+              f"{previous}Build again, or rename {work.name} to {out.name} yourself once it lets go.")
     if aside is not None:
         shutil.rmtree(aside, ignore_errors=True)
         if aside.exists():
@@ -450,7 +498,7 @@ def build(
         write_model_json(model, model_out)
         console.print(f"[green]Model JSON written to {model_out}[/green]")
 
-    with _staged_output(out) as work:
+    with _staged_output(out, lambda work: _guard_output(scrubber, work, model_out)) as work:
         if include_json and raw_xml:
             _write_raw_xml([(model, work)], scrubber)  # before the pages: it can add to the redaction report
         _render_markdown_with_progress(model, work)
@@ -465,7 +513,6 @@ def build(
     if include_json:
         console.print(f"[dim]JSON data files written to {out}[/dim]")
 
-    _guard_output(scrubber, out, model_out)
     _print_summary(model)
     if model.warnings:
         console.print(f"[dim]See {out / 'Reports' / 'warnings.md'} for details.[/dim]")
@@ -505,7 +552,7 @@ def _build_batch(scan, out: Path, scrubber, *, solution: str, include_json: bool
     hosts = sorted({e.host for e in scan.manifest.entries if e.host}) if scan.manifest else []
     if scrubber is not None:
         hosts = [scrubber.scrub_text(h, "Summary.xml host") for h in hosts]
-    with _staged_output(out) as work:
+    with _staged_output(out, lambda work: _guard_output(scrubber, work)) as work:
         if include_json and raw_xml:
             # After every file is scrubbed, so a value found in a later file is redacted here too
             _write_raw_xml([(f.model, work / f.folder) for f in files], scrubber)
@@ -525,7 +572,6 @@ def _build_batch(scan, out: Path, scrubber, *, solution: str, include_json: bool
         (work / OUTPUT_MARKER).write_text("Generated by fm-saxml. Safe to overwrite.\n", encoding="utf-8")
     console.print(f"[green]Markdown documentation for {len(files)} files written to {out}[/green]")
 
-    _guard_output(scrubber, out)
     _print_batch_summary(files, links)
     _print_scrubbing(combined_scrubbing(files) or files[0].model.scrubbing, report="Reports/redactions.md")
 
@@ -585,21 +631,32 @@ def _analyze_batch(scan, scrubber, folders: dict[str, str], coverage: bool = Fal
     for s in scan.skipped:
         console.print(f"[yellow]Skipping {s.path.name}: {s.reason}[/yellow]")
 
-    # Scrub every file before normalizing any: a value found in a later file must
+    # Read every file before scrubbing any, so each file's object names are known in all
+    # of them. Scrub every file before normalizing any: a value found in a later file must
     # also be redacted in the earlier ones, which only a second pass can do.
-    scrubbed = []
+    read = []
     failed = []
     with _progress() as progress:
-        task = progress.add_task("Reading and scrubbing", total=len(scan.solutions))
+        task = progress.add_task("Reading", total=len(scan.solutions))
         for s in scan.solutions:
             progress.update(task, description=f"Reading {s.name}")
             try:
-                parsed = _parse_and_scrub(s.path, scrubber, s.fragments or None, step=lambda _desc: None,
-                                          coverage=coverage)
+                raw = _parse_export(s.path, s.fragments or None, coverage=coverage)
             except _InputProblem as exc:
                 failed.append((s, str(exc)))
             else:
-                scrubbed.append((s, parsed, len(scrubber.registry) if scrubber is not None else 0))
+                read.append((s, raw))
+                if scrubber is not None:
+                    scrubber.learn_names(raw)
+            progress.advance(task)
+    scrubbed = []
+    with _progress() as progress:
+        task = progress.add_task("Scrubbing", total=len(read))
+        while read:
+            s, raw = read.pop(0)
+            progress.update(task, description=f"Scrubbing {s.name}")
+            parsed = _scrub_parsed(raw, s.path, scrubber, step=lambda _desc: None)
+            scrubbed.append((s, parsed, len(scrubber.registry) if scrubber is not None else 0))
             progress.advance(task)
 
     files: list[BatchFile] = []
@@ -1341,8 +1398,12 @@ def _analyze(input_xml: Path, scrubber, fragments: Optional[list[Path]], step, c
 
 def _parse_and_scrub(input_xml: Path, scrubber, fragments: Optional[list[Path]], step, coverage: bool = False):
     """Stages 1-2. Returns what ``_normalize_scrubbed`` needs: (raw, scrub summary, source file, path)."""
+    return _scrub_parsed(_parse_export(input_xml, fragments, coverage=coverage), input_xml, scrubber, step)
+
+
+def _parse_export(input_xml: Path, fragments: Optional[list[Path]], coverage: bool = False):
+    """Stage 1: the raw model, or ``_InputProblem`` when the export isn't usable."""
     from .parser.saxml_reader import parse_savexml
-    from .model.document_model import ScrubSummary
     from .render.json.raw_xml import RawSource
 
     raw = parse_savexml(input_xml, fragments, coverage=coverage)
@@ -1355,6 +1416,12 @@ def _parse_and_scrub(input_xml: Path, scrubber, fragments: Optional[list[Path]],
         raise _InputProblem(f"'{input_xml.name}' is not valid XML ({xml_errors[0]}).")
     if not (raw.tables or raw.scripts or raw.layouts or raw.fields):
         raise _InputProblem(f"'{input_xml.name}' doesn't contain any FileMaker tables, scripts or layouts.")
+    return raw
+
+
+def _scrub_parsed(raw, input_xml: Path, scrubber, step):
+    """Stage 2 of ``_parse_and_scrub``."""
+    from .model.document_model import ScrubSummary
 
     # Scrub the raw records before normalization copies their strings into
     # entities, references and warnings.

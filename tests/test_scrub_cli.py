@@ -114,6 +114,26 @@ def test_guard_fails_when_a_value_survives_in_a_name(tmp_path):
     assert result.exit_code == 2, result.output
     assert "Scrubbing guard failed" in result.output
     assert "Xy7kL9mQ2z" not in result.output
+    said = " ".join(result.output.split())
+    assert "1 redacted value(s) still appear" in said
+    assert "It is also the name of a script" in said and "rename the object" in said
+
+
+def test_guard_runs_before_the_rejected_docs_replace_good_ones(tmp_path):
+    out = tmp_path / "docs"
+    result = runner.invoke(app, ["build", str(_secret_xml(tmp_path)), "-o", str(out)])
+    assert result.exit_code == 0, result.output
+    before = sorted(p.relative_to(out) for p in out.rglob("*"))
+
+    (tmp_path / "leaky").mkdir()
+    leaky = _secret_xml(tmp_path / "leaky", password="Xy7kL9mQ2z", script_name="Xy7kL9mQ2z")
+    result = runner.invoke(app, ["build", str(leaky), "-o", str(out), "-y"])
+    assert result.exit_code == 2, result.output
+    assert "was left as it was" in " ".join(result.output.split())
+    assert sorted(p.relative_to(out) for p in out.rglob("*")) == before
+    assert "Xy7kL9mQ2z" not in _all_output(out)
+    staged = [p for p in tmp_path.iterdir() if p.name.startswith("docs.tmp-")]
+    assert len(staged) == 1 and "Xy7kL9mQ2z" in _all_output(staged[0])
 
 
 RAG_SAMPLE = Path(__file__).resolve().parent.parent / "samples" / "by_type" / "second_file" / "EverythingBagel.xml"

@@ -63,6 +63,26 @@ def test_function_missing_redacts_secret_shaped_arguments_only():
     assert out == '<Function Missing> ("smtp.example.com";587;"svc@example.com";"[REDACTED:secret#1]")'
 
 
+@pytest.mark.parametrize("arg", [
+    "application/json", "text/csv; charset=utf-8", "application/vnd.ms-excel", "image/svg+xml",
+    "multipart/form-data; boundary=xyz", "Content-Type: application/json", "content-type:text/plain",
+    "Accept: */*", "User-Agent: FileMaker/21", "Content-Disposition: attachment; filename=a.pdf",
+    "SMTP-SetBody", "MAIL-AttachFile-Clear", "ssl=true", "timeout=10", "html", "plain", "quit", "UTF-8",
+])
+def test_function_missing_keeps_mime_types_and_plain_headers(arg):
+    source = f'<Function Missing> ( $curl ; "{arg}" ; "y8L9k7fp" )'
+    assert calc(source) == f'<Function Missing> ( $curl ; "{arg}" ; "[REDACTED:secret#1]" )'
+
+
+@pytest.mark.parametrize("arg", [
+    "Authorization: Basic dXNlcjpwYXNz", "X-Api-Key: y8L9k7fp", "X-Thing-Secret: y8L9k7fp",
+    "application/y8L9k7fp/extra", "y8L9k7fp/json",
+    "correct-horse-battery", "Summer-2024", "SMTP-y8L9k7fp", "password=y8L9k7fp", "htmly8L9k7fp",
+])
+def test_function_missing_still_redacts_credential_headers_and_lookalikes(arg):
+    assert "y8L9k7fp" not in calc(f'<Function Missing> ( $curl ; "{arg}" )')
+
+
 def test_function_missing_email_gets_its_own_label_at_standard():
     out = Scrubber(ScrubPolicy(level="standard")).scrub_calc(
         '<Function Missing> ( "smtp.example.com" ; 587 ; "svc@example.com" ; "y8L9k7fp" )')

@@ -27,10 +27,11 @@ from .detectors.entropy import looks_random
 from .detectors.known_keys import has_pem_marker
 from .placeholders import PLACEHOLDER_RE, PlaceholderRegistry
 from .policy import CREDENTIAL_CATEGORIES, ScrubPolicy, category_from_name
+from .positional import MISSING_FUNCTION
 from .structural import ALWAYS_SECRET_DETECTORS, Flag, local_hits, plan
 from .walker import Slot, collect_slots, rebuild_step_texts
 
-ENGINE_VERSION = "5"
+ENGINE_VERSION = "6"
 
 _PREVIEW_RADIUS = 40
 _SCHEME_WORD_RE = re.compile(r"\s*(?:Bearer|Basic|Token|Digest|OAuth)?\s*", re.I)
@@ -43,6 +44,24 @@ _NAME_BASED = {"keyword_assignment", "json_credential"}
 _NAME_INFERRED = _NAME_BASED | {"json_set_element", "comment_credential", "credential_variable", "credential_field"}
 _VALUE_LIKE_RE = re.compile(r"(?=.*[A-Za-z0-9]).{4,}", re.S)
 _UUID_RE = re.compile(r"[0-9A-Fa-f]{8}-(?:[0-9A-Fa-f]{4}-){3}[0-9A-Fa-f]{12}")
+
+# Rules that guess a value is secret from its shape or from prose, with no position that
+# says so (<Function Missing> has lost its name, so any argument might be the password).
+# A value that equals an object's name in the solution, such as <Function Missing> ( "Popover" )
+# beside a script named Popover, is far likelier to be that name: these rules leave it as it
+# is and report it for review. Every other rule redacts it anyway, and the output guard then
+# stops the build, since names are never rewritten: a password used as a script name is a leak.
+NAME_DEFERRING_DETECTORS = frozenset({MISSING_FUNCTION, "high_entropy", "comment_credential"})
+# Where object names live, in a RawModel (snake_case) and under a model.json's entities
+# (camelCase). Accounts are left out: an account name is a person, not a schema name.
+_NAMED_COLLECTIONS = {
+    "tables": "table", "fields": "field", "table_occurrences": "table occurrence", "layouts": "layout",
+    "layout_objects": "layout object", "scripts": "script", "custom_functions": "custom function",
+    "value_lists": "value list", "privilege_sets": "privilege set", "extended_privileges": "extended privilege",
+    "custom_menus": "custom menu", "custom_menu_sets": "custom menu set", "themes": "theme",
+    "external_data_sources": "external data source", "file_references": "file reference",
+}
+_CAMEL_RE = re.compile(r"(?<=[a-z])(?=[A-Z])")
 
 
 @dataclass
@@ -72,6 +91,8 @@ class Scrubber:
         # structural labels (params[].label, calculations[].parameter), so a redacted
         # value that happens to equal one can't count as a leak.
         self._schema_names: set[str] = set()
+        # Object names in the solution, casefolded (as FileMaker compares them) -> (kind, name).
+        self._object_names: dict[str, tuple[str, str]] = {}
         self.last_changes: list[tuple[str, str, str]] = []
 
     # ------------------------------------------------------------------
@@ -94,8 +115,24 @@ class Scrubber:
 
     def scrub_raw(self, raw: Any) -> ScrubSummary:
         """Scrub a parser ``RawModel`` in place, before normalization copies its strings around."""
-        roots = {name: getattr(raw, name) for name in raw.__dataclass_fields__}
-        return self._run(roots)
+        return self._run(_raw_roots(raw))
+
+    def learn_names(self, raw: Any) -> None:
+        """Know a ``RawModel``'s object names before scrubbing anything.
+
+        ``scrub_raw`` learns its own model's names. A run over several files calls this for
+        every file first, so a value in one file that names an object in another is seen as a name.
+        """
+        self._learn_names(_raw_roots(raw))
+
+    def _learn_names(self, roots: dict[str, Any]) -> None:
+        for kind, name in _object_names(roots):
+            self._object_names.setdefault(name.casefold(), (kind, name))
+
+    def object_kind(self, value: str) -> Optional[str]:
+        """What kind of object in the solution is named ``value`` ("script", ...), if any."""
+        entry = self._object_names.get(value.strip().casefold())
+        return entry[0] if entry else None
 
     def scrub_model_data(self, data: dict) -> ScrubSummary:
         """Scrub a ``model.json`` dict in place (a model saved unscrubbed, or by an older engine)."""
@@ -140,6 +177,7 @@ class Scrubber:
     def _run(self, roots: dict[str, Any]) -> ScrubSummary:
         # Findings recorded since the last run (e.g. the source path) belong to this one.
         walk = collect_slots(roots)
+        self._learn_names(roots)
         self._schema_names.update(
             c["parameter"] for step in walk.steps for c in step.calcs if isinstance(c.get("parameter"), str)
         )
@@ -301,6 +339,14 @@ class Scrubber:
                 continue
             if self.policy.is_allowed(value) or value in self._allowed_values:
                 continue
+            named = self._object_names.get(value.strip().casefold()) if h.detector in NAME_DEFERRING_DETECTORS else None
+            if named:
+                self._pending.append(_Pending(
+                    h.category, h.detector, location, "", None, preview=_preview(text, h.start, h.end),
+                    action="flagged", note=f"Equals the name of {named[0]} '{named[1]}', so it was read as that "
+                                           "name and left unchanged. Check it by hand.",
+                ))
+                continue
             # A reference ($token, Users::Password) is where the secret is used, not the secret.
             if h.category in CREDENTIAL_CATEGORIES and h.detector != "known_value" and _REFERENCE_RE.match(value.strip()):
                 continue
@@ -426,6 +472,29 @@ class Scrubber:
             ))
         self._pending = []
         return findings
+
+
+def _raw_roots(raw: Any) -> dict[str, Any]:
+    return {name: getattr(raw, name) for name in raw.__dataclass_fields__}
+
+
+def _object_names(roots: dict[str, Any]) -> Iterable[tuple[str, str]]:
+    """(kind, name) for every named object: top-level collections, a model.json's entities, layout objects."""
+    for key, items in roots.items():
+        if key == "entities" and isinstance(items, dict):
+            yield from _object_names(items)
+            continue
+        kind = _NAMED_COLLECTIONS.get(_CAMEL_RE.sub("_", key).lower())
+        if kind is None:
+            continue
+        for item in items.values() if isinstance(items, dict) else items if isinstance(items, list) else ():
+            if not isinstance(item, dict):
+                continue
+            name = item.get("name")
+            if isinstance(name, str) and name.strip():
+                yield kind, name.strip()
+            if kind == "layout":
+                yield from _object_names({"layout_objects": item.get("layout_objects")})
 
 
 def _allow_marked(slot: Slot) -> bool:

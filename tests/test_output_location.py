@@ -191,7 +191,7 @@ def test_swap_that_cannot_move_the_old_folder_keeps_both(tmp_path, monkeypatch):
             raise PermissionError(13, "The process cannot access the file")
         return real_replace(src, dst)
     monkeypatch.setattr(cli.os, "replace", locked)
-    monkeypatch.setattr(cli, "_SWAP_DELAY", 0)
+    monkeypatch.setattr(cli, "_SWAP_DELAYS", (0, 0))
     result = runner.invoke(app, [*BUILD, str(BAGEL), "-o", str(out)])
     assert result.exit_code == 1
     said = " ".join(result.output.split())  # the console wraps long lines
@@ -201,12 +201,64 @@ def test_swap_that_cannot_move_the_old_folder_keeps_both(tmp_path, monkeypatch):
     shutil.rmtree(staged)
 
 
+def _lock_staged(monkeypatch, out: Path, times: int) -> list[int]:
+    """Make renaming the staged folder fail ``times`` times (antivirus scanning the new files)."""
+    real_replace, failures = os.replace, [0]
+
+    def locked(src, dst):
+        if Path(src).name.startswith(f"{out.name}.tmp-") and failures[0] < times:
+            failures[0] += 1
+            raise PermissionError(13, "Access is denied")
+        return real_replace(src, dst)
+    monkeypatch.setattr(cli.os, "replace", locked)
+    monkeypatch.setattr(cli, "_SWAP_DELAYS", (0,) * 5)
+    return failures
+
+
+def test_swap_retries_moving_the_new_docs_in(tmp_path, monkeypatch):
+    out = tmp_path / "docs"
+    _build(BAGEL, "-o", out)
+    (out / "stale.md").write_text("from an older build", encoding="utf-8")
+    failures = _lock_staged(monkeypatch, out, times=3)
+    _build(BAGEL, "-o", out)
+    assert failures[0] == 3
+    assert not (out / "stale.md").exists() and (out / "docs.json").is_file()
+    assert _siblings(out) == []
+
+
+def test_swap_that_cannot_move_the_new_docs_in_restores_the_old(tmp_path, monkeypatch):
+    out = tmp_path / "docs"
+    _build(BAGEL, "-o", out)
+    (out / "stale.md").write_text("from an older build", encoding="utf-8")
+    before = sorted(p.relative_to(out) for p in out.rglob("*"))
+    _lock_staged(monkeypatch, out, times=1000)
+    result = runner.invoke(app, [*BUILD, str(BAGEL), "-o", str(out)])
+    assert result.exit_code == 1
+    said = " ".join(result.output.split())
+    assert "Could not move the new docs into" in said and "The previous docs are back in" in said
+    assert sorted(p.relative_to(out) for p in out.rglob("*")) == before
+    staged = out.with_name(f"{out.name}.tmp-{os.getpid()}")
+    assert _siblings(out) == [staged.name] and (staged / "docs.json").is_file()
+    shutil.rmtree(staged)
+
+
+def test_swap_into_a_new_folder_that_stays_locked(tmp_path, monkeypatch):
+    out = tmp_path / "docs"
+    _lock_staged(monkeypatch, out, times=1000)
+    result = runner.invoke(app, [*BUILD, str(BAGEL), "-o", str(out)])
+    assert result.exit_code == 1
+    said = " ".join(result.output.split())
+    assert "Could not move the new docs into" in said and "previous docs" not in said
+    staged = out.with_name(f"{out.name}.tmp-{os.getpid()}")
+    assert not out.exists() and (staged / "docs.json").is_file()
+    shutil.rmtree(staged)
+
+
 def test_rebuild_with_a_file_open_in_the_docs(tmp_path, monkeypatch):
     """A reader holding a file open: Windows refuses the swap (clear error, old docs kept); POSIX swaps."""
     out = tmp_path / "docs"
     _build(BAGEL, "-o", out)
-    monkeypatch.setattr(cli, "_SWAP_ATTEMPTS", 2)
-    monkeypatch.setattr(cli, "_SWAP_DELAY", 0)
+    monkeypatch.setattr(cli, "_SWAP_DELAYS", (0,))
     with open(out / "entities.json", "rb"):
         result = runner.invoke(app, [*BUILD, str(BAGEL), "-o", str(out)])
     if sys.platform == "win32":

@@ -10,7 +10,10 @@ A plugin function exported without its plugin installed is written as
 ``<Function Missing> ( "smtp.example.com" ; 587 ; "user@example.com" ; "pw" )``: the name
 is gone, so no argument position is known. Every string argument is treated as a possible
 secret, except those shaped like a number, email, hostname or plain URL; those are left to
-the level's own detectors (``[EMAIL#n]``, ``[HOST#n]``), which keeps the call readable.
+the level's own detectors (``[EMAIL#n]``, ``[HOST#n]``), which keeps the call readable. A
+MIME type, a standard header that never carries a credential (``Content-Type: text/csv``), a
+plugin command (``SMTP-SetBody``), an on/off or numeric option (``ssl=true``) and a mode
+keyword (``html``) are left as they are too. The engine also keeps an argument that names an object in the solution.
 
 Function list adapted from the FileMaker XML Scrubber (Andrew Kear, CC BY 4.0).
 """
@@ -37,13 +40,23 @@ _PLUGIN_REGISTER_RE = re.compile(r"^[A-Za-z][A-Za-z0-9]*_Register$")
 _PREFILTER_RE = re.compile(r"JSONSetElement|Crypt|MBS|_Register|Missing\s*>", re.I)
 
 MISSING_FUNCTION = "missing_function"
+_MIME = (r"(?:application|audio|font|image|message|model|multipart|text|video)/[\w.+-]+"
+         r"(?:\s*;\s*[\w-]+=[^;\s\"]+)*")
 # Argument shapes that describe where a secret goes rather than being one.
 _NOT_SECRET_SHAPE_RE = re.compile(
     r"[-+]?\d+(?:\.\d+)?"                                           # number
     r"|[^\s@\"]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+"                 # email
     r"|(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}(?::\d+)?"                   # hostname
     r"|\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?"                            # IPv4
-    r"|[a-z][a-z0-9+.-]*://[^\s@?#\"]+",                            # URL without userinfo or query
+    r"|[a-z][a-z0-9+.-]*://[^\s@?#\"]+"                             # URL without userinfo or query
+    r"|" + _MIME +                                                  # MIME type
+    r"|[A-Z]{2,8}(?:-[A-Z][A-Za-z]+)+"                              # plugin command: SMTP-SetBody (as Mail.Send)
+    r"|[a-z][\w-]*=(?:true|false|yes|no|on|off|\d+)"                # plugin option: ssl=true, timeout=10
+    r"|html|plain|text|quit|true|false|yes|no|on|off|none|auto|get|post|put|patch|delete"
+    r"|ssl|tls|starttls|utf-?8|base64|json|xml"                     # mode keyword
+    r"|(?:content-(?:type|length|disposition|encoding|language|transfer-encoding)|accept(?:-[a-z]+)?"
+    r"|user-agent|cache-control|connection|host|origin|referer|if-match|if-none-match|x-requested-with)"
+    r"\s*:[^\r\n]*",                                                # header line that holds no credential
     re.I,
 )
 

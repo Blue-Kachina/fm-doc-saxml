@@ -62,8 +62,11 @@ Some things are **flagged for review** instead of changed, in a "Needs review" s
 
 - a credential read from a field (nothing in the file to redact);
 - a variable whose source couldn't be found;
-- a plain word stated as a password in a comment.
+- a plain word stated as a password in a comment;
+- a value that equals the name of an object in the solution (a custom function, script, layout, layout object, field, table occurrence, value list...) where the only reason to call it secret is a guess. This is mostly `<Function Missing> ( "Popover" )`, a plugin call exported without its plugin installed, whose argument names a script. Names are compared without case, across every file in a multi-file build.
 
-Only string literals and comments are ever changed. After writing, a guard searches every output file for each redacted value. If one survived somewhere the scrubber doesn't look (for example, a script *named* after a password), the run fails with exit code 2.
+`<Function Missing>` arguments shaped like a number, email, hostname, URL, MIME type (`application/json`), plain HTTP header (`Content-Type: …`), plugin command (`SMTP-SetBody`), on/off or numeric option (`ssl=true`) or mode keyword (`html`) are left as they are. Any other string argument is redacted, since the function's name is gone and any of them could be the password.
+
+Only string literals and comments are ever changed. Before the new docs replace the old ones, a guard searches every output file for each redacted value. If one survived somewhere the scrubber doesn't look (for example, a script *named* after a password), the run fails with exit code 2, the previous docs stay as they were, and the rejected docs are left in a `<folder>.tmp-<pid>` folder beside them.
 
 This is a heuristic scrubber, not a guarantee: review output before sharing it. Detection rules are adapted from Andrew Kear's [FileMaker XML Scrubber](https://github.com/andykear/FileMaker-XML-scrubber) (Clockwork Creative Technology, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)). The design and roadmap are in [secret-redaction.md](../secret-redaction.md).
