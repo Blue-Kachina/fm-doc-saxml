@@ -126,8 +126,39 @@ Each file gets its own subfolder, and references from one file into another beco
 | `--scrub-level secrets\|standard\|strict` | How much to redact (default `secrets`) — see [Scrubbing](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/scrubbing.md) |
 | `--disable-scrubbing` | Turn secret scrubbing off |
 | `--strict` | Exit non-zero if any reference is left unresolved |
+| `--progress rich\|plain\|json` | How `build` reports progress: live bars, one line per stage and file, or JSON lines for tools (default: `rich` in a terminal, `plain` when the output is piped) — see [Progress in scripts and pipes](#progress-in-scripts-and-pipes) |
 
 Run `fm-saxml <command> --help` for every option. The [technical README](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/README_technical.md) covers the rest, including CI flags, the output layout, and known limitations.
+
+### Progress in scripts and pipes
+
+In a terminal, `build` draws live progress bars. When its output goes to a pipe or a file, the bars can't redraw, so by default it prints one line per stage and per file instead (`--progress plain`):
+
+```text
+Analyzing: 12 file(s)
+[3/12] Analyzing Invoices...
+[3/12] Analyzing Invoices (4.2s)
+Analyzing done (37.5s)
+Done (52.1s)
+```
+
+`--progress json` prints the same events as one JSON object per line on stdout, for a program that wants to show the progress (the agentic-fm companion does). The build's other output (summaries, warnings) is still printed around them, so skip any line that isn't a JSON object with an `event` key.
+
+```json
+{"event": "file_done", "stage": "analyze", "file": "Invoices", "index": 3, "total": 12, "elapsed": 41.7, "seconds": 4.2}
+```
+
+| Field | Meaning |
+|---|---|
+| `event` | `stage_start`, `file_start`, `file_done`, `stage_done`, or `done` (once, at the end of a successful build) |
+| `stage` | `read`, `scrub`, `analyze`, `write_raw` or `write_pages`, in that order (no `write_raw` with `--no-raw-xml` or `--no-include-json`); `null` for `done` |
+| `file` | The export's name (its FileMaker file name) for `file_start` and `file_done`; otherwise `null` |
+| `index` | This file's number in the stage, from 1; `0` for `stage_start` and `done`; `total` for `stage_done` |
+| `total` | Files in the stage (`1` for a single-file build); `0` for `done` |
+| `elapsed` | Seconds since the build started, to 0.1 |
+| `seconds` | `file_done` and `stage_done` only: how long that file or stage took |
+
+A file that can't be read in a multi-file build still gets its `file_done` in `read`, and is left out of the later stages (their `total` is lower).
 
 ## Documentation
 

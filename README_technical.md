@@ -77,6 +77,7 @@ pip install -e ".[dev]"
 | `--coverage` | `build`, `parse`, `render` | Also check that everything in the export reached the docs, and write `Reports/coverage.md` (see [Coverage report](#coverage-report)) |
 | `--fail-on-coverage-gap` | `build` | Exit with status 1 if anything in the export didn't reach the docs, or the export has XML the converter doesn't recognise. Turns on `--coverage`. For CI. |
 | `--fail-on-secrets` | `build`, `parse`, `render` | Exit with status 1 (after writing everything) if the export contains hardcoded credentials. For CI. |
+| `--progress rich\|plain\|json` | `build` | Live bars, one line per stage and file, or one JSON object per line (see [Progress in scripts and pipes](README.md#progress-in-scripts-and-pipes)). Default: `rich` when stdout is a terminal, else `plain` |
 
 The scrubbing flags (`--scrub-level`, `--scrub-keyword`, `--scrub-allow`, `--disable-scrubbing`) are described in [Scrubbing](./docs/scrubbing.md).
 
@@ -167,6 +168,7 @@ Every generated `index.md` and `Reports/summary.md` also records **which build o
 ```text
 src/fm_saxml/
 ├─ cli.py               # Typer CLI entry point (fm-saxml)
+├─ progress.py          # build --progress: Rich bars, plain lines or JSON lines behind one reporter
 ├─ version.py           # Self-version detection (git commit or package version) for doc provenance
 ├─ parser/              # XML parsing and per-entity extractors
 │  ├─ saxml_reader.py

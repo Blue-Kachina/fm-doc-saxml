@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- `build --progress rich|plain|json`. `plain` prints one line per stage and per file (`[3/12] Analyzing Invoices (4.2s)`); `json` prints one JSON object per line (`event`, `stage`, `file`, `index`, `total`, `elapsed`, and `seconds` when a file or stage ends), for tools that show a build's progress. Without the flag, a terminal still gets the Rich bars, and a pipe or file now gets `plain` lines instead of the bars' final state. The fields are in the README, under "Progress in scripts and pipes".
+
 ### Changed
 
 - `fm-saxml serve`, and `--serve` on `build`/`render`, now use port **8766** by default instead of 8765. The agentic-fm companion server also defaults to 8765, so the two used to clash. To keep the old port, pass `--port 8765`. As before, if the port is taken, a free one is used.

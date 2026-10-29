@@ -10,16 +10,10 @@ from typing import Annotated, Callable, Optional
 
 import typer
 from rich.console import Console
-from rich.progress import (
-    BarColumn,
-    Progress,
-    SpinnerColumn,
-    TaskProgressColumn,
-    TextColumn,
-    TimeElapsedColumn,
-)
 from rich.table import Table
 from typer.core import TyperGroup
+
+from .progress import ProgressMode, Reporter, RichReporter, make_reporter
 
 
 class _DefaultToBuildGroup(TyperGroup):
@@ -136,6 +130,11 @@ ServeOpt = Annotated[bool, typer.Option(
          "viewer WebMCP (it doesn't on pages opened from disk). Ctrl+C stops it.",
 )]
 PortOpt = Annotated[int, typer.Option("--port", help="Port for --serve / serve (a free one is used if it's taken)")]
+ProgressOpt = Annotated[Optional[ProgressMode], typer.Option(
+    "--progress", case_sensitive=False,
+    help="rich: live bars. plain: one line per stage and file. json: one JSON object per line, for tools "
+         "(see the README). Default: rich in a terminal, plain when output is piped.",
+)]
 
 
 def _check_serve(serve: bool, webmcp: bool) -> None:
@@ -450,6 +449,7 @@ def build(
     fail_on_secrets: FailOnSecretsOpt = False,
     coverage: CoverageOpt = False,
     fail_on_coverage_gap: FailOnCoverageOpt = False,
+    progress: ProgressOpt = None,
 ) -> None:
     """Parse a FileMaker XML export and render Markdown documentation.
 
@@ -457,6 +457,7 @@ def build(
     many files at once), each file gets its own subfolder and references between
     the files become links.
     """
+    reporter = make_reporter(progress, console)  # starts the clock for --progress json's elapsed
     input_xml = _normalize_path(input_xml)
     _validate_input(input_xml, allow_dir=True)
     scan, source = _resolve_input(input_xml)
@@ -480,7 +481,7 @@ def build(
         _build_batch(scan, out, scrubber, solution=solution, include_json=include_json, raw_xml=raw_xml,
                      strict=strict, force=force or yes,
                      html=html, webmcp=webmcp, fail_on_secrets=fail_on_secrets, open_when_done=open_when_done,
-                     coverage=coverage, fail_on_coverage_gap=fail_on_coverage_gap)
+                     coverage=coverage, fail_on_coverage_gap=fail_on_coverage_gap, reporter=reporter)
         if serve:
             _serve(out, port)
         return
@@ -490,7 +491,8 @@ def build(
     if scan is not None:
         _print_manifest_check(scan)
 
-    model = _run_pipeline(source.path, scrubber, source.fragments or None, coverage=coverage)
+    model = _run_pipeline(source.path, scrubber, source.fragments or None, coverage=coverage,
+                          reporter=reporter, name=source.name)
 
     if model_out:
         model_out = _normalize_path(model_out)
@@ -500,8 +502,9 @@ def build(
 
     with _staged_output(out, lambda work: _guard_output(scrubber, work, model_out)) as work:
         if include_json and raw_xml:
-            _write_raw_xml([(model, work)], scrubber)  # before the pages: it can add to the redaction report
-        _render_markdown_with_progress(model, work)
+            # Before the pages: it can add to the redaction report
+            _write_raw_xml([(source.name, model, work)], scrubber, reporter)
+        _render_markdown_with_progress(model, work, reporter, name=source.name)
         if include_json:
             from .render.json.writer import build_root_catalog, write_root_catalog, write_split_json
             write_split_json(model, work)
@@ -525,6 +528,7 @@ def build(
 
     _check_fail_on_secrets(fail_on_secrets, model.scrubbing)
     _report_coverage([model], fail_on_coverage_gap)
+    reporter.done()
 
     if open_when_done:
         _open_folder(out)
@@ -539,14 +543,16 @@ _RESERVED_BATCH_FOLDERS = {"reports", "_viewer"}
 def _build_batch(scan, out: Path, scrubber, *, solution: str, include_json: bool, strict: bool, force: bool,
                  raw_xml: bool = True,
                  html: bool, fail_on_secrets: bool, open_when_done: bool, webmcp: bool = False,
-                 coverage: bool = False, fail_on_coverage_gap: bool = False) -> None:
+                 coverage: bool = False, fail_on_coverage_gap: bool = False,
+                 reporter: Optional[Reporter] = None) -> None:
     """Convert every export in a folder into its own subfolder of ``out``, with cross-file links."""
     from .batch.links import link_batch
     from .batch.report import BatchResult, combined_scrubbing, write_batch_reports
 
     folders = _batch_folders(scan)
     _confirm_output_directory(out, force=force, wipe=False)
-    files, failed, missing, extra = _analyze_batch(scan, scrubber, folders, coverage=coverage)
+    reporter = reporter or RichReporter(console)
+    files, failed, missing, extra = _analyze_batch(scan, scrubber, folders, coverage=coverage, reporter=reporter)
 
     links = link_batch(files)
     hosts = sorted({e.host for e in scan.manifest.entries if e.host}) if scan.manifest else []
@@ -555,8 +561,8 @@ def _build_batch(scan, out: Path, scrubber, *, solution: str, include_json: bool
     with _staged_output(out, lambda work: _guard_output(scrubber, work)) as work:
         if include_json and raw_xml:
             # After every file is scrubbed, so a value found in a later file is redacted here too
-            _write_raw_xml([(f.model, work / f.folder) for f in files], scrubber)
-        _render_batch_with_progress(files, links, work)
+            _write_raw_xml([(f.name, f.model, work / f.folder) for f in files], scrubber, reporter)
+        _render_batch_with_progress(files, links, work, reporter)
         if include_json:
             from .render.json.writer import build_root_catalog, write_root_catalog, write_split_json
             for f in files:
@@ -598,6 +604,7 @@ def _build_batch(scan, out: Path, scrubber, *, solution: str, include_json: bool
     _report_coverage([f.model for f in files], fail_on_coverage_gap)
     if failed:
         raise typer.Exit(1)
+    reporter.done()
     if open_when_done:
         _open_folder(out)
 
@@ -622,7 +629,8 @@ def _batch_folders(scan) -> dict[str, str]:
     return folders
 
 
-def _analyze_batch(scan, scrubber, folders: dict[str, str], coverage: bool = False):
+def _analyze_batch(scan, scrubber, folders: dict[str, str], coverage: bool = False,
+                   reporter: Optional[Reporter] = None):
     """Analyze each export on its own. Returns (files, failed, manifest missing, manifest extra)."""
     from .batch.links import BatchFile
 
@@ -634,12 +642,12 @@ def _analyze_batch(scan, scrubber, folders: dict[str, str], coverage: bool = Fal
     # Read every file before scrubbing any, so each file's object names are known in all
     # of them. Scrub every file before normalizing any: a value found in a later file must
     # also be redacted in the earlier ones, which only a second pass can do.
+    reporter = reporter or RichReporter(console)
     read = []
     failed = []
-    with _progress() as progress:
-        task = progress.add_task("Reading", total=len(scan.solutions))
+    with reporter.stage("read", len(scan.solutions)):
         for s in scan.solutions:
-            progress.update(task, description=f"Reading {s.name}")
+            reporter.file_start(s.name, label=f"Reading {s.name}")
             try:
                 raw = _parse_export(s.path, s.fragments or None, coverage=coverage)
             except _InputProblem as exc:
@@ -648,23 +656,21 @@ def _analyze_batch(scan, scrubber, folders: dict[str, str], coverage: bool = Fal
                 read.append((s, raw))
                 if scrubber is not None:
                     scrubber.learn_names(raw)
-            progress.advance(task)
+            reporter.file_done(s.name)
     scrubbed = []
-    with _progress() as progress:
-        task = progress.add_task("Scrubbing", total=len(read))
+    with reporter.stage("scrub", len(read)):
         while read:
             s, raw = read.pop(0)
-            progress.update(task, description=f"Scrubbing {s.name}")
+            reporter.file_start(s.name, label=f"Scrubbing {s.name}")
             parsed = _scrub_parsed(raw, s.path, scrubber, step=lambda _desc: None)
             scrubbed.append((s, parsed, len(scrubber.registry) if scrubber is not None else 0))
-            progress.advance(task)
+            reporter.file_done(s.name)
 
     files: list[BatchFile] = []
-    with _progress() as progress:
-        task = progress.add_task("Analyzing files", total=len(scrubbed))
+    with reporter.stage("analyze", len(scrubbed)):
         while scrubbed:
             s, (raw, summary, source_file, path), known = scrubbed.pop(0)
-            progress.update(task, description=f"Analyzing {s.name}")
+            reporter.file_start(s.name, label=f"Analyzing {s.name}")
             if scrubber is not None and len(scrubber.registry) > known:
                 # Pass-1 previews were taken before the later files' values were known.
                 summary = scrubber.summary(scrubber.refresh(summary.findings) + scrubber.scrub_raw(raw).findings)
@@ -672,7 +678,7 @@ def _analyze_batch(scan, scrubber, folders: dict[str, str], coverage: bool = Fal
             model = _normalize_scrubbed(raw, summary, source_file, path, step=lambda _desc: None)
             del raw  # keep only the models in memory
             files.append(BatchFile(folder=folders[s.name], name=s.name, model=model))
-            progress.advance(task)
+            reporter.file_done(s.name)
     for s, reason in failed:
         err_console.print(f"[red]Not converted:[/red] {reason}")
     if not files:
@@ -680,15 +686,15 @@ def _analyze_batch(scan, scrubber, folders: dict[str, str], coverage: bool = Fal
     return files, failed, missing, extra
 
 
-def _write_raw_xml(targets, scrubber) -> None:
-    """raw/*.json for each (model, folder), one export at a time (each is reparsed)."""
+def _write_raw_xml(targets, scrubber, reporter: Reporter) -> None:
+    """raw/*.json for each (name, model, folder), one export at a time (each is reparsed)."""
     from .render.json.raw_xml import write_raw_xml
 
-    with _progress() as progress:
-        task = progress.add_task("Writing raw XML", total=len(targets))
-        for model, folder in targets:
+    with reporter.stage("write_raw", len(targets)):
+        for name, model, folder in targets:
+            reporter.file_start(name)
             write_raw_xml(model, folder, scrubber)
-            progress.advance(task)
+            reporter.file_done(name)
 
 
 def _print_manifest_check(scan):
@@ -706,26 +712,17 @@ def _print_manifest_check(scan):
     return missing, extra
 
 
-def _render_batch_with_progress(files, links, out: Path) -> None:
+def _render_batch_with_progress(files, links, out: Path, reporter: Reporter) -> None:
     from .render.markdown.link_resolver import LinkResolver
     from .render.markdown.renderer import render_markdown
     from .utils.file_writer import on_write
 
     total = sum(LinkResolver(f.model).page_count + 25 for f in files)
-    written = 0
-    with _progress() as progress:
-        task = progress.add_task("Writing pages", total=total)
-
-        def tick(_path: Path) -> None:
-            nonlocal written
-            written += 1
-            progress.update(task, completed=written, total=max(total, written))
-
-        with on_write(tick):
-            for f in files:
-                progress.update(task, description=f"Writing {f.name}")
-                render_markdown(f.model, out / f.folder, links.cross_file.get(f.folder))
-        progress.update(task, completed=written, total=written, description=f"Wrote {written} pages")
+    with reporter.stage("write_pages", len(files), units=total), on_write(lambda _path: reporter.unit_done()):
+        for f in files:
+            reporter.file_start(f.name, label=f"Writing {f.name}")
+            render_markdown(f.model, out / f.folder, links.cross_file.get(f.folder))
+            reporter.file_done(f.name)
 
 
 def _print_batch_summary(files, links) -> None:
@@ -1374,31 +1371,30 @@ class _InputProblem(Exception):
 
 
 def _run_pipeline(input_xml: Path, scrubber=None, fragments: Optional[list[Path]] = None, *,
-                  coverage: bool = False):
-    """Parse → scrub → normalize → resolve → analyze. ``scrubber=None`` means scrubbing is disabled."""
-    with _progress() as progress:
-        task = progress.add_task(f"Parsing {input_xml.name}", total=7)
-        try:
-            return _analyze(
-                input_xml, scrubber, fragments,
-                step=lambda desc: progress.update(task, advance=1, description=desc),
-                coverage=coverage,
-            )
-        except _InputProblem as exc:
-            _fail(str(exc), EXPORT_HINT)
-
-
-def _analyze(input_xml: Path, scrubber, fragments: Optional[list[Path]], step, coverage: bool = False):
-    """The pipeline itself. ``step(description)`` is called as each of its 7 stages finishes.
+                  coverage: bool = False, reporter: Optional[Reporter] = None, name: Optional[str] = None):
+    """Parse → scrub → normalize → resolve → analyze. ``scrubber=None`` means scrubbing is disabled.
 
     ``input_xml`` may be a separate-catalogs folder; ``fragments`` then lists its catalog XMLs.
+    Reports the read, scrub and analyze stages of one file (``name``, by default the input's);
+    Rich shows them as one bar of 7 steps, advanced by the ``step(description)`` calls.
     """
-    return _normalize_scrubbed(*_parse_and_scrub(input_xml, scrubber, fragments, step, coverage=coverage), step)
+    reporter = reporter or RichReporter(console)
+    name = name or (input_xml.name if input_xml.is_dir() else input_xml.stem)
 
+    def stage(stage_id: str, run):
+        with reporter.stage(stage_id, 1):
+            reporter.file_start(name)
+            result = run()
+            reporter.file_done(name)
+        return result
 
-def _parse_and_scrub(input_xml: Path, scrubber, fragments: Optional[list[Path]], step, coverage: bool = False):
-    """Stages 1-2. Returns what ``_normalize_scrubbed`` needs: (raw, scrub summary, source file, path)."""
-    return _scrub_parsed(_parse_export(input_xml, fragments, coverage=coverage), input_xml, scrubber, step)
+    with reporter.group(f"Parsing {input_xml.name}", 7):
+        try:
+            raw = stage("read", lambda: _parse_export(input_xml, fragments, coverage=coverage))
+        except _InputProblem as exc:
+            _fail(str(exc), EXPORT_HINT)
+        parsed = stage("scrub", lambda: _scrub_parsed(raw, input_xml, scrubber, reporter.step))
+        return stage("analyze", lambda: _normalize_scrubbed(*parsed, reporter.step))
 
 
 def _parse_export(input_xml: Path, fragments: Optional[list[Path]], coverage: bool = False):
@@ -1420,7 +1416,7 @@ def _parse_export(input_xml: Path, fragments: Optional[list[Path]], coverage: bo
 
 
 def _scrub_parsed(raw, input_xml: Path, scrubber, step):
-    """Stage 2 of ``_parse_and_scrub``."""
+    """Stage 2. Returns what ``_normalize_scrubbed`` needs: (raw, scrub summary, source file, path)."""
     from .model.document_model import ScrubSummary
 
     # Scrub the raw records before normalization copies their strings into
@@ -1465,39 +1461,22 @@ def _normalize_scrubbed(raw, scrub_summary, source_file: str, input_xml: Path, s
     return model
 
 
-def _progress() -> Progress:
-    """Spinner + bar + elapsed time. Rich degrades gracefully when output is piped."""
-    return Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        TaskProgressColumn(),
-        TimeElapsedColumn(),
-        console=console,
-    )
-
-
-def _render_markdown_with_progress(model, out: Path) -> None:
-    """Render Markdown, advancing a progress bar once per page written."""
+def _render_markdown_with_progress(model, out: Path, reporter: Optional[Reporter] = None,
+                                   name: Optional[str] = None) -> None:
+    """Render Markdown, advancing a progress bar once per page written (Rich only)."""
     from .render.markdown.link_resolver import LinkResolver
     from .render.markdown.renderer import render_markdown
     from .utils.file_writer import on_write
 
+    reporter = reporter or RichReporter(console)
+    name = name or model.solution.name
     # Entity pages plus a rough allowance for section indexes and reports.
     total = LinkResolver(model).page_count + 25
-    written = 0
-
-    with _progress() as progress:
-        task = progress.add_task("Writing pages", total=total)
-
-        def tick(_path: Path) -> None:
-            nonlocal written
-            written += 1
-            progress.update(task, completed=written, total=max(total, written))
-
-        with on_write(tick):
+    with reporter.stage("write_pages", 1, units=total):
+        reporter.file_start(name)
+        with on_write(lambda _path: reporter.unit_done()):
             render_markdown(model, out)
-        progress.update(task, completed=written, total=written, description=f"Wrote {written} pages")
+        reporter.file_done(name)
 
 
 def _render_html_viewer(out: Path, webmcp_files: Optional[list[dict]] = None, shown: Optional[Path] = None) -> None:
