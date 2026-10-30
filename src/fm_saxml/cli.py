@@ -115,7 +115,7 @@ DOCS_ROOT_ENV = "FM_SAXML_DOCS_ROOT"
 HtmlOpt = Annotated[bool, typer.Option(
     "--html",
     help="Also write index.html for browsing the docs in a web browser, straight from disk "
-         "(adds one small .js file per page under _viewer/; the page needs internet access to load its renderer)",
+         "(adds one small .js file per page under _viewer/, plus its Markdown renderer; works offline)",
 )]
 
 WebMcpOpt = Annotated[bool, typer.Option(

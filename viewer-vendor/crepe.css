@@ -1,0 +1,7 @@
+/* The Crepe partials a read-only viewer needs (theme/common/style.css minus the editing UI). */
+@import 'prosemirror-view/style/prosemirror.css';
+@import 'prosemirror-tables/style/tables.css';
+@import '@milkdown/crepe/theme/common/reset.css';
+@import '@milkdown/crepe/theme/common/code-mirror.css';
+@import '@milkdown/crepe/theme/common/list-item.css';
+@import '@milkdown/crepe/theme/common/table.css';

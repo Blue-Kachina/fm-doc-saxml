@@ -508,10 +508,7 @@ def viewer(docs):
         errors: list[str] = []
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.goto((docs / "index.html").as_uri())
-        try:
-            page.wait_for_selector("body[data-rendered]", timeout=60000)
-        except Exception as exc:  # the renderer comes from a CDN
-            pytest.skip(f"viewer didn't render (offline?): {exc}")
+        page.wait_for_selector("body[data-rendered]", timeout=60000)
         yield page, errors
         browser.close()
 

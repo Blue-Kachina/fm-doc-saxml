@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -56,6 +57,22 @@ def test_build_with_html_covers_every_markdown_page(tmp_path):
         source = (out / path).read_text(encoding="utf-8")
         assert source.endswith(body)
         assert not body.startswith("---")  # frontmatter is passed separately, not rendered
+
+
+def test_viewer_bundles_its_renderer_and_loads_nothing_remote(tmp_path):
+    out = _build(tmp_path, "--html")
+    vendor = out / VIEWER_DIR / "vendor"
+    assert {p.name for p in vendor.iterdir()} == {"crepe.js", "crepe.css", "nord.css", "nord-dark.css",
+                                                   "THIRD_PARTY_LICENSES.txt"}
+    page = (out / "index.html").read_text(encoding="utf-8")
+    assert "import(" not in page and "esm.sh" not in page and "jsdelivr" not in page
+    refs = re.findall(r'<(?:script|link)\b[^>]*\b(?:src|href)="([^"]+)"', page)
+    assert len(refs) == 5
+    for ref in refs:
+        assert (out / ref).is_file(), ref  # every script and stylesheet is a file next to the page
+    # The bundle fetches nothing itself either (its only URLs are XML namespaces and doc links).
+    bundle = (vendor / "crepe.js").read_text(encoding="utf-8") + (vendor / "crepe.css").read_text(encoding="utf-8")
+    assert not re.search(r"""import\(\s*["'`]|@import|url\(\s*["']?(?:https?:)?//""", bundle)
 
 
 def test_sidebar_sections_follow_root_index(tmp_path):

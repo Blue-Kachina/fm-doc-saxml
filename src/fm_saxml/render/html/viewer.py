@@ -3,8 +3,9 @@
 Browsers block fetch() and local ES modules on file:// pages, so the viewer can't
 read the .md files itself. Instead each page is copied into a small classic script
 (``_viewer/pages/pNNNNN.js``) that the viewer loads on demand with a ``<script>``
-tag, which file:// does allow. The Markdown is rendered by Milkdown Crepe, loaded
-from a CDN.
+tag, which file:// does allow. The Markdown is rendered by Milkdown Crepe, bundled
+into ``_viewer/vendor/`` (built by viewer-vendor/ in the repo) so the viewer needs
+no network.
 """
 
 from __future__ import annotations
@@ -17,9 +18,12 @@ from importlib import resources
 from pathlib import Path
 from urllib.parse import unquote
 
-from ...utils.file_writer import write_text
+from ...utils.file_writer import write_bytes, write_text
 
 VIEWER_DIR = "_viewer"
+VENDOR_DIR = "vendor"
+# The bundled renderer (package data in ./vendor), copied as-is into _viewer/vendor/.
+_VENDOR_FILES = ("crepe.js", "crepe.css", "nord.css", "nord-dark.css", "THIRD_PARTY_LICENSES.txt")
 
 _FRONTMATTER_RE = re.compile(r"\A---\r?\n(.*?)\r?\n---\r?\n", re.DOTALL)
 _HEADING_RE = re.compile(r"^#\s+(.+)$", re.MULTILINE)
@@ -89,6 +93,9 @@ def render_html_viewer(output_dir: Path, webmcp_files: list[dict] | None = None,
         webmcp_tag = f'<script src="{VIEWER_DIR}/webmcp.js"></script>'
         write_text(output_dir / "llms.txt", _llms_txt(title, webmcp_files, _TOOL_NAME_RE.findall(script)))
     write_text(output_dir / VIEWER_DIR / "manifest.js", f"FMDocs.manifest({_js_literal(manifest)});\n")
+    vendor = resources.files(__package__).joinpath(VENDOR_DIR)
+    for name in _VENDOR_FILES:
+        write_bytes(output_dir / VIEWER_DIR / VENDOR_DIR / name, vendor.joinpath(name).read_bytes())
 
     template = templates.joinpath("index.html").read_text(encoding="utf-8")
     page = template.replace("{{TITLE}}", html.escape(title)).replace("<!--WEBMCP-->", webmcp_tag)

@@ -9,8 +9,8 @@ fm-saxml build ./MySolution.xml --html
 `--html` adds `index.html` to the output folder. Double-click it to browse the documentation in any modern browser, with a sidebar, page filter, breadcrumbs and working links between pages. It runs straight from disk, so no web server is needed.
 
 - Browsers don't let a page opened from disk read other files, so each Markdown page is also written as a small script under `_viewer/pages/` (one per page). That's why it's opt-in.
-- The Markdown is rendered with [Milkdown Crepe](https://milkdown.dev/), loaded from a CDN (esm.sh and jsDelivr). Viewing needs internet access, at least until the browser has cached it. The `.md` files are unchanged and still work on their own.
-- Calculations are written as ` ```filemaker ` code blocks, and the viewer highlights them with FileMaker calculation syntax via [fmscriptui](https://github.com/Blue-Kachina/fmscriptui). If that can't load, calculations still show, just without highlighting.
+- The Markdown is rendered with [Milkdown Crepe](https://milkdown.dev/), bundled into `_viewer/vendor/` (about 1.7 MB, with its licence notices). The viewer makes no network requests, so it works offline. The `.md` files are unchanged and still work on their own.
+- Calculations are written as ` ```filemaker ` code blocks, and the viewer highlights them with FileMaker calculation syntax via [fmscriptui](https://github.com/Blue-Kachina/fmscriptui). Other code blocks show without highlighting.
 - Keep `index.html` and `_viewer/` together if you move or zip the folder.
 
 ## Agent-ready HTML (`--webmcp`)

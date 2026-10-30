@@ -193,6 +193,15 @@ def test_guard_finds_a_value_in_a_viewer_script(tmp_path):
     assert [leak.placeholder for leak in leaks] == ["[REDACTED:password#1]"]
 
 
+def test_guard_skips_the_bundled_renderer(tmp_path):
+    # Third-party code, never solution data: a short value that happens to be in it isn't a leak.
+    (tmp_path / VIEWER_DIR / "vendor").mkdir(parents=True)
+    (tmp_path / VIEWER_DIR / "vendor" / "crepe.js").write_text("var admin=1;", encoding="utf-8")
+    (tmp_path / VIEWER_DIR / "manifest.js").write_text("var admin=1;", encoding="utf-8")
+    leaks = guard_output(tmp_path, {"admin": "[REDACTED:password#1]"})
+    assert [leak.path.name for leak in leaks] == ["manifest.js"]
+
+
 # ---------------------------------------------------------------------------
 # Effective access
 # ---------------------------------------------------------------------------
@@ -306,10 +315,7 @@ def viewer(tmp_path_factory):
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.add_init_script(_STUB)
         page.goto((out / "index.html").as_uri())
-        try:
-            page.wait_for_selector("body[data-rendered]", timeout=60000)
-        except Exception as exc:  # the renderer comes from a CDN
-            pytest.skip(f"viewer didn't render (offline?): {exc}")
+        page.wait_for_selector("body[data-rendered]", timeout=60000)
         yield page, out, errors
         browser.close()
 

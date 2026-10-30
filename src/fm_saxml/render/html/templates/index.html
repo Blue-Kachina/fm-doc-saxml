@@ -4,19 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{TITLE}}</title>
-<!--
-  Crepe's theme/common/style.css can't be linked directly: its partials @import bare
-  npm specifiers ('@milkdown/kit/prose/...') that only a bundler resolves. Link the
-  partials a read-only viewer needs, plus those bare imports at their real CDN paths.
--->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prosemirror-view@1.41.3/style/prosemirror.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prosemirror-tables@1.8.1/style/tables.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@milkdown/crepe@7.22.1/lib/theme/common/reset.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@milkdown/crepe@7.22.1/lib/theme/common/code-mirror.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@milkdown/crepe@7.22.1/lib/theme/common/list-item.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@milkdown/crepe@7.22.1/lib/theme/common/table.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@milkdown/crepe@7.22.1/lib/theme/nord/style.css" media="(prefers-color-scheme: light)">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@milkdown/crepe@7.22.1/lib/theme/nord-dark/style.css" media="(prefers-color-scheme: dark)">
+<!-- The bundled renderer (Milkdown Crepe 7.22.1; see _viewer/vendor/THIRD_PARTY_LICENSES.txt). -->
+<link rel="stylesheet" href="_viewer/vendor/crepe.css">
+<link rel="stylesheet" href="_viewer/vendor/nord.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="_viewer/vendor/nord-dark.css" media="(prefers-color-scheme: dark)">
 <style>
 /* ---- Viewer chrome ---------------------------------------------------- */
 :root {
@@ -244,6 +235,7 @@ window.FMDocs = {
 };
 </script>
 <script src="_viewer/manifest.js"></script>
+<script src="_viewer/vendor/crepe.js" defer></script>
 <!--WEBMCP-->
 </head>
 <body>
@@ -259,14 +251,6 @@ window.FMDocs = {
     <div id="content"><div class="message">Loading viewer…</div></div>
 </main>
 <script type="module">
-// deps pin: npm's codemirror@6.65.7 is a mis-published v5 build that ^6.0.1 would pick up.
-const CREPE_URL = 'https://esm.sh/@milkdown/crepe@7.22.1?deps=codemirror@6.0.2';
-// ```filemaker fences (calculations) highlight via fmscriptui's CodeMirror language. esm.sh resolves its
-// @codemirror/language peer to the same module instance Crepe uses, which the Language facet requires.
-const CM_LANGUAGE_URL = 'https://esm.sh/@codemirror/language@^6.0.0';
-const CM_LANGUAGE_DATA_URL = 'https://esm.sh/@codemirror/language-data@^6.3.1';
-const FM_CALC_URL = 'https://esm.sh/gh/Blue-Kachina/fmscriptui@v0.4.0/src/filemaker-codemirror.js';
-
 const $ = (id) => document.getElementById(id);
 const content = $('content');
 const data = window.FMDocs.data;
@@ -283,30 +267,22 @@ if (!data) {
     throw new Error('manifest missing');
 }
 
-let Crepe;
-try {
-    ({ Crepe } = await import(CREPE_URL));
-} catch (err) {
-    showMessage(`Could not load the Markdown renderer from the CDN (<code>${esc(CREPE_URL)}</code>).<br>`
-        + 'This viewer needs an internet connection. The <code>.md</code> files in this folder can still be opened directly.'
-        + `<br><small>${esc(err && err.message)}</small>`);
-    throw err;
+// _viewer/vendor/crepe.js (a classic script, loaded in <head>) sets window.FMVendor.
+const vendor = window.FMVendor;
+if (!vendor) {
+    showMessage('Could not load the Markdown renderer, <code>_viewer/vendor/crepe.js</code>. '
+        + 'Keep <code>index.html</code> next to its <code>_viewer</code> folder. '
+        + 'The <code>.md</code> files in this folder can still be opened directly.');
+    throw new Error('renderer missing');
 }
+const { Crepe } = vendor;
 
-// Best-effort: without it, calculations still render, just unhighlighted.
-let codeLanguages = null;
-try {
-    const [{ LanguageDescription }, { languages }] = await Promise.all([
-        import(CM_LANGUAGE_URL), import(CM_LANGUAGE_DATA_URL),
-    ]);
-    codeLanguages = [...languages, LanguageDescription.of({
-        name: 'FileMaker',
-        alias: ['filemaker', 'fmfn'],
-        load: () => import(FM_CALC_URL).then((m) => m.filemakerCalc()),
-    })];
-} catch (err) {
-    console.warn('FileMaker calculation highlighting unavailable:', err);
-}
+// ```filemaker fences (calculations) highlight via fmscriptui's CodeMirror language.
+const codeLanguages = [vendor.LanguageDescription.of({
+    name: 'FileMaker',
+    alias: ['filemaker', 'fmfn'],
+    load: async () => vendor.filemakerCalc(),
+})];
 
 // ---- Paths & routing -------------------------------------------------------
 const byPath = new Map(data.pages.map((p) => [p.p, p]));
@@ -433,7 +409,7 @@ const features = {};
 for (const name of ['Placeholder', 'Latex', 'Toolbar', 'BlockEdit', 'LinkTooltip', 'ImageBlock', 'Cursor', 'TopBar', 'AI']) {
     if (Crepe.Feature[name] !== undefined) features[Crepe.Feature[name]] = false;
 }
-const featureConfigs = codeLanguages ? { [Crepe.Feature.CodeMirror]: { languages: codeLanguages } } : {};
+const featureConfigs = { [Crepe.Feature.CodeMirror]: { languages: codeLanguages } };
 
 function renderHead(path, page) {
     const parts = path.split('/');

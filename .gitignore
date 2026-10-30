@@ -20,3 +20,6 @@ saxml2doc/
 _*.txt
 _ddr_*.py
 samples/has_indirection/
+
+# Viewer bundle build (viewer-vendor/); its output in src/.../html/vendor is tracked
+node_modules/

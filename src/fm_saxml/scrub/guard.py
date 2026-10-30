@@ -16,6 +16,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable, Optional
 
+from ..render.html.viewer import VENDOR_DIR, VIEWER_DIR
+
 # .js: the --html viewer copies every page, and --webmcp the model data, into scripts under _viewer/.
 LEAK_LIMIT = 50  # per scan: enough to show what leaked and where
 _TEXT_SUFFIXES = {".md", ".json", ".txt", ".html", ".js", ".csv", ".xml", ".yaml", ".yml"}
@@ -114,8 +116,14 @@ def guarded_files(target: Path) -> list[Path]:
     if target.is_file():
         return [target]
     if target.is_dir():
-        return [p for p in sorted(target.rglob("*")) if p.is_file() and p.suffix.lower() in _TEXT_SUFFIXES]
+        return [p for p in sorted(target.rglob("*"))
+                if p.is_file() and p.suffix.lower() in _TEXT_SUFFIXES and not _is_vendor(p, target)]
     return []
+
+
+def _is_vendor(path: Path, root: Path) -> bool:
+    """The viewer's bundled renderer: fixed third-party code, never solution data (and big)."""
+    return path.relative_to(root).parts[:2] == (VIEWER_DIR, VENDOR_DIR)
 
 
 def guard_output(target: Path, values: dict[str, str],
