@@ -73,18 +73,6 @@ The docs are written to `<input name>_docs` next to the input. Use `--out <folde
 
 Converted docs are local output: build them from your own export and don't commit them. To keep every solution in one place, set `FM_SAXML_DOCS_ROOT` (or pass `--docs-root`): each build then goes to `<docs root>/<solution>`, where tools find it with `fm_saxml.find_docs("<solution>")`. A rebuild swaps the new docs in only once they're complete.
 
-### Reading the docs from Python
-
-```python
-import fm_saxml
-
-docs = fm_saxml.load("Invoices_docs")
-docs.find("script", "post invoice")
-docs.refs_to("field:Invoices::Total")
-```
-
-See [JSON contract](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/contract.md#reading-from-python) for the rest.
-
 ### Multi-file solutions
 
 FileMaker Pro 26 can Save a Copy as XML for several files at once. Point `fm-saxml` at the folder it wrote:
@@ -95,79 +83,9 @@ fm-saxml ./SaXML_PROD_2026-10-14
 
 Each file gets its own subfolder, and references from one file into another become links between them. See [Multi-file solutions](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/multi-file.md) for the details.
 
-### Commands
+### Commands and options
 
-`fm-saxml <file>` is shorthand for `fm-saxml build <file>`.
-
-| Command | What it does |
-|---|---|
-| `build <file or folder>` | Parse the export and write the documentation (the default) |
-| `parse <file>` | Parse the export into the normalized `model.json` only |
-| `render markdown --model <model.json>` | Write documentation from a `model.json` made earlier |
-| `inspect <file or folder>` | Print entity counts and warnings without writing anything |
-| `validate <file or folder>` | Exit non-zero if the model has critical issues |
-| `diff <old> <new>` | Compare two exports and report what changed — see [Comparing exports](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/diff.md) |
-| `rename-check <file or docs folder> <name>...` | What would break if you renamed a field, script, layout, object ...: every place that names it in text — see [Names written in text](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/indirection.md#rename-check) |
-| `scrub <file>` | Write a copy of the XML with secrets redacted — see [Scrubbing](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/scrubbing.md#scrubbing-the-xml-itself-scrub) |
-| `serve <docs folder>` | Serve a `--webmcp` build at `http://127.0.0.1:8766` so browser agents get its tools |
-| `doctor` | Print environment details for bug reports |
-
-### Common options
-
-| Option | What it does |
-|---|---|
-| `--out <path>` / `-o` | Write the output somewhere other than `<input name>_docs` |
-| `--docs-root <folder>` | Write to `<folder>/<solution>` instead (also `FM_SAXML_DOCS_ROOT`); `--solution` sets the name |
-| `--force` / `-f` (or `--yes` / `-y`) | Overwrite an existing output folder without asking |
-| `--open` | Open the output folder when finished |
-| `--html` | Also write an `index.html` for browsing the docs in a web browser — see [HTML viewer](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/html-viewer.md) |
-| `--webmcp` | Make the HTML viewer agent-ready, with tools that query the solution — see [HTML viewer](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/html-viewer.md#agent-ready-html---webmcp) |
-| `--coverage` | Check that everything in the export reached the docs and write `Reports/coverage.md` |
-| `--scrub-level secrets\|standard\|strict` | How much to redact (default `secrets`) — see [Scrubbing](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/scrubbing.md) |
-| `--disable-scrubbing` | Turn secret scrubbing off |
-| `--strict` | Exit non-zero if any reference is left unresolved |
-| `--progress rich\|plain\|json` | How `build` reports progress: live bars, one line per stage and file, or JSON lines for tools (default: `rich` in a terminal, `plain` when the output is piped) — see [Progress in scripts and pipes](#progress-in-scripts-and-pipes) |
-
-Run `fm-saxml <command> --help` for every option. The [technical README](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/README_technical.md) covers the rest, including CI flags, the output layout, and known limitations.
-
-### Progress in scripts and pipes
-
-In a terminal, `build` draws live progress bars. When its output goes to a pipe or a file, the bars can't redraw, so by default it prints one line per stage and per file instead (`--progress plain`):
-
-```text
-Analyzing: 12 file(s)
-[3/12] Analyzing Invoices...
-[3/12] Analyzing Invoices (4.2s)
-Analyzing done (37.5s)
-Writing HTML viewer: 5300/21193 pages (40.1s)
-Done (52.1s)
-```
-
-A stage that counts pages or files prints how far it got at most every 5 seconds, as in the `Writing HTML viewer` line.
-
-`--progress json` prints the same events as one JSON object per line on stdout, for a program that wants to show the progress (the agentic-fm companion does). The build's other output (summaries, warnings) is still printed around them, so skip any line that isn't a JSON object with an `event` key.
-
-```json
-{"event": "file_done", "stage": "analyze", "file": "Invoices", "index": 3, "total": 12, "elapsed": 41.7, "seconds": 4.2}
-{"event": "stage_progress", "stage": "write_viewer", "file": "Accounting", "index": 1, "total": 1, "elapsed": 61.3, "done": 5300, "units": 21193, "unit": "pages"}
-```
-
-| Field | Meaning |
-|---|---|
-| `event` | `stage_start`, `file_start`, `stage_progress`, `file_done`, `stage_done`, or `done` (once, at the end of a successful build) |
-| `stage` | `read`, `scrub`, `analyze`, `write_raw`, `write_pages`, `write_viewer` or `check`, in that order (no `write_raw` with `--no-raw-xml` or `--no-include-json`, `write_viewer` only with `--html` or `--webmcp`, `check` only when scrubbing is on); `null` for `done` |
-| `file` | The export's name (its FileMaker file name) for `file_start`, `stage_progress` and `file_done`; otherwise `null`. `write_viewer` and `check` run once over the whole output, so their one file is the solution (the `--solution` name, or the file's name for a single file) |
-| `index` | This file's number in the stage, from 1; `0` for `stage_start` and `done`; `total` for `stage_done` |
-| `total` | Files in the stage (`1` for a single-file build); `0` for `done` |
-| `elapsed` | Seconds since the build started, to 0.1 |
-| `seconds` | `file_done` and `stage_done` only: how long that file or stage took |
-| `done` | `stage_progress`, and `stage_done` of `write_pages`, `write_viewer` and `check`: pages or files finished so far in the stage (the final count in `stage_done`) |
-| `units` | `stage_progress` only: how many the stage expects. `write_pages`'s is an estimate, so it may end a little above or below |
-| `unit` | With `done`: `pages` (`write_pages`, `write_viewer`: the viewer's pages are the Markdown pages) or `files` (`check`: the text files the scrubbing guard scans, none when nothing was redacted) |
-
-`stage_progress` comes at most once a second, and only when `done` has changed. `write_viewer` and `check` can take minutes on a large solution (tens of thousands of pages).
-
-A file that can't be read in a multi-file build still gets its `file_done` in `read`, and is left out of the later stages (their `total` is lower).
+`fm-saxml <file>` is shorthand for `fm-saxml build <file>`. Run `fm-saxml <command> --help` for every option. The [technical README](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/README_technical.md#cli-behaviour) lists every command and option, plus CI flags, progress output for scripts and pipes, the output layout, and known limitations.
 
 ## Documentation
 
@@ -179,7 +97,7 @@ A file that can't be read in a multi-file build still gets its `file_done` in `r
 | [Comparing exports](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/diff.md) | The `diff` command |
 | [JSON contract](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/contract.md) | `entities.json`, `references.json`, `backlinks.json`, `external-references.json`: shapes, docIds, versions and JSON Schemas, for tools that read the docs |
 | [Names written in text](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/docs/indirection.md) | `GetField`, `Set Field By Name`, `Perform Script` by name, `ExecuteSQL` ...: what breaks on rename, `Reports/indirection.md` and `rename-check` |
-| [Technical README](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/README_technical.md) | Pipeline, output layout, coverage report, development, FileMaker XML notes, known limitations |
+| [Technical README](https://github.com/Blue-Kachina/fm-doc-saxml/blob/master/README_technical.md) | Commands and options, progress output, reading the docs from Python, pipeline, output layout, coverage report, development, FileMaker XML notes, known limitations |
 
 ## License
 
