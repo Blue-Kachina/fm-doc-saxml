@@ -436,6 +436,27 @@ def test_serve_serves_the_folder_to_this_computer_only(tmp_path):
         server.server_close()
 
 
+def test_serve_moves_to_a_free_port_when_its_port_is_taken(tmp_path):
+    from fm_saxml.serve import make_server
+
+    first = make_server(tmp_path, 0)
+    port = first.server_address[1]
+    try:
+        second = make_server(tmp_path, port)
+        try:
+            assert second.server_address[1] not in (0, port)
+        finally:
+            second.server_close()
+    finally:
+        first.server_close()
+    # Once it's free again, the asked-for port is the one used.
+    third = make_server(tmp_path, port)
+    try:
+        assert third.server_address[1] == port
+    finally:
+        third.server_close()
+
+
 def test_serve_needs_a_webmcp_build(tmp_path):
     out = _build(tmp_path, "--html")
     result = runner.invoke(app, ["serve", str(out), "--no-open"])

@@ -10,6 +10,8 @@ other host name (so a web page can't reach it through DNS rebinding).
 from __future__ import annotations
 
 import http.server
+import os
+import socket
 from pathlib import Path
 
 from .render.html.viewer import VIEWER_DIR
@@ -52,6 +54,19 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         pass
 
 
+class _Server(http.server.ThreadingHTTPServer):
+    # On Windows SO_REUSEADDR lets a second socket bind a port another server is
+    # listening on, so a taken port never raises and make_server's fallback never
+    # runs. Ask for the port exclusively there instead; POSIX keeps SO_REUSEADDR so
+    # a restart isn't blocked by TIME_WAIT.
+    if os.name == "nt":
+        allow_reuse_address = False
+
+        def server_bind(self) -> None:
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+            super().server_bind()
+
+
 def make_server(docs_dir: Path, port: int = DEFAULT_PORT) -> http.server.ThreadingHTTPServer:
     """A server for ``docs_dir`` on ``port`` (0: any free port), or on a free port if that one is taken."""
     try:
@@ -64,7 +79,7 @@ def make_server(docs_dir: Path, port: int = DEFAULT_PORT) -> http.server.Threadi
 
 def _bind(docs_dir: Path, port: int) -> http.server.ThreadingHTTPServer:
     handler = type("Handler", (_Handler,), {})
-    server = http.server.ThreadingHTTPServer(
+    server = _Server(
         (HOST, port), lambda *a, **kw: handler(*a, directory=str(docs_dir), **kw))
     bound = server.server_address[1]
     handler.allowed_hosts = frozenset({f"127.0.0.1:{bound}", f"localhost:{bound}"})
