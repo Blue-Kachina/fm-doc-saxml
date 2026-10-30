@@ -106,7 +106,9 @@ def _check_ticks(events: list[dict], ticks: list[dict], stage: str, file: str) -
 
 
 def _no_rich_bars(output: str) -> None:
-    assert "━" not in output and "100%" not in output and "Wrote " not in output
+    # the summary table's heavy rules (┏━━┳ / ┡━━╇) use ━ too, wherever the console can draw them
+    bars = [ln for ln in output.splitlines() if "━" in ln and not ln.lstrip().startswith(("┏", "┡"))]
+    assert not bars and "100%" not in output and "Wrote " not in output
 
 
 def test_json_single_file(tmp_path):

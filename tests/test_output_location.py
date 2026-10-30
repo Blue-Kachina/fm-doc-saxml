@@ -215,7 +215,9 @@ def test_swap_with_a_file_held_in_the_old_folder_keeps_both(tmp_path, monkeypatc
     result = runner.invoke(app, [*BUILD, str(BAGEL), "-o", str(out)])
     assert result.exit_code == 1
     said = " ".join(result.output.split())
-    assert "Could not replace" in said and "entities.json is in use by another program" in said
+    assert "Could not replace" in said and "is in use by another program" in said
+    # a path longer than the console is folded mid-word, so match it with the whitespace gone
+    assert f"{out / 'entities.json'}isinusebyanotherprogram" in "".join(result.output.split())
     assert "the new docs are in" in said and "the previous ones are unchanged" in said
     assert sorted(p.relative_to(out) for p in out.rglob("*")) == before
     staged = out.with_name(f"{out.name}.tmp-{os.getpid()}")
@@ -232,7 +234,7 @@ def test_swap_contents_puts_everything_back_when_a_new_entry_cannot_move_in(tmp_
     _lock(monkeypatch, out, staged / "index.md")
     result = runner.invoke(app, [*BUILD, str(BAGEL), "-o", str(out)])
     assert result.exit_code == 1
-    assert "index.md is in use by another program" in " ".join(result.output.split())
+    assert f"{staged / 'index.md'}isinusebyanotherprogram" in "".join(result.output.split())
     assert sorted(p.relative_to(out) for p in out.rglob("*")) == before
     assert _siblings(out) == [staged.name]
     assert (staged / "docs.json").is_file() and (staged / "index.md").is_file()
