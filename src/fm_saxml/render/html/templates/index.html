@@ -311,8 +311,8 @@ function buildTree() {
         const parts = page.p.split('/');
         let node = root;
         let prefix = '';
-        // A layout or script nests in its FileMaker folders (page.g), whose names aren't the slugs in its path.
-        for (const dir of page.g ? [parts[0], ...page.g] : parts.slice(0, -1)) {
+        // A layout or script nests in its FileMaker folders (page.g: its section's folders, then those), whose names aren't the slugs in its path.
+        for (const dir of page.g || parts.slice(0, -1)) {
             prefix += dir + '/';
             if (!node.dirs.has(dir)) node.dirs.set(dir, { name: dir, prefix, dirs: new Map(), files: [] });
             node = node.dirs.get(dir);

@@ -70,7 +70,7 @@ def render_html_viewer(output_dir: Path, webmcp_files: list[dict] | None = None,
         )
         page = {"p": rel, "t": _page_title(path, meta, body), "f": js_name}
         if meta.get("folder"):
-            page["g"] = meta["folder"].split(" › ")  # layout/script folders: the sidebar nests the page in them
+            page["g"] = _sidebar_dirs(rel, meta)
         pages.append(page)
         if on_page is not None:
             on_page()
@@ -145,6 +145,16 @@ def _llms_txt(title: str, files: list[dict], tool_names: list[str]) -> str:
 - [Overview](index.html#/index.md)
 - Tools: {", ".join(tool_names)}
 """
+
+
+def _sidebar_dirs(rel: str, meta: dict[str, str]) -> list[str]:
+    """The sidebar folders of a layout or script page: its section's folders (``Scripts``, or ``File/Scripts`` in a
+    multi-file build), then its FileMaker folders by their real names (not the slugs in the page's path)."""
+    folders = meta["folder"].split(" › ")
+    dirs = rel.split("/")[:-1]
+    if meta.get("entityType") == "script":
+        dirs = dirs[:len(dirs) - len(folders)]  # a script's path has one directory per folder; a layout's has none
+    return [*dirs, *folders]
 
 
 def _split_frontmatter(text: str) -> tuple[dict[str, str], str]:

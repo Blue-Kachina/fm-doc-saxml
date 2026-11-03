@@ -72,3 +72,18 @@ def test_in_folder_matches_a_folder_and_what_is_below_it(viewer):
 def test_summary_shows_the_folder(viewer):
     body = _run(viewer, "query_entities", {"type": "script", "display": False})
     assert body["items"][0]["detail"] == "Utils › Old"
+
+
+# ---------------------------------------------------------------------------
+# The viewer's sidebar: folders sit under Scripts/Layouts, never directly under a file
+# ---------------------------------------------------------------------------
+
+def test_sidebar_dirs_of_layouts_and_scripts():
+    from fm_saxml.render.html.viewer import _sidebar_dirs
+
+    layout = {"entityType": "layout", "folder": "DEV › Old"}
+    script = {"entityType": "script", "folder": "Utils › Old"}
+    assert _sidebar_dirs("Layouts/Home.md", layout) == ["Layouts", "DEV", "Old"]
+    assert _sidebar_dirs("FileA/Layouts/Home.md", layout) == ["FileA", "Layouts", "DEV", "Old"]
+    assert _sidebar_dirs("Scripts/Utils/Old/Go.md", script) == ["Scripts", "Utils", "Old"]
+    assert _sidebar_dirs("FileA/Scripts/Utils/Old/Go.md", script) == ["FileA", "Scripts", "Utils", "Old"]
