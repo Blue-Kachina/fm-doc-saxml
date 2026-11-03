@@ -82,3 +82,10 @@ Reference kinds (`relationshipType`): `usesField`, `usesScript`, `triggersScript
 | 28 | Table occurrences of base table X | `query_entities({type:"tableOccurrence", where:[{field:"baseTableDocId",op:"eq",value:"table:X"}]})` |
 | 29 | Path between table occurrences A and B | `traverse({from:"to:A", to:"to:B", direction:"both", relationshipTypes:["joinsTo"]})` |
 | 30 | Everything that references file Y | `query({steps:[{from:"reference"},{where:[{field:"externalFile",op:"eq",value:"Y"}]}]})` |
+
+## Recent changes
+
+| # | Question | Call |
+|---|---|---|
+| 31 | What changed in the past 30 days? (count back from today) | `query_entities({where:[{field:"modified.timestamp",op:"gte",value:"<today minus 30 days, YYYY-MM-DD>"}], fields:["modified.timestamp","modified.accountName"], sort:{field:"modified.timestamp",desc:true}})`. No `type` searches every type; types without a modification stamp (script steps, layout objects ...) are listed in `skippedTypes` |
+| 32 | Which scripts and custom functions did account X change since a date? | `query_entities({types:["script","customFunction"], where:[{field:"modified.timestamp",op:"gte",value:"2026-10-01"},{field:"modified.accountName",op:"eq",value:"X"}]})` |

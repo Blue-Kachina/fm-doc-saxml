@@ -27,7 +27,7 @@ fm-saxml serve ./MySolution_docs                     # serve docs built earlier
 | `describe_schema` | Which entity types exist, and the fields of each that can be queried |
 | `get_solution_overview`, `get_current_page`, `get_entity` | What's in the solution, what's on screen, and everything about one entity |
 | `search_entities` | Find anything by name, or by comment, calculation or step text |
-| `query_entities` | Filter one type by its attributes ("unstored calcs that use related fields", "layout objects with a hide condition") |
+| `query_entities` | Filter one type, several (`types`) or every type by their attributes ("unstored calcs that use related fields", "layout objects with a hide condition", "everything changed since a date"), optionally sorted (`sort`). Types that lack a field in the filter are skipped and listed in `skippedTypes` |
 | `find_script_steps` | Steps by name, text, regex, script or folder, or by what they set ("every Set Field on `Invoices::Total`") |
 | `find_references` | What uses an entity, or every field of a table, and what it uses (places that name it in text are marked `byName`; `includeByName: false` leaves them out) |
 | `find_unreferenced` | Dead-code candidates: scripts, layouts, value lists, custom functions or fields nothing references |
@@ -73,4 +73,7 @@ The viewer registers its tools through `document.modelContext` (or the older `na
 
 ```js
 await FMDocs.tools.query_entities.execute({type: "field", where: [{field: "global", op: "eq", value: true}]})
+// Everything changed since a date, across every type, newest first
+await FMDocs.tools.query_entities.execute({where: [{field: "modified.timestamp", op: "gte", value: "2026-10-03"}],
+    fields: ["modified.timestamp", "modified.accountName"], sort: {field: "modified.timestamp", desc: true}})
 ```

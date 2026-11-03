@@ -68,8 +68,10 @@ def write_webmcp_data(model: DocumentModel, output_dir: str | Any, *, file_key: 
 
     counts: dict[str, int] = {}
     catalog: list[list[Any]] = []
+    keys: dict[str, list[str]] = {}  # every top-level key per type, so queries can skip types without a field
     for entity_type, records in builder.records_by_type().items():
         counts[entity_type] = len(records)
+        keys[entity_type] = sorted({k for r in records for k in r})
         _write(data_dir / f"{entity_type}.js", f"FMDocs.shard({_js_literal(key)},{_js_literal(entity_type)},"
                                               f"{_js_literal(records, compact=True)});\n")
         for r in records:
@@ -79,6 +81,7 @@ def write_webmcp_data(model: DocumentModel, output_dir: str | Any, *, file_key: 
     sites = builder.indirection_records()
     if sites:
         counts["indirectionSite"] = len(sites)
+        keys["indirectionSite"] = sorted({k for r in sites for k in r})
         _write(data_dir / "indirectionSite.js", f"FMDocs.shard({_js_literal(key)},{_js_literal('indirectionSite')},"
                                                 f"{_js_literal(sites, compact=True)});\n")
 
@@ -94,7 +97,7 @@ def write_webmcp_data(model: DocumentModel, output_dir: str | Any, *, file_key: 
         "references": len(refs["rows"]),
         "scrubbed": bool(model.scrubbing and model.scrubbing.applied),
     }
-    _write(data_dir / "catalog.js", f"FMDocs.catalog({_js_literal(key)},{_js_literal({**info, 'index': catalog}, compact=True)});\n")
+    _write(data_dir / "catalog.js", f"FMDocs.catalog({_js_literal(key)},{_js_literal({**info, 'index': catalog, 'keys': keys}, compact=True)});\n")
     return info
 
 

@@ -217,11 +217,9 @@
         const cs = where.map(compile);
         return (r) => cs.every((c) => c(r));
     }
-    function checkFields(type, where, sample) {
-        // Unknown keys are an error (listing the real ones), not a silent empty result.
-        if (!sample.length || !where) return;
-        const keys = new Set();
-        for (const r of sample.slice(0, 500)) for (const k of Object.keys(r)) keys.add(k);
+    function fieldsOf(where) {
+        // The top-level record keys a where names, leaving out the keys every record has.
+        const heads = new Set();
         const walk = (c) => {
             if (!c) return;
             if (Array.isArray(c)) return c.forEach(walk);
@@ -229,11 +227,43 @@
             if (c.all) return walk(c.all);
             if (c.not) return walk(c.not);
             const head = String(c.field).split('.')[0];
-            if (!keys.has(head) && !COMMON_KEYS.has(head)) {
-                throw new ToolError(`'${type}' records have no field '${head}'.`, { validFields: [...keys].sort() });
-            }
+            if (!COMMON_KEYS.has(head)) heads.add(head);
         };
         walk(where);
+        return heads;
+    }
+    function checkFields(type, where, sample) {
+        // Unknown keys are an error (listing the real ones), not a silent empty result.
+        if (!sample.length || !where) return;
+        const keys = new Set();
+        for (const r of sample.slice(0, 500)) for (const k of Object.keys(r)) keys.add(k);
+        for (const head of fieldsOf(where)) {
+            if (!keys.has(head)) throw new ToolError(`'${type}' records have no field '${head}'.`, { validFields: [...keys].sort() });
+        }
+    }
+    async function typeKeys(type, file) {
+        // Every key the type's records have, from the catalog (no shard load). Catalogs from
+        // older builds have no key lists: fall back to a sample of the records.
+        const keys = new Set();
+        for (const { catalog } of await catalogs(file)) {
+            if (!catalog.counts[type]) continue;
+            if (!catalog.keys) {
+                for (const r of (await records(type, file)).slice(0, 500)) for (const k of Object.keys(r)) keys.add(k);
+                return keys;
+            }
+            for (const k of catalog.keys[type] || []) keys.add(k);
+        }
+        return keys;
+    }
+    function byField(field, desc) {
+        // Rows without a value go last, whichever the direction.
+        const d = desc ? -1 : 1;
+        const none = (v) => v === undefined || v === null;
+        return (a, b) => {
+            const x = getPath(a, field), y = getPath(b, field);
+            if (none(x) || none(y)) return none(x) - none(y);
+            return (x > y ? 1 : x < y ? -1 : 0) * d;
+        };
     }
     const COMMON_KEYS = new Set(['docId', 'entityType', 'name', 'path']);
 
@@ -391,16 +421,58 @@
         }, { query: true, required: ['query'] });
 
     tool('query_entities',
-        'Filters the entities of one type by their attributes, e.g. unstored calculation fields, global fields, '
-        + 'layouts based on a table occurrence, layout objects with a hide condition. Call describe_schema(type) for the fields.',
-        { type: S.type, where: S.where, file: S.file, fields: { type: 'array', items: { type: 'string' }, description: 'Also return these fields of each match.' }, limit: S.limit },
+        'Filters entities by their attributes, e.g. unstored calculation fields, global fields, '
+        + 'layouts based on a table occurrence, layout objects with a hide condition. Give one type (type), several (types), '
+        + 'or neither to search every type, e.g. everything changed since a date: '
+        + 'where [{field:"modified.timestamp",op:"gte",value:"2026-10-03"}] with sort {field:"modified.timestamp",desc:true}. '
+        + 'With several types, a type that lacks a field named in where is skipped and listed in skippedTypes. '
+        + 'Call describe_schema(type) for the fields. To find entities by name, use search_entities: it is instant and needs no type.',
+        { type: S.type, types: { type: 'array', items: S.type, description: 'Only these entity types (instead of type). Leave out both type and types to search every type.' },
+            where: S.where, file: S.file, fields: { type: 'array', items: { type: 'string' }, description: 'Also return these fields of each match.' },
+            sort: { type: 'object', properties: { field: { type: 'string' }, desc: { type: 'boolean' } },
+                description: 'Order matches by this field (dotted path allowed), e.g. {field: "modified.timestamp", desc: true}. Applied before limit.' },
+            limit: S.limit },
         async (args) => {
-            const recs = await records(args.type, args.file);
-            checkFields(args.type, args.where, recs);
+            if (args.type && args.types) throw new ToolError('Pass type or types, not both.', { type: args.type, types: args.types });
+            const item = (r) => itemOf(r, args.fields ? { fields: project(r, args.fields) } : null);
+            const sort = (rs) => (args.sort && args.sort.field ? [...rs].sort(byField(args.sort.field, args.sort.desc)) : rs);
             const match = compileWhere(args.where);
-            const hits = recs.filter(match).map((r) => itemOf(r, args.fields ? { fields: project(r, args.fields) } : null));
-            return page(hits, args);
-        }, { query: true, required: ['type'] });
+            if (args.type) {
+                const recs = await records(args.type, args.file);
+                checkFields(args.type, args.where, recs);
+                return page(sort(recs.filter(match)).map(item), args);
+            }
+            const want = args.types && args.types.length ? [...new Set(args.types)] : TYPES;
+            want.forEach(checkType);
+            const cats = await catalogs(args.file);
+            const targets = want.filter((t) => cats.some(({ catalog }) => catalog.counts[t]));
+            const need = fieldsOf(args.where);
+            const skipped = [];
+            const valid = new Set();
+            const hits = [];
+            for (const t of targets) {
+                const keys = await typeKeys(t, args.file);
+                keys.forEach((k) => valid.add(k));
+                const missing = [...need].filter((f) => !keys.has(f));
+                if (missing.length) { skipped.push({ type: t, missing }); continue; }
+                hits.push(...(await records(t, args.file)).filter(match));
+            }
+            if (targets.length && skipped.length === targets.length) {
+                const missing = [...new Set(skipped.flatMap((s) => s.missing))];
+                const has = missing.filter((f) => valid.has(f));
+                // Every type lacks some field; only a field no type has at all is a likely typo.
+                const none = missing.filter((f) => !valid.has(f));
+                if (none.length) throw new ToolError(`No entity type has field '${none[0]}'.`, { validFields: [...valid].sort() });
+                throw new ToolError(`No entity type has all of: ${[...need].join(', ')}.`, { fieldsFoundSeparately: has });
+            }
+            const more = {};
+            if (skipped.length) {
+                more.skippedTypes = skipped;
+                more.caveats = [`Not searched (no ${[...new Set(skipped.flatMap((s) => s.missing))].join(', ')} field): `
+                    + `${skipped.map((s) => TYPE_LABELS[s.type] || s.type).join(', ')}.`];
+            }
+            return page(sort(hits).map(item), args, more);
+        }, { query: true });
 
     tool('find_script_steps',
         'Finds script steps: by step name (e.g. "Set Field", "Perform Script on Server"), by text in the step as FileMaker '
@@ -919,9 +991,7 @@
                 });
                 grouped = true;
             } else if (op === 'sort') {
-                const f = step.sort;
-                const d = step.desc ? -1 : 1;
-                rows = [...rows].sort((a, b) => { const x = getPath(a, f), y = getPath(b, f); return (x > y ? 1 : x < y ? -1 : 0) * d; });
+                rows = [...rows].sort(byField(step.sort, step.desc));
             } else if (op === 'limit') {
                 rows = rows.slice(0, step.limit);
             }
@@ -1268,7 +1338,9 @@
             describe_schema: { type: 'field' },
             get_solution_overview: {},
             search_entities: { query: (first.table || 'table:Invoice').split(':')[1].slice(0, 4) },
-            query_entities: { type: 'field', where: [{ field: 'global', op: 'eq', value: true }] },
+            query_entities: [{ type: 'field', where: [{ field: 'global', op: 'eq', value: true }] },
+                { where: [{ field: 'modified.timestamp', op: 'gte', value: new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10) }],
+                    fields: ['modified.timestamp', 'modified.accountName'], sort: { field: 'modified.timestamp', desc: true } }],
             find_script_steps: { stepName: 'Set Field', limit: 20 },
             get_entity: { docId: sc },
             find_references: { targetType: 'field', parentDocId: t },
@@ -1305,10 +1377,9 @@
             <code>truncated</code> when there are more. In a multi-file solution, <code>file</code> narrows a call to one file.
             Script, table and layout pages add tools scoped to that page (WebMCP and JavaScript only).</p>`;
         for (const t of list) {
-            const args = ex[t.name];
             html += `<section class="fm-tool"><h3 id="tool-${esc(t.name)}"><code>${esc(t.name)}</code></h3><p>${esc(t.description)}</p>`;
             html += `<details><summary>Arguments (JSON Schema)</summary><pre>${esc(JSON.stringify(t.inputSchema, null, 1))}</pre></details>`;
-            if (args && t.name !== 'show_results') {
+            for (const args of t.name === 'show_results' ? [] : [].concat(ex[t.name] || [])) {
                 const url = resultsUrl(t.name, args, true);
                 html += `<p class="fm-muted">Example: <code>${esc(JSON.stringify(args))}</code> · <a href="${esc(url)}">open as JSON</a> · `
                     + `<a href="${esc(resultsUrl(t.name, args, false))}">open as results</a></p><pre class="fm-url">${esc(url)}</pre>`;

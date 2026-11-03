@@ -162,6 +162,19 @@ def test_batch_writes_one_data_folder_per_file(tmp_path):
                 assert (out / path).exists(), (doc_id, path)
 
 
+def test_catalog_lists_every_key_of_every_type(tmp_path):
+    # From all records, not a sample, so query_entities can skip a type without loading it.
+    out = _build(tmp_path, "--webmcp")
+    _, catalog = _shard(out, "catalog")
+    assert set(catalog["keys"]) == set(catalog["counts"])
+    for entity_type in catalog["counts"]:
+        records = _shard(out, entity_type)[2]
+        assert catalog["keys"][entity_type] == sorted({k for r in records for k in r}), entity_type
+    assert {"modified", "name", "dataType"} <= set(catalog["keys"]["field"])
+    assert "modified" not in catalog["keys"]["scriptStep"]
+    assert "keys" not in _manifest(out)["webmcp"]["files"][0]
+
+
 def test_shards_cannot_break_out_of_the_script(tmp_path):
     xml = (FIXTURES / "v2_sample.xml").read_text(encoding="utf-8")
     xml = xml.replace('name="SendEmail"', 'name="Send &lt;/script&gt;&lt;script&gt;alert(1)//"')
@@ -301,10 +314,24 @@ document.modelContext = {
 """
 
 
+def _staggered(xml: Path, dest: Path) -> Path:
+    """A copy of ``xml`` whose modification stamps are one day apart, in document order."""
+    import re
+    from datetime import date, timedelta
+
+    days = iter(range(10_000))
+    text = re.sub(r'timestamp="[^"]*"',
+                  lambda m: f'timestamp="{date(2026, 1, 1) + timedelta(days=next(days))}T00:00:00"',
+                  xml.read_text(encoding="utf-8"))
+    dest.write_text(text, encoding="utf-8")
+    return dest
+
+
 @pytest.fixture(scope="module")
 def viewer(tmp_path_factory):
     sync_api = pytest.importorskip("playwright.sync_api")
-    out = _build(tmp_path_factory.mktemp("webmcp"), "--webmcp")
+    tmp = tmp_path_factory.mktemp("webmcp")
+    out = _build(tmp, "--webmcp", xml=_staggered(FIXTURES / "v2_sample.xml", tmp / "v2_staggered.xml"))
     with sync_api.sync_playwright() as p:
         try:
             browser = p.chromium.launch(channel="chrome")
@@ -572,4 +599,160 @@ def test_agents_page_lists_every_tool_with_runnable_examples(viewer):
     p.goto(example)
     p.wait_for_selector("#fm-result-json")
     assert json.loads(p.inner_text("#fm-result-json"))["total"] >= 1
+    context.close()
+
+
+# ---------------------------------------------------------------------------
+# query_entities across several types
+# ---------------------------------------------------------------------------
+
+_SINCE = {"field": "modified.timestamp", "op": "gte", "value": "2000-01-01"}
+
+# Records each data script the viewer loads; with __dropKeys set, also strips the
+# catalogs' key lists, as in data written before they existed.
+_SPY = """
+window.__loaded = [];
+const append = Node.prototype.appendChild;
+Node.prototype.appendChild = function (n) {
+    if (n && n.tagName === 'SCRIPT' && n.src) {
+        window.__loaded.push(decodeURIComponent(n.src));
+        if (window.__dropKeys && window.FMDocs && !FMDocs.__wrapped) {
+            const catalog = FMDocs.catalog;
+            FMDocs.catalog = (f, d) => { delete d.keys; catalog(f, d); };
+            FMDocs.__wrapped = true;
+        }
+    }
+    return append.call(this, n);
+};
+"""
+
+
+def _fresh_page(viewer, out: Path | None = None, drop_keys: bool = False):
+    """A new page with nothing loaded yet, so a test can see which data a call loads."""
+    page, built, _ = viewer
+    context = page.context.browser.new_context()
+    if drop_keys:
+        context.add_init_script("window.__dropKeys = true;")
+    context.add_init_script(_SPY)
+    p = context.new_page()
+    p.goto(((out or built) / "index.html").as_uri() + "#/agents")
+    p.wait_for_selector(".fm-agents h3", timeout=60000)
+    return context, p
+
+
+def _error(page, args: dict) -> dict:
+    res = page.evaluate("(a) => FMDocs.tools.query_entities.execute(a)", {**args, "display": False})
+    assert res.get("isError"), res
+    return json.loads(res["content"][0]["text"])
+
+
+def test_query_entities_over_several_types(viewer):
+    page, _, _ = viewer
+    body = _run(page, "query_entities", {"types": ["script", "field", "customFunction"], "where": [_SINCE],
+                                         "fields": ["modified.timestamp"], "display": False})
+    assert {i["type"] for i in body["items"]} == {"script", "field", "customFunction"}
+    assert all(i["fields"]["modified.timestamp"] >= "2000-01-01" for i in body["items"])
+    assert "skippedTypes" not in body
+    scoped = _run(page, "query_entities", {"types": ["script", "field"], "where": [_SINCE], "file": "TestSolution",
+                                           "display": False})
+    assert scoped["total"] == len([i for i in body["items"] if i["type"] != "customFunction"])
+
+
+def test_query_entities_without_a_type_searches_every_type(viewer):
+    page, _, _ = viewer
+    body = _run(page, "query_entities", {"where": [_SINCE], "limit": 1000, "display": False})
+    assert {"table", "field", "script", "account", "theme"} <= {i["type"] for i in body["items"]}
+    skipped = {s["type"]: s["missing"] for s in body["skippedTypes"]}
+    assert skipped["scriptStep"] == ["modified"]
+    assert "Script steps" in body["caveats"][0]
+
+
+def test_query_entities_skips_types_without_the_field_and_errors_when_none_has_it(viewer):
+    page, _, _ = viewer
+    body = _run(page, "query_entities", {"types": ["field", "scriptStep"], "where": [{"field": "dataType", "op": "exists"}],
+                                         "display": False})
+    assert body["total"] >= 1 and {i["type"] for i in body["items"]} == {"field"}
+    assert body["skippedTypes"] == [{"type": "scriptStep", "missing": ["dataType"]}]
+    err = _error(page, {"where": [{"field": "nope", "op": "eq", "value": 1}]})
+    assert "nope" in err["error"] and "dataType" in err["validFields"] and "modified" in err["validFields"]
+    err = _error(page, {"type": "field", "types": ["script"], "where": [_SINCE]})
+    assert "type" in err["error"] and "types" in err["error"]
+
+
+def test_query_entities_sorts_before_the_limit(viewer):
+    page, _, _ = viewer
+    every = _run(page, "query_entities", {"where": [_SINCE], "fields": ["modified.timestamp"], "limit": 1000,
+                                          "display": False})
+    newest = sorted((i["fields"]["modified.timestamp"] for i in every["items"]), reverse=True)[:3]
+    top = _run(page, "query_entities", {"where": [_SINCE], "fields": ["modified.timestamp"], "limit": 3,
+                                        "sort": {"field": "modified.timestamp", "desc": True}, "display": False})
+    assert top["truncated"] is True
+    assert [i["fields"]["modified.timestamp"] for i in top["items"]] == newest
+    single = _run(page, "query_entities", {"type": "field", "where": [_SINCE], "fields": ["modified.timestamp"],
+                                           "sort": {"field": "modified.timestamp"}, "display": False})
+    stamps = [i["fields"]["modified.timestamp"] for i in single["items"]]
+    assert stamps == sorted(stamps) and len(set(stamps)) > 1
+
+
+def test_query_entities_does_not_load_types_it_skips(viewer):
+    context, p = _fresh_page(viewer)
+    body = json.loads(p.evaluate("FMDocs.tools.query_entities.execute({where: [{field: 'modified.timestamp', op: 'gte', "
+                                 "value: '2000-01-01'}], display: false}).then(r => r.content[0].text)"))
+    assert body["total"] >= 1
+    loaded = p.evaluate("window.__loaded")
+    assert any(s.endswith("/field.js") for s in loaded)
+    assert not any(s.endswith(("/scriptStep.js", "/layoutObject.js")) for s in loaded), loaded
+    context.close()
+
+
+def test_query_entities_works_with_catalogs_from_older_builds(viewer):
+    page, _, _ = viewer
+    args = {"where": [_SINCE], "limit": 1000, "display": False}
+    expected = _run(page, "query_entities", args)
+    context, p = _fresh_page(viewer, drop_keys=True)
+    assert p.evaluate("FMDocs.__wrapped") is True
+    body = json.loads(p.evaluate("(a) => FMDocs.tools.query_entities.execute(a).then(r => r.content[0].text)", args))
+    assert [i["docId"] for i in body["items"]] == [i["docId"] for i in expected["items"]]
+    assert body["skippedTypes"] == expected["skippedTypes"]
+    context.close()
+
+
+def test_query_entities_schema_and_agents_example(viewer):
+    page, _, _ = viewer
+    schema = page.evaluate("FMDocs.tools.query_entities.inputSchema")
+    assert {"type", "types", "sort"} <= set(schema["properties"]) and "required" not in schema
+    context, p = _fresh_page(viewer)
+    links = p.evaluate("[...document.querySelectorAll('.fm-agents a')].filter(a => a.textContent === 'open as JSON'"
+                       " && a.href.includes('query_entities')).map(a => a.href)")
+    assert len(links) == 2 and "modified.timestamp" in links[1]
+    p.goto(links[1])
+    p.wait_for_selector("#fm-result-json")
+    assert "total" in json.loads(p.inner_text("#fm-result-json"))
+    context.close()
+
+
+def test_multi_type_results_group_by_file_then_type(viewer, tmp_path):
+    if not MULTI.exists():
+        pytest.skip("multi-file sample not present")
+    out = tmp_path / "docs"
+    result = runner.invoke(app, ["build", str(MULTI), "-o", str(out), "-f", "--webmcp"])
+    assert result.exit_code == 0, result.output
+    from urllib.parse import quote
+    q = quote(json.dumps({"tool": "query_entities", "args": {"types": ["table", "field"], "where": [_SINCE]}}))
+    context, p = _fresh_page(viewer, out)
+    p.goto((out / "index.html").as_uri() + "#/results?q=" + q)
+    p.wait_for_function("document.body.dataset.rendered === 'results'", timeout=30000)
+    p.wait_for_selector("h3.fm-file", timeout=30000)
+    groups = p.evaluate("Object.fromEntries([...document.querySelectorAll('h3.fm-file')].map(h => { const g = []; "
+                        "for (let n = h.nextElementSibling; n && !n.matches('h3.fm-file'); n = n.nextElementSibling) "
+                        "if (n.matches('details.fm-group')) g.push(n.querySelector('summary').firstChild.textContent.trim()); "
+                        "return [h.textContent, g]; }))")
+    assert sorted(groups) == ["FileA", "FileB"]
+    assert all(g and set(g) <= {"Tables", "Fields"} for g in groups.values()), groups
+    assert any(len(g) == 2 for g in groups.values()), groups
+    whole = json.loads(p.evaluate("(a) => FMDocs.tools.query_entities.execute(a).then(r => r.content[0].text)",
+                                  {"types": ["table", "field"], "where": [_SINCE], "display": False}))
+    one = json.loads(p.evaluate("(a) => FMDocs.tools.query_entities.execute(a).then(r => r.content[0].text)",
+                                {"types": ["table", "field"], "where": [_SINCE], "file": "FileA", "display": False}))
+    assert {i["file"] for i in whole["items"]} == {"FileA", "FileB"} and {i["file"] for i in one["items"]} == {"FileA"}
     context.close()
