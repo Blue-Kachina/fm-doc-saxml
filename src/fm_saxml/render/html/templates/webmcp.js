@@ -161,7 +161,8 @@
             description: 'Conditions, all of which must hold. Each is {field, op, value}, {any:[conditions]} or {not:condition}. '
                 + 'field is a record key or dotted path (storage.indexed, autoEnter.type); call describe_schema for the keys. '
                 + 'ops: eq, ne, contains (case-insensitive), startsWith, regex, in, exists, missing, gt, gte, lt, lte, isEmpty. '
-                + 'On a list, eq/contains/regex hold if any element matches.',
+                + 'On a list, eq/contains/regex hold if any element matches. '
+                + 'To get what is in a layout or script folder (and the folders below it): {field:"folderPathParts",op:"inFolder",value:"Utils/Old"}.',
             items: { type: 'object' },
         },
     };
@@ -207,7 +208,12 @@
             case 'exists': return (r) => { const x = getPath(r, cond.field); return x !== undefined && x !== null && x !== false && !(Array.isArray(x) && !x.length); };
             case 'missing': return (r) => { const x = getPath(r, cond.field); return x === undefined || x === null || x === false || (Array.isArray(x) && !x.length); };
             case 'isEmpty': return (r) => { const x = getPath(r, cond.field); return x === undefined || x === null || x === '' || (Array.isArray(x) && !x.length); };
-            default: throw new ToolError(`Unknown op '${op}'.`, { validOps: ['eq', 'ne', 'contains', 'startsWith', 'regex', 'in', 'exists', 'missing', 'isEmpty', 'gt', 'gte', 'lt', 'lte'] });
+            case 'inFolder': {
+                // value: a folder as a list of names or as "A/B" or "A › B"; holds for items in it or in any folder below it
+                const want = (Array.isArray(v) ? v : String(v).split(/\s*[\/›]\s*/)).map(lower).filter(Boolean);
+                return (r) => { const x = getPath(r, cond.field); return Array.isArray(x) && want.length <= x.length && want.every((p, i) => lower(x[i]) === p); };
+            }
+            default: throw new ToolError(`Unknown op '${op}'.`, { validOps: ['eq', 'ne', 'contains', 'startsWith', 'regex', 'in', 'exists', 'missing', 'isEmpty', 'inFolder', 'gt', 'gte', 'lt', 'lte'] });
         }
         return (r) => { const x = getPath(r, cond.field); return Array.isArray(x) ? x.some(test) : test(x); };
     }
@@ -268,14 +274,16 @@
     const COMMON_KEYS = new Set(['docId', 'entityType', 'name', 'path']);
 
     // ---- Result items ---------------------------------------------------------
+    // The folders a layout or script is in, e.g. "Utils › Old"; '' at the top level. Parts are exact; the joined folderPath can't tell "A/B" from A › B.
+    const folderLabel = (r) => (r.folderPathParts && r.folderPathParts.length ? r.folderPathParts.join(' › ') : r.folderPath || '');
     function detailOf(r) {
         switch (r.entityType) {
             case 'field': return [r.dataType, r.fieldType, r.global ? 'global' : null, r.stored === false ? 'unstored' : null].filter(Boolean).join(' · ');
             case 'scriptStep': return r.text;
             case 'layoutObject': return [r.objectType, r.fieldName, r.hasHideCondition ? 'hide when: ' + r.hideCondition : null,
                 r.shownIn ? 'in ' + r.shownIn.map((c) => c.kind).join(' › ') : null].filter(Boolean).join(' · ');
-            case 'script': return r.folderPath || '';
-            case 'layout': return r.baseTableOccurrence ? 'on ' + r.baseTableOccurrence : '';
+            case 'script': return folderLabel(r);
+            case 'layout': return [r.baseTableOccurrence ? 'on ' + r.baseTableOccurrence : null, folderLabel(r)].filter(Boolean).join(' · ');
             case 'tableOccurrence': return r.baseTable ? 'of ' + r.baseTable : '';
             case 'account': return [r.accountType, r.privilegeSetName, r.enabled === false ? 'disabled' : null].filter(Boolean).join(' · ');
             case 'customFunction': return r.parameters ? `(${r.parameters.join('; ')})` : '';

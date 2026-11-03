@@ -76,7 +76,7 @@ class LinkResolver:
             self._title_by_doc_id[e.doc_id] = e.name
 
         for e in em.scripts.values():
-            p = script_path(e.name, e.folder_path)
+            p = script_path(e.name, e.folder_path, e.folder_path_parts)
             self._path_by_doc_id[e.doc_id] = p
             self._title_by_doc_id[e.doc_id] = e.name
 

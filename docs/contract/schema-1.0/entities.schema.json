@@ -1962,6 +1962,13 @@
           "default": null,
           "title": "Folderpath"
         },
+        "folderPathParts": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Folderpathparts",
+          "type": "array"
+        },
         "width": {
           "anyOf": [
             {
@@ -3241,6 +3248,13 @@
           ],
           "default": null,
           "title": "Folderpath"
+        },
+        "folderPathParts": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Folderpathparts",
+          "type": "array"
         },
         "runWithFullAccess": {
           "anyOf": [

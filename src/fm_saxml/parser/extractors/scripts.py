@@ -42,13 +42,13 @@ def extract_scripts(
             steps_map[sc_id] = steps
 
     results = []
-    _walk_script_folder(catalog, folder_path="", results=results, steps_map=steps_map)
+    _walk_script_folder(catalog, folder_parts=[], results=results, steps_map=steps_map)
     return results
 
 
 def _walk_script_folder(
     elem: etree._Element,
-    folder_path: str,
+    folder_parts: list[str],
     results: list[dict[str, Any]],
     steps_map: dict[str, list] | None = None,
 ) -> None:
@@ -75,22 +75,18 @@ def _walk_script_folder(
                 continue
             if is_folder == "true":
                 name = attr(child, "name", "Name")
-                base = "/".join(p for p in [folder_path, *open_folders] if p)
-                sub_path = f"{base}/{name}".lstrip("/")
                 if any(_local(c.tag) == "Script" for c in child if isinstance(c.tag, str)):
-                    _walk_script_folder(child, sub_path, results, steps_map)  # nested form
+                    _walk_script_folder(child, [*folder_parts, *open_folders, name], results, steps_map)  # nested form
                 else:
                     open_folders.append(name)
                 continue
-            path = "/".join(p for p in [folder_path, *open_folders] if p)
-            results.append(_parse_script(child, path, steps_map or {}))
+            results.append(_parse_script(child, [*folder_parts, *open_folders], steps_map or {}))
         elif local in ("ScriptFolder", "Folder", "Group"):
             folder_name = attr(child, "name", "Name")
-            sub_path = f"{folder_path}/{folder_name}".lstrip("/")
-            _walk_script_folder(child, sub_path, results, steps_map)
+            _walk_script_folder(child, [*folder_parts, folder_name] if folder_name else folder_parts, results, steps_map)
 
 
-def _parse_script(elem: etree._Element, folder_path: str, steps_map: dict[str, list]) -> dict[str, Any]:
+def _parse_script(elem: etree._Element, folder_parts: list[str], steps_map: dict[str, list]) -> dict[str, Any]:
     sc_id = attr(elem, "id", "ID")
 
     # v1: steps live in a <StepList> child of the <Script> element
@@ -107,7 +103,8 @@ def _parse_script(elem: etree._Element, folder_path: str, steps_map: dict[str, l
         "id": sc_id,
         "name": attr(elem, "name", "Name"),
         "uuid": uuid_of(elem),
-        "folder_path": folder_path or None,
+        "folder_parts": [p for p in folder_parts if p],
+        "folder_path": "/".join(p for p in folder_parts if p) or None,
         "steps": steps,
         "options": _script_options(elem),
         "modified": modification_info(elem),

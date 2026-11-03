@@ -4,6 +4,10 @@
 
 ### Added
 
+- Layouts and scripts say which folders they are in. `entities.json` has `folderPathParts` on each (one item per folder, outermost first, `[]` at the top level) next to `folderPath`, which joins them with `/` and can't tell a folder called `A/B` from `A` > `B`. Older builds are read as before: the parts are taken from `folderPath`. This is a minor addition to contract 1.0.
+- Markdown: a layout or script in a folder has a breadcrumb under its title (`Scripts › Utils › Old › Name`) that links to each folder's section in the index. The Layouts and Scripts indexes are grouped by folder when any exist: a contents list, then a heading per folder (`## Utils`, `### Utils › Old`), unfiled items first. A solution without folders keeps its flat index.
+- The HTML viewer's sidebar nests layouts in their folders too (scripts already were), using the folders' real names. The pages carry a `folder:` line in their front matter for this.
+- WebMCP: layouts and scripts have `folderPathParts`, script steps have `scriptFolderParts`, and layout objects have `layoutFolder` and `layoutFolderParts`. A new `inFolder` op for `where` matches a folder and everything below it: `{field:"folderPathParts", op:"inFolder", value:"Utils/Old"}` (a list of names or `A › B` also work). Result lines for layouts and scripts show the folder.
 - WebMCP `query_entities` takes a `types` argument (several entity types) and, with neither `type` nor `types`, searches every type, so "everything changed since a date" is one call and one results link. A type that lacks a field named in `where` is skipped and listed in `skippedTypes` (with a caveat on the results page); a field no type has is still an error listing the valid fields. A new `sort` argument (`{field, desc}`) orders matches before `limit` applies. The viewer's catalogs now list every field of each type, so skipped types are never loaded. The `#/agents` page has a "changed in the past 30 days" example.
 - `build --progress rich|plain|json`. `plain` prints one line per stage and per file (`[3/12] Analyzing Invoices (4.2s)`); `json` prints one JSON object per line (`event`, `stage`, `file`, `index`, `total`, `elapsed`, and `seconds` when a file or stage ends), for tools that show a build's progress. Without the flag, a terminal still gets the Rich bars, and a pipe or file now gets `plain` lines instead of the bars' final state. The fields are in the README, under "Progress in scripts and pipes".
 - `build --progress` reports two more stages, after `write_pages`: `write_viewer` (Writing HTML viewer, with `--html` or `--webmcp`) and `check` (Checking redactions: the scrubbing guard, when scrubbing is on). On a large solution they took minutes with no sign of life. Each has a Rich bar with its pages or files.
@@ -11,6 +15,7 @@
 
 ### Changed
 
+- The Scripts index's second column is now the step count; it used to repeat the folder, which the folder headings now show.
 - `fm-saxml serve`, and `--serve` on `build`/`render`, now use port **8766** by default instead of 8765. The agentic-fm companion server also defaults to 8765, so the two used to clash. To keep the old port, pass `--port 8765`. As before, if the port is taken, a free one is used.
 - The scrubbing guard now checks a build's docs *before* they replace the previous ones. When it fails, the previous docs are kept and the rejected ones are left in `<folder>.tmp-<pid>`. Its message groups the leaks by value, and says when a value is also an object's name.
 - Scrub engine version 6: a `model.json` saved by an earlier version is scrubbed again when rendered.
@@ -18,6 +23,7 @@
 
 ### Fixed
 
+- If an export holds a layout folder's layouts as child elements (rather than as siblings), those layouts were left out of the docs, and layouts under a `Folder`, `Group` or `LayoutFolder` wrapper were filed at the top level. Both are now read with their folders.- A script folder whose name contains `/` is one folder in the file paths, not two.
 - Windows: `fm-saxml serve` and `--serve` could start on a port another server was already listening on, instead of moving to a free one, so either server might answer. The port is now bound exclusively on Windows.
 - A `<Function Missing>` argument that names an object in the solution, such as `<Function Missing> ( "SlidingDrawer" )` inside the custom function SlidingDrawer, is no longer redacted as a secret. The redaction could never be complete, since names are never rewritten, so the guard stopped the build (exit 2). Such values are now listed under "Needs review". This holds across files in a multi-file build, and for the strict level's high-entropy rule and comment prose too. Rules with real evidence (a password parameter, a Crypt key, a `$password = "…"` assignment) still redact, and still stop the build if the value is also a name.
 - `<Function Missing>` arguments that are MIME types, plain HTTP headers (`Content-Type: …`), plugin commands (`SMTP-SetBody`), on/off or numeric options (`ssl=true`) and mode keywords (`html`) are no longer redacted.

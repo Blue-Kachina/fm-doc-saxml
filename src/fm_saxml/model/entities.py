@@ -304,6 +304,7 @@ class LayoutEntity(BaseModel):
     theme_uuid: Optional[str] = Field(None, alias="themeUuid")
     theme_base: Optional[str] = Field(None, alias="themeBase")  # <LayoutThemeReference Base>: the theme it derives from
     folder_path: Optional[str] = Field(None, alias="folderPath")  # layout folder(s), e.g. "DEV/Old"
+    folder_path_parts: list[str] = Field(default_factory=list, alias="folderPathParts")  # one item per folder, outermost first
     width: Optional[int] = None  # points
     grid_style: Optional[int] = Field(None, alias="gridStyle")  # <GridStyle><Style>, FileMaker's number
     client_type: Optional[int] = Field(None, alias="clientType")  # <ClientType>, FileMaker's number
@@ -442,6 +443,7 @@ class ScriptEntity(BaseModel):
     fmp_id: str = Field(alias="fmpId")
     uuid: Optional[str] = None
     folder_path: Optional[str] = Field(None, alias="folderPath")
+    folder_path_parts: list[str] = Field(default_factory=list, alias="folderPathParts")  # one item per folder, outermost first
     run_with_full_access: Optional[bool] = Field(None, alias="runWithFullAccess")
     show_in_menu: Optional[bool] = Field(None, alias="showInMenu")  # "Include in menu" (Scripts menu)
     siri_shortcut: Optional[bool] = Field(None, alias="siriShortcut")

@@ -2,11 +2,14 @@
 docId: {{ entity.doc_id }}
 entityType: script
 name: {{ entity.name }}
----
+{% if folder_label %}folder: {{ folder_label }}
+{% endif %}---
 
 # Script: {{ entity.name }}
 
-## Metadata
+{% if folder_breadcrumb %}{{ folder_breadcrumb }}
+
+{% endif %}## Metadata
 
 | Name | Value |
 |---|---|

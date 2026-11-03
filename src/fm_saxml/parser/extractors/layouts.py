@@ -30,13 +30,13 @@ def extract_layouts(database_elem: etree._Element, chunk_lists: ChunkLists | Non
         return []
 
     results: list[dict[str, Any]] = []
-    _walk_layout_catalog(catalog, "", results, chunk_lists)
+    _walk_layout_catalog(catalog, [], results, chunk_lists)
     return results
 
 
 def _walk_layout_catalog(
     elem: etree._Element,
-    folder_path: str,
+    folder_parts: list[str],
     results: list[dict[str, Any]],
     chunk_lists: ChunkLists | None = None,
 ) -> None:
@@ -52,7 +52,10 @@ def _walk_layout_catalog(
         if not isinstance(child.tag, str):
             continue
         if _local(child.tag) != "Layout":
-            _walk_layout_catalog(child, folder_path, results, chunk_lists)  # wrapper elements (older formats)
+            wrapper = attr(child, "name", "Name") if _local(child.tag) in ("LayoutFolder", "Folder", "Group") else ""
+            # wrapper elements (older formats); folder-like ones name a folder
+            _walk_layout_catalog(child, [*folder_parts, *open_folders, wrapper] if wrapper else [*folder_parts, *open_folders],
+                                 results, chunk_lists)
             continue
         is_folder = attr(child, "isFolder", "IsFolder").lower()
         if attr(child, "isSeparatorItem", "IsSeparatorItem").lower() == "true":
@@ -62,10 +65,15 @@ def _walk_layout_catalog(
                 open_folders.pop()
             continue
         if is_folder == "true":
-            open_folders.append(attr(child, "name", "Name"))
+            name = attr(child, "name", "Name")
+            if any(isinstance(c.tag, str) and _local(c.tag) == "Layout" for c in child):
+                _walk_layout_catalog(child, [*folder_parts, *open_folders, name], results, chunk_lists)  # nested form
+            else:
+                open_folders.append(name)
             continue
         layout = _parse_layout(child, chunk_lists)
-        layout["folder_path"] = "/".join(p for p in [folder_path, *open_folders] if p) or None
+        layout["folder_parts"] = [p for p in [*folder_parts, *open_folders] if p]
+        layout["folder_path"] = "/".join(layout["folder_parts"]) or None
         results.append(layout)
 
 

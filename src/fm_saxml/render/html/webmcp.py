@@ -29,6 +29,7 @@ from typing import Any, Callable, Optional
 from ...analyze.access import build_access
 from ...model.document_model import DocumentModel
 from ...utils.file_writer import write_text
+from ..markdown.folders import entity_folder_parts
 from ..markdown.link_resolver import LinkResolver
 from .viewer import VIEWER_DIR, _js_literal
 
@@ -246,7 +247,15 @@ def _derive_field(b: _Builder, e: Any, r: dict[str, Any]) -> None:
     r["hasValidation"] = e.validation is not None
 
 
+def _fill_folder(e: Any, r: dict[str, Any]) -> None:
+    """Parts on every layout and script row, also for a model saved before ``folderPathParts``."""
+    parts = entity_folder_parts(e)
+    if parts:
+        r["folderPathParts"] = parts
+
+
 def _derive_layout(b: _Builder, e: Any, r: dict[str, Any]) -> None:
+    _fill_folder(e, r)
     r["baseTableOccurrence"] = b.name(e.base_table_occurrence_doc_id)
     r["objectCount"] = len(e.layout_objects)
     r["triggerEvents"] = [t.event for t in e.script_triggers]
@@ -255,6 +264,10 @@ def _derive_layout(b: _Builder, e: Any, r: dict[str, Any]) -> None:
 def _derive_layout_object(b: _Builder, e: Any, r: dict[str, Any]) -> None:
     em = b.model.entities
     r["layoutName"] = b.name(e.layout_doc_id)
+    layout = em.layouts.get(e.layout_doc_id)
+    if layout is not None and entity_folder_parts(layout):
+        r["layoutFolder"] = " › ".join(entity_folder_parts(layout))
+        r["layoutFolderParts"] = entity_folder_parts(layout)
     r["label"] = e.name or e.raw_text or None
     roles: dict[str, str] = {}
     for c in e.calculations:
@@ -288,14 +301,16 @@ def _derive_layout_object(b: _Builder, e: Any, r: dict[str, Any]) -> None:
 
 
 def _derive_script(b: _Builder, e: Any, r: dict[str, Any]) -> None:
+    _fill_folder(e, r)
     r["stepCount"] = len(e.steps)
 
 
 def _derive_step(b: _Builder, e: Any, r: dict[str, Any]) -> None:
     script = b.model.entities.scripts.get(e.script_doc_id)
     r["scriptName"] = script.name if script else b.name(e.script_doc_id)
-    if script is not None and script.folder_path:
-        r["scriptFolder"] = script.folder_path
+    if script is not None and entity_folder_parts(script):
+        r["scriptFolder"] = script.folder_path or "/".join(entity_folder_parts(script))
+        r["scriptFolderParts"] = entity_folder_parts(script)
     r["stepNumber"] = e.index + 1
     r["text"] = e.fm_text or e.raw_text or e.name
     r.pop("rawText", None)

@@ -17,6 +17,7 @@ from ...parser.coverage import CONTEXTS as COVERAGE_CONTEXTS
 from ...normalize.paths import relative_md_link
 from ...utils.file_writer import write_text
 from .by_name import ByNameIndex
+from .folders import SEP, breadcrumb, build_folder_tree, contents_lines, entity_folder_parts, section_lines
 from .link_resolver import LinkResolver, _encode_href, _esc as _esc_link_label, _relative
 
 
@@ -387,10 +388,13 @@ def _render_layouts(model: DocumentModel, output_dir: Path, env: Environment, li
         extra_col_fn=lambda e: links.title_for(e.base_table_occurrence_doc_id or "") if e.base_table_occurrence_doc_id else "",
         index_path="Layouts/index.md",
         links=links,
+        by_folder=True,
     )
     for entity in entities:
         rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
+        ctx["folder_breadcrumb"] = breadcrumb("Layouts", "Layouts/index.md", rel_path, entity_folder_parts(entity), entity.name)
+        ctx["folder_label"] = SEP.join(entity_folder_parts(entity))
         content = tmpl.render(**ctx)
         write_text(output_dir / rel_path, content)
 
@@ -447,14 +451,17 @@ def _render_scripts(model: DocumentModel, output_dir: Path, env: Environment, li
         entities, output_dir / "Scripts" / "index.md",
         section_title="Scripts",
         entity_type_label="script",
-        extra_header="Folder",
-        extra_col_fn=lambda e: e.folder_path or "",
+        extra_header="Steps",
+        extra_col_fn=lambda e: str(len(e.steps)),
         index_path="Scripts/index.md",
         links=links,
+        by_folder=True,
     )
     for entity in entities:
         rel_path = links.path_for(entity.doc_id)
         ctx = _make_ctx(model, rel_path, links, entity)
+        ctx["folder_breadcrumb"] = breadcrumb("Scripts", "Scripts/index.md", rel_path, entity_folder_parts(entity), entity.name)
+        ctx["folder_label"] = SEP.join(entity_folder_parts(entity))
         steps = [model.entities.script_steps[d] for d in entity.steps if d in model.entities.script_steps]
         block = render_script_block(steps)
         ctx["steps_block"] = block
@@ -986,27 +993,34 @@ def _render_section_index(
     links: LinkResolver,
     sort_key=None,
     name_fn=None,
+    by_folder: bool = False,
 ) -> None:
     if sort_key is None:
         sort_key = lambda x: (getattr(x, "name", "") or "").lower()
     if name_fn is None:
         name_fn = lambda x: getattr(x, "name", "") or ""
 
+    def table(items: list) -> list[str]:
+        rows = [f"| Name | {extra_header} |", "|---|---|"]
+        for e in items:
+            # Names can hold newlines and pipes (e.g. a multi-line layout text object),
+            # which would end the table row early.
+            display_name = _md_cell(name_fn(e))
+            doc_path = links.path_for(e.doc_id)
+            if doc_path:
+                href = _relative_from_index(index_path, doc_path)
+                name_cell = f"[{_esc_link_label(name_fn(e))}]({_encode_href(href)})"
+            else:
+                name_cell = display_name
+            rows.append(f"| {name_cell} | {_md_cell(extra_col_fn(e))} |")
+        return rows
+
     lines = [f"# {section_title}", "", f"_{len(entities)} {entity_type_label}(s)_", ""]
-    lines.append(f"| Name | {extra_header} |")
-    lines.append("|---|---|")
-    for e in sorted(entities, key=sort_key):
-        # Names can hold newlines and pipes (e.g. a multi-line layout text object),
-        # which would end the table row early.
-        display_name = _md_cell(name_fn(e))
-        doc_path = links.path_for(e.doc_id)
-        if doc_path:
-            href = _relative_from_index(index_path, doc_path)
-            name_cell = f"[{_esc_link_label(name_fn(e))}]({_encode_href(href)})"
-        else:
-            name_cell = display_name
-        extra_cell = _md_cell(extra_col_fn(e))
-        lines.append(f"| {name_cell} | {extra_cell} |")
+    if by_folder and any(entity_folder_parts(e) for e in entities):
+        root = build_folder_tree(entities)
+        lines += ["## Folders", "", *contents_lines(root), "", *section_lines(root, table, sort_key)]
+    else:
+        lines += table(sorted(entities, key=sort_key))
 
     write_text(out_path, "\n".join(lines) + "\n")
 

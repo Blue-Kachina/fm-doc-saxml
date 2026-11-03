@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "generator": {
     "name": "fm-saxml-converter",
-    "version": "0.6.2"
+    "version": "0.6.13"
   },
   "source": {
     "fmpFileName": "EverythingBagel.fmp12",
@@ -557,6 +557,7 @@
       "themeUuid": "F0797BE7-8F51-B644-A07C-D838BDD53F30",
       "themeBase": "com.filemaker.theme.vibrant",
       "folderPath": null,
+      "folderPathParts": [],
       "width": 1024,
       "gridStyle": 5,
       "clientType": 3,
@@ -656,6 +657,7 @@
       "themeUuid": "3B307897-4D8B-194E-9018-D8C0DD5859AE",
       "themeBase": "com.filemaker.theme.apex_blue",
       "folderPath": null,
+      "folderPathParts": [],
       "width": 1024,
       "gridStyle": 5,
       "clientType": 3,
@@ -2161,6 +2163,7 @@
       "fmpId": "1",
       "uuid": "D8C45FAE-2DB7-5949-BDD9-9EC4E5DCDBDC",
       "folderPath": null,
+      "folderPathParts": [],
       "runWithFullAccess": false,
       "showInMenu": true,
       "siriShortcut": false,
@@ -2396,6 +2399,7 @@
       "fmpId": "2",
       "uuid": "123348D9-193B-5048-87E8-5260BA0B7BF7",
       "folderPath": null,
+      "folderPathParts": [],
       "runWithFullAccess": false,
       "showInMenu": false,
       "siriShortcut": false,

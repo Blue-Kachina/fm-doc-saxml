@@ -42,9 +42,10 @@ def layout_object_path_in(layout_dir: str, object_id: str) -> str:
     return f"LayoutObjects/{layout_dir}/{safe_slug(object_id) or 'object'}.md"
 
 
-def script_path(script_name: str, folder: str | None = None) -> str:
-    if folder:
-        parts = folder_parts(folder)
+def script_path(script_name: str, folder: str | None = None, parts: list[str] | None = None) -> str:
+    """``parts`` (one item per folder) wins over ``folder``, whose joined path can't tell ``A/B`` from ``A`` > ``B``."""
+    if folder or parts:
+        parts = [p for p in (parts or folder_parts(folder or "")) if p]
         folder_seg = "/".join(safe_slug(p) for p in parts)
         return f"Scripts/{folder_seg}/{safe_slug(script_name)}.md"
     return f"Scripts/{safe_slug(script_name)}.md"

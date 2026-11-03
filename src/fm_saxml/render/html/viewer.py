@@ -68,7 +68,10 @@ def render_html_viewer(output_dir: Path, webmcp_files: list[dict] | None = None,
             output_dir / VIEWER_DIR / "pages" / js_name,
             f"FMDocs.page({_js_literal(rel)},{_js_literal(meta)},{_js_literal(body)});\n",
         )
-        pages.append({"p": rel, "t": _page_title(path, meta, body), "f": js_name})
+        page = {"p": rel, "t": _page_title(path, meta, body), "f": js_name}
+        if meta.get("folder"):
+            page["g"] = meta["folder"].split(" › ")  # layout/script folders: the sidebar nests the page in them
+        pages.append(page)
         if on_page is not None:
             on_page()
 
