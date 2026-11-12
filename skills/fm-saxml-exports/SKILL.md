@@ -12,8 +12,7 @@ reads. Large solutions have thousands of pages; never browse them.
 
 ## Step 0: find out what you were given (30 seconds, do this first)
 
-Locate the docs folder. If you were not told, check `$FM_SAXML_DOCS_ROOT`, a sibling `<name>_docs` folder,
-or `saxml2doc/`. Then look at the top level only:
+Locate the docs folder. If you were not told, check `exports/<Solution>/`, `$FM_SAXML_DOCS_ROOT`, a sibling `<name>_docs` folder. Then look at the top level only:
 
 | You see | It means | Use |
 |---|---|---|
