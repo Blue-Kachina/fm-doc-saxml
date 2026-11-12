@@ -1,16 +1,73 @@
 {
   "$defs": {
-    "CatalogFile": {
-      "description": "One FileMaker file whose docs are under this output root.",
+    "Backlink": {
+      "description": "One incoming reference, filed under its target's docId.",
       "properties": {
-        "name": {
-          "title": "Name",
+        "sourceDocId": {
+          "title": "Sourcedocid",
           "type": "string"
         },
-        "folder": {
-          "title": "Folder",
+        "sourceEntityType": {
+          "title": "Sourceentitytype",
           "type": "string"
         },
+        "relationshipType": {
+          "title": "Relationshiptype",
+          "type": "string"
+        },
+        "role": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Role"
+        },
+        "confidence": {
+          "title": "Confidence",
+          "type": "string"
+        },
+        "via": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Via"
+        },
+        "siteDocId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sitedocid"
+        }
+      },
+      "required": [
+        "sourceDocId",
+        "sourceEntityType",
+        "relationshipType",
+        "confidence"
+      ],
+      "title": "Backlink",
+      "type": "object"
+    },
+    "ContractSource": {
+      "description": "The FileMaker file the docs describe. Never a path on the machine that built them.",
+      "properties": {
         "fmpFileName": {
           "anyOf": [
             {
@@ -84,64 +141,7 @@
           "title": "Hasddrinfo"
         }
       },
-      "required": [
-        "name",
-        "folder"
-      ],
-      "title": "CatalogFile",
-      "type": "object"
-    },
-    "CatalogPairing": {
-      "description": "A FileMaker data source of one file, and the file of this batch it names (if found).",
-      "properties": {
-        "folder": {
-          "title": "Folder",
-          "type": "string"
-        },
-        "dataSource": {
-          "title": "Datasource",
-          "type": "string"
-        },
-        "dataSourceUuid": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Datasourceuuid"
-        },
-        "targetFolder": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Targetfolder"
-        },
-        "match": {
-          "default": "",
-          "title": "Match",
-          "type": "string"
-        },
-        "reason": {
-          "default": "",
-          "title": "Reason",
-          "type": "string"
-        }
-      },
-      "required": [
-        "folder",
-        "dataSource"
-      ],
-      "title": "CatalogPairing",
+      "title": "ContractSource",
       "type": "object"
     },
     "Generator": {
@@ -171,7 +171,7 @@
       "type": "object"
     }
   },
-  "description": "docs.json at an output root: one file's docs (\"single\") or a multi-file build (\"batch\").",
+  "description": "backlinks.json: references.json inverted, ``{targetDocId: [backlink, ...]}``.",
   "properties": {
     "schemaVersion": {
       "title": "Schemaversion",
@@ -188,47 +188,26 @@
       ],
       "default": null
     },
-    "kind": {
-      "enum": [
-        "single",
-        "batch"
-      ],
-      "title": "Kind",
-      "type": "string"
+    "source": {
+      "$ref": "#/$defs/ContractSource"
     },
-    "solution": {
-      "title": "Solution",
-      "type": "string"
-    },
-    "files": {
-      "default": [],
-      "items": {
-        "$ref": "#/$defs/CatalogFile"
+    "backlinks": {
+      "additionalProperties": {
+        "items": {
+          "$ref": "#/$defs/Backlink"
+        },
+        "type": "array"
       },
-      "title": "Files",
-      "type": "array"
-    },
-    "pairings": {
-      "default": [],
-      "items": {
-        "$ref": "#/$defs/CatalogPairing"
-      },
-      "title": "Pairings",
-      "type": "array"
-    },
-    "synthesizedManifest": {
-      "default": false,
-      "title": "Synthesizedmanifest",
-      "type": "boolean"
+      "default": {},
+      "title": "Backlinks",
+      "type": "object"
     }
   },
   "required": [
-    "schemaVersion",
-    "kind",
-    "solution"
+    "schemaVersion"
   ],
-  "title": "DocsCatalog",
+  "title": "BacklinksDoc",
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "fm-saxml/contract/schema-1.0/docs.schema.json"
+  "$id": "fm-saxml/contract/schema-1.1/backlinks.schema.json"
 }

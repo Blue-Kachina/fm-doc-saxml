@@ -1,8 +1,16 @@
 {
   "$defs": {
-    "ContractSource": {
-      "description": "The FileMaker file the docs describe. Never a path on the machine that built them.",
+    "CatalogFile": {
+      "description": "One FileMaker file whose docs are under this output root.",
       "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "folder": {
+          "title": "Folder",
+          "type": "string"
+        },
         "fmpFileName": {
           "anyOf": [
             {
@@ -76,7 +84,64 @@
           "title": "Hasddrinfo"
         }
       },
-      "title": "ContractSource",
+      "required": [
+        "name",
+        "folder"
+      ],
+      "title": "CatalogFile",
+      "type": "object"
+    },
+    "CatalogPairing": {
+      "description": "A FileMaker data source of one file, and the file of this batch it names (if found).",
+      "properties": {
+        "folder": {
+          "title": "Folder",
+          "type": "string"
+        },
+        "dataSource": {
+          "title": "Datasource",
+          "type": "string"
+        },
+        "dataSourceUuid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Datasourceuuid"
+        },
+        "targetFolder": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Targetfolder"
+        },
+        "match": {
+          "default": "",
+          "title": "Match",
+          "type": "string"
+        },
+        "reason": {
+          "default": "",
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "folder",
+        "dataSource"
+      ],
+      "title": "CatalogPairing",
       "type": "object"
     },
     "Generator": {
@@ -106,7 +171,7 @@
       "type": "object"
     }
   },
-  "description": "Each optional ``raw/*.json``: the scrubbed XML of one kind of object, ``{docId: \"<element…>\"}``.",
+  "description": "docs.json at an output root: one file's docs (\"single\") or a multi-file build (\"batch\").",
   "properties": {
     "schemaVersion": {
       "title": "Schemaversion",
@@ -123,23 +188,47 @@
       ],
       "default": null
     },
-    "source": {
-      "$ref": "#/$defs/ContractSource"
+    "kind": {
+      "enum": [
+        "single",
+        "batch"
+      ],
+      "title": "Kind",
+      "type": "string"
     },
-    "xml": {
-      "additionalProperties": {
-        "type": "string"
+    "solution": {
+      "title": "Solution",
+      "type": "string"
+    },
+    "files": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CatalogFile"
       },
-      "default": {},
-      "title": "Xml",
-      "type": "object"
+      "title": "Files",
+      "type": "array"
+    },
+    "pairings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CatalogPairing"
+      },
+      "title": "Pairings",
+      "type": "array"
+    },
+    "synthesizedManifest": {
+      "default": false,
+      "title": "Synthesizedmanifest",
+      "type": "boolean"
     }
   },
   "required": [
-    "schemaVersion"
+    "schemaVersion",
+    "kind",
+    "solution"
   ],
-  "title": "RawXmlDoc",
+  "title": "DocsCatalog",
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "fm-saxml/contract/schema-1.0/raw-xml.schema.json"
+  "$id": "fm-saxml/contract/schema-1.1/docs.schema.json"
 }

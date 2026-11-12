@@ -16,6 +16,8 @@ RelationshipType = Literal[
     "usesCustomFunction",
     "usesValueList",
     "usesCustomMenu",
+    "usesTheme",
+    "derivedFrom",          # custom theme -> the theme it was made from (its CSS adds to the base's)
     "basedOnTableOccurrence",
     "basedOnBaseTable",
     "joinsTo",

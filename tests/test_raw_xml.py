@@ -20,7 +20,7 @@ from fm_saxml.render.json.writer import build_root_catalog, write_root_catalog, 
 ROOT = Path(__file__).resolve().parent.parent
 BAGEL = ROOT / "samples" / "by_type" / "whole" / "EverythingBagel.xml"
 MULTI = ROOT / "samples" / "multi_file_export" / "SaXML_no_separate_catalogue"
-SCHEMA = ROOT / "docs" / "contract" / "schema-1.0" / "raw-xml.schema.json"
+SCHEMA = ROOT / "docs" / "contract" / "schema-1.1" / "raw-xml.schema.json"
 SECRET = "hunter2-Sup3r!"
 runner = CliRunner()
 

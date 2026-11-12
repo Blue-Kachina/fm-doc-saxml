@@ -31,7 +31,7 @@ from . import __version__
 if TYPE_CHECKING:
     from .model.document_model import DocumentModel
 
-CONTRACT_VERSION: tuple[int, int] = (1, 0)
+CONTRACT_VERSION: tuple[int, int] = (1, 1)
 CONTRACT_FILES = ("entities.json", "references.json", "backlinks.json", "external-references.json")
 # At the root of every output folder (one file's docs, or a batch): what it holds. Same version.
 ROOT_CATALOG = "docs.json"

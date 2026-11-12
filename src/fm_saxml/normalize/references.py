@@ -10,10 +10,12 @@ from .ids import (
     field_doc_id,
     layout_doc_id,
     script_doc_id,
+    theme_doc_id,
     to_doc_id,
     custom_function_doc_id,
     value_list_doc_id,
 )
+from .names import normalize_name
 
 
 def resolve_references(model: DocumentModel) -> DocumentModel:
@@ -23,6 +25,7 @@ def resolve_references(model: DocumentModel) -> DocumentModel:
     _link_lookups(model)
     _link_tos_to_tables(model)
     _link_relationships(model)
+    _link_themes(model)
     _link_layouts(model)
     _link_layout_objects(model)
     _link_scripts(model)
@@ -184,6 +187,29 @@ def _link_relationships(model: DocumentModel) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Theme → the theme it derives from
+# ---------------------------------------------------------------------------
+
+def _link_themes(model: DocumentModel) -> None:
+    """A custom theme's CSS is applied on top of its base theme's, so the base matters to the result.
+
+    Only linked when the base is in the model: a built-in theme no layout uses isn't exported."""
+    for theme in model.entities.themes.values():
+        if not theme.base_name:
+            continue
+        base = theme_doc_id(normalize_name(theme.base_name))
+        if base != theme.doc_id and base in model.entities.themes:
+            model.references.append(ReferenceRecord(
+                sourceDocId=theme.doc_id,
+                sourceEntityType="theme",
+                targetDocId=base,
+                targetEntityType="theme",
+                relationshipType="derivedFrom",
+                confidence="exact",
+            ))
+
+
+# ---------------------------------------------------------------------------
 # Layout → Table Occurrence and Fields
 # ---------------------------------------------------------------------------
 
@@ -196,6 +222,16 @@ def _link_layouts(model: DocumentModel) -> None:
                 targetDocId=layout.base_table_occurrence_doc_id,
                 targetEntityType="tableOccurrence",
                 relationshipType="basedOnTableOccurrence",
+                confidence="exact",
+            ))
+        theme_doc_id_ = theme_doc_id(normalize_name(layout.theme)) if layout.theme else None
+        if theme_doc_id_ in model.entities.themes:
+            model.references.append(ReferenceRecord(
+                sourceDocId=layout.doc_id,
+                sourceEntityType="layout",
+                targetDocId=theme_doc_id_,
+                targetEntityType="theme",
+                relationshipType="usesTheme",
                 confidence="exact",
             ))
         for fd in layout.referenced_fields:

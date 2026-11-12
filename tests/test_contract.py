@@ -9,7 +9,7 @@ import pytest
 from typer.testing import CliRunner
 
 from fm_saxml.cli import _run_pipeline, app
-from fm_saxml.contract import CONTRACT_FILES, ENVELOPE_KEYS, format_version, parse_version
+from fm_saxml.contract import CONTRACT_FILES, CONTRACT_VERSION, ENVELOPE_KEYS, format_version, parse_version
 from fm_saxml.model.document_model import EntityMaps
 from fm_saxml.normalize.ids import split_scoped_doc_id
 from fm_saxml.normalize.normalize import normalize
@@ -65,7 +65,7 @@ def test_every_contract_file_has_the_same_envelope(bagel_docs):
         envelopes.append({k: doc[k] for k in ENVELOPE_KEYS})
     assert all(e == envelopes[0] for e in envelopes)
     env = envelopes[0]
-    assert env["schemaVersion"] == "1.0"
+    assert env["schemaVersion"] == format_version(CONTRACT_VERSION)
     assert env["generator"]["name"] == "fm-saxml-converter"
     assert env["source"] == {
         "fmpFileName": "EverythingBagel.fmp12",
@@ -151,7 +151,7 @@ def test_render_writes_the_contract_files_too(bagel_model, tmp_path):
                                  "--disable-scrubbing"])
     assert result.exit_code == 0, result.output
     for name in CONTRACT_FILES:
-        assert json.loads((out / name).read_text(encoding="utf-8"))["schemaVersion"] == "1.0"
+        assert json.loads((out / name).read_text(encoding="utf-8"))["schemaVersion"] == format_version(CONTRACT_VERSION)
 
 
 def test_render_no_include_json_skips_them(bagel_model, tmp_path):

@@ -11,6 +11,7 @@ from typer.testing import CliRunner
 
 import fm_saxml
 from fm_saxml import BatchDocs, ContractVersionError, DocsNotFoundError, SolutionDocs, load
+from fm_saxml.contract import CONTRACT_VERSION, format_version
 from fm_saxml.cli import app
 from fm_saxml.model import LayoutObjectEntity, ScriptEntity, ThemeEntity
 from fm_saxml.model.references import ReferenceRecord
@@ -61,7 +62,7 @@ def test_load_one_file(single):
     docs = load(single)
     assert isinstance(docs, SolutionDocs)
     assert docs.catalog.kind == "single" and docs.catalog.solution == "EverythingBagel"
-    assert docs.schema_version == "1.0"
+    assert docs.schema_version == format_version(CONTRACT_VERSION)
     assert docs.name == "EverythingBagel"
     assert docs.source.file_uuid == "400FEDB4-F509-8F4D-AF05-472A0DE02EAC"
     script = docs.entities.scripts["script:OneOfEverything"]
@@ -104,7 +105,7 @@ def test_refs_from_and_to(single):
 def test_v0_docs_load_through_the_upgrade_chain():
     docs = load(V0)  # pre-contract output: no docs.json, no envelope
     assert isinstance(docs, SolutionDocs) and docs.catalog is None
-    assert docs.schema_version == "1.0"
+    assert docs.schema_version == "1.0"  # what the 0 -> 1 upgrade writes
     assert docs.source.fmp_file_name == "EverythingBagel.fmp12"  # from external-references
     assert docs.name == "EverythingBagel"
     assert docs.entities.scripts and docs.references

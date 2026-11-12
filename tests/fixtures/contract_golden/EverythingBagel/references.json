@@ -1,8 +1,8 @@
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "1.1",
   "generator": {
     "name": "fm-saxml-converter",
-    "version": "0.6.13"
+    "version": "0.6.15"
   },
   "source": {
     "fmpFileName": "EverythingBagel.fmp12",
@@ -252,6 +252,19 @@
     {
       "sourceDocId": "layout:EverythingBagel",
       "sourceEntityType": "layout",
+      "targetDocId": "theme:com.filemaker.theme.custom.E1351EFD_0067_4E44_A8BC_3E7A959006D9",
+      "targetEntityType": "theme",
+      "relationshipType": "usesTheme",
+      "role": null,
+      "confidence": "exact",
+      "rawText": null,
+      "externalTarget": null,
+      "via": null,
+      "siteDocId": null
+    },
+    {
+      "sourceDocId": "layout:EverythingBagel",
+      "sourceEntityType": "layout",
       "targetDocId": "field:EverythingBagel::textField",
       "targetEntityType": "field",
       "relationshipType": "usesField",
@@ -359,6 +372,19 @@
       "targetDocId": "to:EverythingBagel",
       "targetEntityType": "tableOccurrence",
       "relationshipType": "basedOnTableOccurrence",
+      "role": null,
+      "confidence": "exact",
+      "rawText": null,
+      "externalTarget": null,
+      "via": null,
+      "siteDocId": null
+    },
+    {
+      "sourceDocId": "layout:CustomMenuSetLayout",
+      "sourceEntityType": "layout",
+      "targetDocId": "theme:com.filemaker.theme.custom.EF7F68C5_98F7_804C_8702_75FCEBC9E1E5",
+      "targetEntityType": "theme",
+      "relationshipType": "usesTheme",
       "role": null,
       "confidence": "exact",
       "rawText": null,

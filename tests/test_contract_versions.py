@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 from fm_saxml.cli import _run_pipeline
-from fm_saxml.contract import CONTRACT_FILES, CONTRACT_VERSION, ROOT_CATALOG
+from fm_saxml.contract import CONTRACT_FILES, CONTRACT_VERSION, ROOT_CATALOG, format_version
 from fm_saxml.contract_migrations import (
     ContractVersionError, file_version, read_contract_file, upgrade,
 )
@@ -68,7 +68,7 @@ def test_entities_model_covers_every_entity_map():
 @pytest.mark.parametrize("name", CONTRACT_FILES)
 def test_read_contract_file_returns_the_typed_model(bagel_out, name):
     doc = read_contract_file(bagel_out / name)
-    assert isinstance(doc, DOC_MODELS[name]) and doc.schema_version == "1.0"
+    assert isinstance(doc, DOC_MODELS[name]) and doc.schema_version == format_version(CONTRACT_VERSION)
 
 
 # ---------------------------------------------------------------------------

@@ -574,5 +574,5 @@
   "title": "ExternalReferencesDoc",
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "fm-saxml/contract/schema-1.0/external-references.schema.json"
+  "$id": "fm-saxml/contract/schema-1.1/external-references.schema.json"
 }

@@ -1,4 +1,4 @@
-# The JSON contract (schema 1.0)
+# The JSON contract (schema 1.1)
 
 Every docs folder holds JSON files that other tools may read. Their shape is versioned and documented here. Anything else fm-saxml writes (the Markdown pages, `model.json`, the viewer's data) may change in any release without notice.
 
@@ -14,7 +14,7 @@ From Python, read them with `fm_saxml.load()` instead of parsing them by hand (s
 
 `build` and `render` both write them. `--no-include-json` leaves them out. In a multi-file build, each file's folder has its own four, and `docs.json` sits at the root.
 
-The JSON Schema of each file, `docs.json` included, is in [`contract/schema-1.0/`](contract/schema-1.0/). It's generated from the Pydantic models in `src/fm_saxml/contract_models.py`, and a test fails when the two drift apart.
+The JSON Schema of each file, `docs.json` included, is in [`contract/schema-1.1/`](contract/schema-1.1/). It's generated from the Pydantic models in `src/fm_saxml/contract_models.py`, and a test fails when the two drift apart.
 
 ## Envelope
 
@@ -22,7 +22,7 @@ The four per-file files are JSON objects that start with the same three keys (`d
 
 ```json
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "1.1",
   "generator": {"name": "fm-saxml-converter", "version": "0.7.0"},
   "source": {
     "fmpFileName": "EverythingBagel.fmp12",
@@ -48,7 +48,7 @@ The catalog at the root of every output folder. Readers start here instead of sc
 
 ```json
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "1.1",
   "generator": {"name": "fm-saxml-converter", "version": "0.7.0"},
   "kind": "batch",
   "solution": "Accounting",
@@ -202,6 +202,8 @@ Inside one file's docs, docIds are unscoped. To name an entity across files, pre
 ## References
 
 Each entry of `references.json` has `sourceDocId`, `sourceEntityType`, `targetDocId`, `targetEntityType` and `relationshipType`. Optional keys: `role`, `confidence`, `rawText`, `externalTarget`, `via`, `siteDocId`.
+
+`relationshipType` values include `usesTheme` (layout → theme) and `derivedFrom` (custom theme → the theme it was made from; only when that theme is in the file). Both were added in 1.1.
 
 | `confidence` | Meaning |
 |---|---|
