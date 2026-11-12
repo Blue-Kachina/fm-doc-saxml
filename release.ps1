@@ -40,6 +40,9 @@ $MainBranch = 'master'
 $Remote = 'origin'
 $VersionFile = Join-Path $PSScriptRoot 'src\fm_saxml\__init__.py'
 $VersionPattern = '(?m)^__version__ = "(.*)"'
+$QueueTimeoutMinutes = 10
+$CiTimeoutMinutes = 45
+$ReleaseTimeoutMinutes = 90
 
 Set-Location $PSScriptRoot
 
@@ -116,6 +119,34 @@ function Find-WorkflowRun([string]$Workflow, [string]$Sha) {
         Start-Sleep -Seconds 5
     }
     return $null
+}
+
+# Wait for a workflow run to finish; $true if it succeeded, $false if it did not.
+# Unlike `gh run watch` this gives up: a run that never leaves the queue (GitHub
+# can leave orphaned runs behind) or that runs far too long aborts the release.
+function Wait-WorkflowRun([string]$RunId, [int]$IntervalSeconds, [int]$MaxMinutes) {
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    $started = $false
+    $last = ''
+    while ($true) {
+        $json = Get-NativeOutput 'gh' @('run', 'view', $RunId, '--json', 'status,conclusion')
+        if ($json) {
+            $run = $json | ConvertFrom-Json
+            if ($run.status -ne $last) {
+                Write-Host "  run ${RunId}: $($run.status)"
+                $last = $run.status
+            }
+            if ($run.status -eq 'completed') { return ($run.conclusion -eq 'success') }
+            if ($run.status -notin @('queued', 'waiting', 'pending')) { $started = $true }
+        }
+        if (-not $started -and $stopwatch.Elapsed.TotalMinutes -ge $QueueTimeoutMinutes) {
+            Stop-Release "Run $RunId has not started after $QueueTimeoutMinutes minutes. It may be an orphaned run (gh run view $RunId --web). Rerun this script once a fresh run exists for the commit."
+        }
+        if ($stopwatch.Elapsed.TotalMinutes -ge $MaxMinutes) {
+            Stop-Release "Run $RunId did not finish within $MaxMinutes minutes. Check it: gh run view $RunId --web"
+        }
+        Start-Sleep -Seconds $IntervalSeconds
+    }
 }
 
 $originalVersionText = $null
@@ -318,8 +349,7 @@ try {
     if (-not $ciRun) {
         Stop-Release "No CI run appeared for $shortSha. Check the Actions tab, then tag manually: git tag -a $tag -m $tag; git push $Remote $tag"
     }
-    & gh run watch $ciRun --exit-status --interval 15
-    if ($LASTEXITCODE -ne 0) {
+    if (-not (Wait-WorkflowRun $ciRun 15 $CiTimeoutMinutes)) {
         Stop-Release "CI failed (run $ciRun). Not tagging. Fix it, then rerun this script with the same version."
     }
     Write-Ok 'CI passed'
@@ -332,8 +362,7 @@ try {
     Write-Step 'Following the Release workflow'
     $releaseRun = Find-WorkflowRun 'release.yml' $releaseSha
     if (-not $releaseRun) { Stop-Release 'No Release run appeared. Check the Actions tab.' }
-    & gh run watch $releaseRun --exit-status --interval 20
-    if ($LASTEXITCODE -ne 0) {
+    if (-not (Wait-WorkflowRun $releaseRun 20 $ReleaseTimeoutMinutes)) {
         Write-Host ''
         Write-Host "The Release workflow failed (run $releaseRun): gh run view $releaseRun --log-failed"
         Write-Host 'If nothing reached PyPI yet, you can delete the tag and retry:'

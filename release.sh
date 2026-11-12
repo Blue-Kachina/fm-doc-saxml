@@ -23,6 +23,9 @@ PACKAGE="fm-saxml-converter"
 VERSION_FILE="src/fm_saxml/__init__.py"
 MAIN_BRANCH="master"
 REMOTE="origin"
+QUEUE_TIMEOUT_MIN=10
+CI_TIMEOUT_MIN=45
+RELEASE_TIMEOUT_MIN=90
 
 cd "$(dirname "$0")"
 
@@ -250,10 +253,41 @@ find_run() {
     return 1
 }
 
+# Wait for a workflow run to finish; returns 0 if it succeeded, 1 if it did not.
+# Unlike `gh run watch` this gives up: a run that never leaves the queue (GitHub
+# can leave orphaned runs behind) or that runs far too long aborts the release.
+wait_for_run() {
+    local run_id=$1 interval=$2 max_minutes=$3
+    local started=0 last="" out status conclusion
+    local begin=$SECONDS
+    while true; do
+        out=$(gh run view "$run_id" --json status,conclusion \
+            --jq '.status + " " + .conclusion' 2>/dev/null || true)
+        if [[ -n "$out" ]]; then
+            status=${out%% *}
+            conclusion=${out#* }
+            if [[ "$status" != "$last" ]]; then
+                echo "  run $run_id: $status"
+                last=$status
+            fi
+            [[ "$status" == "completed" ]] && [[ "$conclusion" == "success" ]] && return 0
+            [[ "$status" == "completed" ]] && return 1
+            case "$status" in queued|waiting|pending) ;; *) started=1 ;; esac
+        fi
+        if [[ $started -eq 0 ]] && (( SECONDS - begin >= QUEUE_TIMEOUT_MIN * 60 )); then
+            die "Run $run_id has not started after $QUEUE_TIMEOUT_MIN minutes. It may be an orphaned run (gh run view $run_id --web). Rerun this script once a fresh run exists for the commit."
+        fi
+        if (( SECONDS - begin >= max_minutes * 60 )); then
+            die "Run $run_id did not finish within $max_minutes minutes. Check it: gh run view $run_id --web"
+        fi
+        sleep "$interval"
+    done
+}
+
 step "Waiting for CI on ${release_sha:0:7}"
 ci_run=$(find_run ci.yml "$release_sha") \
     || die "No CI run appeared for ${release_sha:0:7}. Check the Actions tab, then tag manually: git tag -a $TAG -m $TAG && git push $REMOTE $TAG"
-if ! gh run watch "$ci_run" --exit-status --interval 15; then
+if ! wait_for_run "$ci_run" 15 "$CI_TIMEOUT_MIN"; then
     die "CI failed (run $ci_run). Not tagging. Fix it, then rerun this script with the same version."
 fi
 ok "CI passed"
@@ -266,7 +300,7 @@ ok "pushed $TAG"
 step "Following the Release workflow"
 release_run=$(find_run release.yml "$release_sha") \
     || die "No Release run appeared. Check the Actions tab."
-if ! gh run watch "$release_run" --exit-status --interval 20; then
+if ! wait_for_run "$release_run" 20 "$RELEASE_TIMEOUT_MIN"; then
     echo
     echo "The Release workflow failed (run $release_run): gh run view $release_run --log-failed"
     echo "If nothing reached PyPI yet, you can delete the tag and retry:"
