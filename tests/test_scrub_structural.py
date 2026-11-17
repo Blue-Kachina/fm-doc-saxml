@@ -386,3 +386,31 @@ def test_traced_and_password_redactions_reach_filemaker_step_text():
     assert "tracedpw88" not in dump(raw) and '"abc"' not in dump(raw)
     assert steps[1]["fm_text"] == ('Re-Login [ Account Name: "CreateModify"; Password: "[REDACTED:password#1]"; '
                                    'With dialog: Off ]')
+
+
+def test_a_redacted_step_still_holding_the_value_is_noted():
+    relogin = step(0, "Re-Login", [("Name", None, '"CreateModify"'), ("Password", None, '"Xy7kL9mQ2z"')], "138")
+    relogin["title"] = "Xy7kL9mQ2z"  # a skipped key: no pass rewrites it
+    clean = step(1, "Re-Login", [("Name", None, '"Other"'), ("Password", None, '"Xy7kL9mQ2z"')], "138")
+    raw = RawModel(file_name="t.xml")
+    raw.scripts = [{"id": "0", "name": "Login", "steps": [relogin, clean]}]
+    scrubber = Scrubber()
+    scrubber.scrub_raw(raw)
+    assert scrubber.unredacted_steps == {"[REDACTED:password#1]": ["Script 'Login' › Step 1: Re-Login"]}
+
+
+@pytest.mark.parametrize("note", [
+    'BY HAND: insert Add Account [ Account Name: "zz_test" ; Password: PLACEHOLDER_VALUE ] below',
+    "BY HAND: zz_test signs in with PLACEHOLDER_VALUE",  # no credential word: only the known value finds it
+])
+def test_redacted_value_reaches_a_comment_steps_filemaker_text(note):
+    # A comment's fm_text is prose, not a calc: the password it repeats is unquoted there.
+    comment = step(0, "# (comment)", [], "89")
+    comment["params"] = [{"kind": "comment", "text": note}]
+    comment["fm_text"] = f"# {note}"
+    add = step(1, "Add Account", [("Name", None, '"zz_test"'), ("Password", None, '"PLACEHOLDER_VALUE"')], "134")
+    raw, _ = run(("S", [comment, add]))
+    out = raw.scripts[0]["steps"][0]
+    assert "PLACEHOLDER_VALUE" not in dump(raw)
+    assert out["fm_text"] == "# " + note.replace("PLACEHOLDER_VALUE", "[REDACTED:password#1]")
+    assert out["fm_text"] == f"# {out['params'][0]['text']}"  # same placeholder in both copies

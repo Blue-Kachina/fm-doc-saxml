@@ -261,3 +261,29 @@ def test_guard_message_masks_the_value_in_file_paths(tmp_path, capsys):
     assert "[REDACTED:password#1].md" in "".join(err.split())
     # Rich wraps long paths at the console width, which can split the value and hide it.
     assert "Xy7kL9mQ2z" not in "".join(err.split())
+    assert "report and the output disagree" not in " ".join(err.split())  # no step involved
+
+
+def test_guard_message_names_a_step_the_report_calls_redacted(tmp_path, capsys):
+    import pytest
+    import typer
+
+    from fm_saxml.cli import _guard_output
+    from fm_saxml.parser.saxml_reader import RawModel
+    from fm_saxml.scrub import Scrubber
+
+    relogin = {"step_type_id": "138", "index": 65, "name": "Re-Login", "raw_text": "Re-Login",
+               "title": "Xy7kL9mQ2z",  # a skipped key: the scrubber leaves it, like a missed copy of the step
+               "calculations": [{"text": '"Xy7kL9mQ2z"', "parameter": "Password", "slot": None, "position": 0}]}
+    raw = RawModel(file_name="t.xml")
+    raw.scripts = [{"id": "0", "name": "Login", "steps": [relogin]}]
+    scrubber = Scrubber()
+    scrubber.scrub_raw(raw)
+    page = tmp_path / "Login.md"
+    page.write_text("66  Re-Login Xy7kL9mQ2z\n", encoding="utf-8")
+    with pytest.raises(typer.Exit) as exc:
+        _guard_output(scrubber, page)
+    assert exc.value.exit_code == 2
+    said = " ".join(capsys.readouterr().err.split())
+    assert "lists it as redacted in Script 'Login' › Step 66: Re-Login" in said
+    assert "report and the output disagree" in said

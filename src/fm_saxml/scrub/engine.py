@@ -31,7 +31,7 @@ from .positional import MISSING_FUNCTION
 from .structural import ALWAYS_SECRET_DETECTORS, Flag, local_hits, plan
 from .walker import Slot, collect_slots, rebuild_step_texts
 
-ENGINE_VERSION = "6"
+ENGINE_VERSION = "7"
 
 _PREVIEW_RADIUS = 40
 _SCHEME_WORD_RE = re.compile(r"\s*(?:Bearer|Basic|Token|Digest|OAuth)?\s*", re.I)
@@ -94,6 +94,9 @@ class Scrubber:
         # Object names in the solution, casefolded (as FileMaker compares them) -> (kind, name).
         self._object_names: dict[str, tuple[str, str]] = {}
         self.last_changes: list[tuple[str, str, str]] = []
+        # Placeholder -> steps the report lists as redacted that still hold the value in another
+        # copy. The guard fails on those; naming them shows where scrubber and output disagree.
+        self.unredacted_steps: dict[str, list[str]] = {}
 
     # ------------------------------------------------------------------
     # Public, single-string API
@@ -225,6 +228,7 @@ class Scrubber:
         self.last_changes = [
             (slot.kind, old, slot.get()) for slot, old in zip(walk.slots, originals) if slot.get() != old
         ]
+        self._note_unredacted_steps()
         return self.summary(self._finalize())
 
     def _allow_slot(self, slot: Slot, structural: list[Hit]) -> None:
@@ -449,6 +453,21 @@ class Scrubber:
     # Findings
     # ------------------------------------------------------------------
 
+    def _note_unredacted_steps(self) -> None:
+        """Steps with a redaction finding where some other string still holds the value."""
+        values = {ph: v for v, ph in self.guard_values().items()}
+        checked: set[tuple[int, str]] = set()
+        for p in self._pending:
+            if p.action != "redacted" or p.slot is None or p.slot.ctx is None or p.placeholder not in values:
+                continue
+            step = p.slot.ctx.step
+            if (id(step), p.placeholder) in checked:
+                continue
+            checked.add((id(step), p.placeholder))
+            pattern = re.compile(rf"(?<![A-Za-z0-9]){re.escape(values[p.placeholder])}(?![A-Za-z0-9])")
+            if any(pattern.search(s) for s in _strings(step)):
+                self.unredacted_steps.setdefault(p.placeholder, []).append(self.substitute(p.location))
+
     def _finalize(self) -> list[ScrubFinding]:
         seen = set()
         findings = []
@@ -505,6 +524,17 @@ def _allow_marked(slot: Slot) -> bool:
     if slot.kind != "calc":
         return True
     return any(t.kind == COMMENT and _ALLOW_RE.search(t.text) for t in tokenize(value))
+
+
+def _strings(obj: Any) -> Iterable[str]:
+    if isinstance(obj, str):
+        yield obj
+    elif isinstance(obj, dict):
+        for v in obj.values():
+            yield from _strings(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            yield from _strings(v)
 
 
 def _has_content(text: str, tok: Token) -> bool:

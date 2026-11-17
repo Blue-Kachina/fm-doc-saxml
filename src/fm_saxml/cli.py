@@ -278,7 +278,7 @@ def _guard_output(scrubber, *targets: Optional[Path], reporter: Optional[Reporte
         f"[bold red]Scrubbing guard failed:[/bold red] {len(by_placeholder)} redacted value(s) still appear in the "
         f"output ({shown}{len(leaks)} place(s))."
     )
-    named = False
+    named = disagree = False
     for ph, found in by_placeholder.items():
         # The path itself can hold the value (a page named after a script named after a password).
         first = found[0]
@@ -288,6 +288,18 @@ def _guard_output(scrubber, *targets: Optional[Path], reporter: Optional[Reporte
         also = f" It is also the name of a {kind}, and names are never rewritten." if kind else ""
         err_console.print(f"  The value behind {ph}: {len(found)} place(s) in {files} file(s), first at "
                           f"{scrubber.substitute(str(first.path))}:{first.line}.{also}")
+        steps = scrubber.unredacted_steps.get(ph, [])
+        if steps:
+            disagree = True
+            more = f" (and {len(steps) - 3} more)" if len(steps) > 3 else ""
+            err_console.print(f"    The redaction report lists it as redacted in {'; '.join(steps[:3])}{more}, "
+                              "but another copy of that step's text still holds it.")
+    if disagree:
+        err_console.print(
+            "[dim]The redaction report and the output disagree about the step(s) named above: that is a bug "
+            "in fm-saxml. Please report it, naming the step. Until it is fixed, removing the value from that "
+            "step in FileMaker and exporting again avoids it.[/dim]"
+        )
     if named:
         err_console.print(
             "[dim]A value that is also an object's name: if it isn't a secret, exclude it with --scrub-allow; "

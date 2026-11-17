@@ -22,6 +22,7 @@ import re
 from dataclasses import dataclass, field, replace
 from typing import Any, Optional
 
+from ..model.step_text import COMMENT_STEP
 from .placeholders import PLACEHOLDER_RE
 
 _CALC_KEYS = {"calculation", "install_condition", "formula", "fm_text"}  # fm_text: FileMaker's step text, holds calcs
@@ -203,7 +204,9 @@ def _label(collection: str, item: dict) -> str | None:
     return f"{title} '{name}'" if name else title
 
 
-def _classify(key: str, collection: str | None, step_like: bool) -> str | None:
+def _classify(key: str, collection: str | None, step_like: bool, comment_step: bool = False) -> str | None:
+    if comment_step and key in ("fm_text", "raw_text"):
+        return "text"  # a comment step's text is the comment itself: an unquoted value in it is still prose
     if key in _CALC_KEYS:
         return "calc"
     if key == "text" and collection == "calculations":
@@ -259,6 +262,7 @@ def _walk(obj: Any, collection: str | None, loc: list[str], walk: Walk, parent_k
         return
 
     step_like = _key(obj, "step_type_id") is not None or collection in _STEP_COLLECTIONS
+    comment_step = step_like and obj.get("name") == COMMENT_STEP
     derived: set[str] = set()
     if step_like and collection != "calculations":
         # model.json steps are grouped by scriptDocId; parser steps by their shared list.
@@ -278,7 +282,7 @@ def _walk(obj: Any, collection: str | None, loc: list[str], walk: Walk, parent_k
             if collection == "accounts" and sk == "name" and parent_key == "accounts":
                 walk.slots.append(Slot(obj, k, "person", where))
                 continue
-            kind = _classify(sk, collection, step_like)
+            kind = _classify(sk, collection, step_like, comment_step)
             if kind:
                 walk.slots.append(Slot(obj, k, kind, where, ctx))
         elif isinstance(v, dict):
