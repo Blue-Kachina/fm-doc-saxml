@@ -4,7 +4,7 @@ Read converted docs with ``fm_saxml.load(docs_dir)`` or ``fm_saxml.find_docs(nam
 (see ``fm_saxml.api`` and docs/contract.md).
 """
 
-__version__ = "0.6.16"
+__version__ = "0.7.0"
 
 from .api import (  # noqa: E402
     BatchDocs, DocsNotFoundError, RawXmlNotFoundError, ResolvedRef, SolutionDocs, find_docs, load,
