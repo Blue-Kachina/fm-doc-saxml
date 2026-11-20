@@ -1,6 +1,10 @@
 ---
 name: fm-saxml-exports
-description: Answer questions about a FileMaker solution from fm-saxml output (a *_docs / saxml2doc folder, docs.json, entities.json, the --html/--webmcp viewer) or run the fm-saxml CLI. Use when asked what calls a script, what uses a field, who can access something, what changed, what is unused, or what a rename would break. Picks the fastest source (JSON, Markdown, WebMCP tools or CLI) so you do not grep or read thousands of pages.
+description: Use for questions about a FileMaker solution's fm-saxml docs ('what calls script X', 'what uses this field', 'who can access X', 'what changed', 'is X unused') or to run the fm-saxml CLI.
+metadata:
+  author: "Matthew Leering"
+  tags: [filemaker, fm-saxml, analysis, references]
+compatibility: Needs docs built by fm-saxml-converter. The Python API and the CLI need fm-saxml installed (Python 3.11+); the WebMCP tools need a --webmcp build.
 ---
 
 # Answering questions from fm-saxml output
@@ -9,6 +13,16 @@ description: Answer questions about a FileMaker solution from fm-saxml output (a
 contract, and optionally an HTML viewer with agent tools. Everything is **read-only, scrubbed of secrets by
 default, and built from the model, not the raw XML**. The goal here: reach the right answer with the fewest
 reads. Large solutions have thousands of pages; never browse them.
+
+## Purpose
+
+Answers per-solution questions (what uses X, what X uses, who can access X, what changed between exports, what is unused, what a rename breaks) from a converted solution, by picking the cheapest source among the JSON contract, the Markdown pages, the WebMCP tools and the CLI. It reads the docs and never changes them; to refresh them, rebuild with `fm-saxml build`.
+
+## Prerequisites
+
+- A docs folder built by fm-saxml (`docs.json` at its top level). The export's XML is needed only for `diff`, `rename-check`, `inspect` and a rebuild.
+- For the Python API and the CLI: a Python 3.11+ with fm-saxml installed (`import fm_saxml` works; `pip install fm-saxml-converter`).
+- For the WebMCP tools: a build with `--webmcp`, opened by URL or served with `fm-saxml serve`.
 
 ## Step 0: find out what you were given (30 seconds, do this first)
 
@@ -28,7 +42,7 @@ Locate the docs folder. If you were not told, check `exports/<Solution>/`, `$FM_
 
 Also note `schemaVersion` and `generator.version` in any contract file's envelope. The docs may be older than
 the export or the repo; say so if it matters. If something you need is missing (no `--webmcp`, no
-`--coverage`), rebuilding is cheap and usually better than working around it (see "Rebuild").
+`--coverage`), rebuilding is cheap and usually better than working around it (Optimizations, item 6).
 
 ## Choosing the source
 
@@ -90,50 +104,15 @@ Verified on a real two-file build (`disRenewalUniverse` + `idiClients`: 6,743 an
 
 ## WebMCP / `window.FMDocs` (the `--webmcp` viewer)
 
-Only present if built with `--webmcp` (which implies `--html`). Read-only; nothing executes agent-written code
-(`query` takes JSON pipelines only). Tools run against the model, so they are faster and more reliable than
-page scraping for cross-cutting questions.
+Only present if built with `--webmcp`. Read-only query tools that run against the model (`describe_schema` first, then `search_entities`, `query_entities`, `find_references`, `traverse`, `who_can_access`, `rename_impact`, `query` and others), faster than reading pages for cross-cutting questions, and per-file in a multi-file build. Call them natively when the viewer is served (`fm-saxml serve <docs>`), or by URL: `index.html#/results?q=<URL-encoded {"tool":"<name>","args":{...}}>&format=json`.
 
-There are 17 tools (`Object.keys(FMDocs.tools)` lists them; the header badge may show a smaller count, and the three page-scoped tools only appear on a matching page). Results carry the entity's Markdown `path` and, for `find_unreferenced`, a `caveat`. The URL route works even from a `file://` page, though the badge then says "WebMCP off: opened from disk".
-
-Core tools: `describe_schema` (start here: lists queryable types and fields), `get_solution_overview`,
-`get_entity`, `search_entities`, `query_entities` (one type, several via `types`, or all; `sort`; unknown
-fields are skipped and reported in `skippedTypes`), `find_script_steps`, `find_references`,
-`find_unreferenced`, `find_indirection`, `rename_impact`, `traverse`, `who_can_access`, `what_can_access`,
-`query` (JSON pipeline: `from where join joinRefs joinAccess select groupBy sort limit`), `navigate_to`,
-`show_results`. Page-scoped: `list_steps_in_this_script`, `list_fields_in_this_table`,
-`list_objects_on_this_layout` (the last finds hidden objects, including those in tab panels, slide panels
-and popovers).
-
-Observed on the live server: calls took 0.1 to 0.4 s each even on a 28k-reference solution. `search_entities({query, types:[...], limit})` returns `{total, items, truncated, query}` and is the way to get an exact docId; `who_can_access` with a docId that does not exist returns `{error, hint}` ("Check the docId with search_entities"), so look the id up first. A `who_can_access` answer lists each privilege set with `allowed`, `access`, `reason` and its `accounts` (with `enabled` and `external` flags). The header badge reads "WebMCP not in this browser" over HTTP in a browser without WebMCP (e.g. plain Chrome) and "opened from disk" on `file://`; in both cases the URL route below still works.
-
-Three ways to call them, in order of preference:
-
-1. **Native WebMCP** (`document.modelContext`): available only in WebMCP-capable browsers, and only when the
-   viewer is served over HTTP. `fm-saxml serve <docs>` (or `build ... --webmcp --serve`) serves it at
-   `http://127.0.0.1:8766`. A viewer opened from `file://` reports "WebMCP off: opened from disk".
-2. **By URL** (works without WebMCP, e.g. Claude in Chrome):
-   `index.html#/results?q=<URL-encoded {"tool":"<name>","args":{...}}>&format=json`
-   returns JSON text in `<pre id="fm-result-json">`. Without `&format=json` you get the human results view.
-3. **In-page JS**: `FMDocs.tools.<name>.execute({...})`.
-
-Discovery: the header's **For AI agents** link (`#/agents`) lists every tool with its argument schema and
-example links for *this* solution; `llms.txt` at the docs root points there. Both work from disk.
-`tests/webmcp_questions.md` in the fm-saxml repo has ~30 worked question-to-call examples. Examples:
-
-- References to all fields of table X: `find_references({targetType:"field", parentDocId:"table:X", direction:"incoming", groupBy:"target"})`
-- Who can run script X: `who_can_access({docId:"script:X", action:"run"})`
-- Everything that eventually calls script X: `traverse({from:"script:X", direction:"incoming", relationshipTypes:["usesScript","triggersScript"]})`
-- Hidden fields on a layout: `query_entities({type:"layoutObject", where:[{field:"layoutDocId",op:"eq",value:"layout:X"},{field:"isField",op:"eq",value:true},{any:[{field:"hasHideCondition",op:"eq",value:true},{field:"inPanel",op:"eq",value:true}]}]})`
-
-Pass `display:false` to skip opening the results view when you only need data. If you do not have a browser at
-all, the same data is in `_viewer/data/` and the JSON contract; use the Python API or `jq` instead.
+Read `references/webmcp.md` before the first call: it lists all 17 tools, their result shapes, the three ways to call them and worked examples.
 
 ## Optimizations
 
 1. **Look before you read**: `docs.json` + `Reports/summary.md` tell you scope, file list and warnings in two small reads.
 2. **Ask the narrowest source**: one docId lookup beats a search; a tool call beats reading ten pages.
-3. **Filter before loading** large JSON (`jq`, Python generators); never paste whole collections into context. Return counts and a short sample, and say how to get the rest.
+3. **Filter before loading** large JSON (see "Reading JSON efficiently"); never paste whole collections into context. Return counts and a short sample, and say how to get the rest.
 4. **Cite docIds** in answers so the reader can verify (and so follow-ups are one lookup).
 5. **Batch questions** into one `query` pipeline or one Python session instead of many round trips.
 6. **Rebuild instead of working around gaps.** Cheap flags worth adding:
@@ -142,15 +121,32 @@ all, the same data is in `_viewer/data/` and the JSON contract; use the Python A
 7. **Scripted runs**: `--progress json` emits machine-readable progress lines; `--strict`, `--fail-on-secrets`, `--fail-on-coverage-gap` set exit codes for CI. Output is staged and swapped in, so a failed build leaves the previous docs intact. Do not rebuild into a folder a reader or server has open.
 8. **Staleness**: compare `generator.version` and the export's name/date to what the user is asking about. A rename or new export means rebuild.
 
-## Caveats to state in answers
+## Limitations
+
+State the ones that apply in the answer.
 
 - **Scrubbed**: secrets and personal data are replaced with placeholders (see `Reports/redactions.md`). A missing or odd value may be a placeholder, not a bug in the solution. Never try to recover scrubbed values.
-- **`find_unreferenced` is noisy for scripts.** On the real solution it flagged 178 of 193 scripts (92%), mostly legitimate entry points: server-side scheduled and PSOS scripts, test scaffolds, dev tools, API and menu-bound scripts (items carry the script's folder in `detail`; 76 had none). Group the result by `detail` folder, set aside obvious entry-point folders, and report the remainder as candidates with the tool's own `caveat` (names from data, files not in the build and server schedules are invisible). The same tool is far more useful for fields, value lists and custom functions.
-- **Unused means "no static reference found"**. Say candidate, not dead. Dynamic names, other files, schedules, web direct, plug-ins and external callers are invisible.
+- **Unused means "no static reference found"**: say candidate, not dead. Dynamic names, other files, schedules, web direct, plug-ins and external callers are invisible. `find_unreferenced` is noisy for scripts: on the real solution it flagged 178 of 193 scripts (92%), mostly legitimate entry points (server-side scheduled and PSOS scripts, test scaffolds, dev tools, API and menu-bound scripts; items carry the script's folder in `detail`, and 76 had none). Group the result by `detail` folder, set aside obvious entry-point folders, and report the remainder with the tool's own `caveat`. The same tool is far more useful for fields, value lists and custom functions.
+- **WebMCP tools are per-file**: in a multi-file build, an empty result does not mean "no cross-file use" (see "Multi-file solutions").
+- **Coverage and raw XML depend on the export**: `Reports/coverage.md` needs a v2-format export (and `--coverage`), and `raw/` can be empty for older v1-format exports. Without them, say coverage is unknown and read the Markdown page instead of raw XML.
 - **Names in text** (`Evaluate`, `ExecuteSQL`, `Perform Script by name`) are classed hardcoded / traced / opaque / broken / safe. Opaque ones cannot be resolved statically.
 - **Access answers** are derived from privilege sets and accounts and include a reason; relay the reason.
 - **Multi-file**: a reference into a file not in the folder stays plain text and is listed in the index; do not claim the target does not exist.
 - The converter documents the export, not live data. It cannot say what records contain.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `raw_xml()` raises `RawXmlNotFoundError` | A v1-format export (empty `raw/`), or a build with `--no-raw-xml` | Rebuild without `--no-raw-xml`; for a v1 export, read the Markdown page |
+| No `entities.json` or `references.json` at the root | A multi-file build (they sit in each file's subfolder), or a build with `--no-include-json` | Open the file's subfolder; otherwise rebuild without `--no-include-json` |
+| `ModuleNotFoundError: No module named 'fm_saxml'` | A Python without fm-saxml | Use the Python fm-saxml is installed in, or `pip install fm-saxml-converter` |
+| `jq` not found | Not installed (common on Windows) | Use the Python one-liner in "Reading JSON efficiently" |
+| A page path does not exist | Guessed path: pages are nested in FileMaker folders and names are slugged | Take the `path` from a tool result or the type folder's `index.md` |
+| Header badge says "WebMCP off: opened from disk" or "WebMCP not in this browser" | Viewer opened from `file://`, or a browser without WebMCP | Use the URL route, or `fm-saxml serve <docs>` |
+| `who_can_access` returns `{error, hint}` | The docId does not exist | Get the exact docId with `search_entities` first |
+| WebMCP finds no callers from another file | The tools are per-file | Use `backlinks.json` / `BatchDocs`, `Reports/batch-summary.md` or `external-references.json` |
+| No `Reports/coverage.md` after `--coverage` | The export carries no coverage data | Say coverage is unknown, not complete |
 
 ## Do not
 
