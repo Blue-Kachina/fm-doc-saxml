@@ -169,6 +169,13 @@ main {
 .milkdown .milkdown-code-block .cm-activeLine,
 .milkdown .milkdown-code-block .cm-activeLineGutter { background: transparent; }
 .milkdown .milkdown-code-block .cm-content { color: var(--crepe-color-on-background); }
+/* A script's steps carry their own step numbers; CodeMirror's line numbers would drift from them. */
+.milkdown .milkdown-code-block:has(.cm-content[data-language="fmscript"]) .cm-gutters { display: none; }
+/* Crepe's language button shows the fence's raw label; spell out the steps' one. */
+.milkdown .milkdown-code-block:has(.cm-content[data-language="fmscript"]) .tools .language-button { font-size: 0; gap: 0; }
+.milkdown .milkdown-code-block:has(.cm-content[data-language="fmscript"]) .tools .language-button::before {
+    content: "FileMaker Script"; font-size: calc(var(--crepe-base-font-size, 16px) * .75); margin-right: 6px;
+}
 /* Viewer-only: links are navigation here, so make them look clickable. */
 .milkdown .ProseMirror a { cursor: pointer; }
 
@@ -278,10 +285,20 @@ if (!vendor) {
 const { Crepe } = vendor;
 
 // ```filemaker fences (calculations) highlight via fmscriptui's CodeMirror language.
+// ```fmscript fences (a script's steps) stay plain text; naming the language tags the
+// block data-language="fmscript", which hides CodeMirror's line numbers (see the CSS).
+const fmscriptLanguage = vendor.StreamLanguage.define({
+    name: 'fmscript',
+    token(stream) { stream.skipToEnd(); return null; },
+});
 const codeLanguages = [vendor.LanguageDescription.of({
     name: 'FileMaker',
     alias: ['filemaker', 'fmfn'],
     load: async () => vendor.filemakerCalc(),
+}), vendor.LanguageDescription.of({
+    name: 'FileMaker Script',
+    alias: ['fmscript'],
+    load: async () => fmscriptLanguage,
 })];
 
 // ---- Paths & routing -------------------------------------------------------

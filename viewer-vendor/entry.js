@@ -3,5 +3,5 @@
 // It's one bundle so Crepe and the FileMaker grammar share one @codemirror/language,
 // which the Language facet requires.
 export { Crepe } from '@milkdown/crepe';
-export { LanguageDescription } from '@codemirror/language';
+export { LanguageDescription, StreamLanguage } from '@codemirror/language';
 export { filemakerCalc } from 'fmscriptui/filemaker-codemirror';
