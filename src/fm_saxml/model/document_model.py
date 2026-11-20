@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 from pydantic import BaseModel, Field, ConfigDict, PrivateAttr
 
 from .entities import (
@@ -258,6 +258,14 @@ class DocumentModel(BaseModel):
     # The export this model came from (render/json/raw_xml.RawSource), for raw/*.json. Not
     # saved: a model loaded from model.json has no export to read.
     _raw_source: Optional[object] = PrivateAttr(None)
+    # Layout object docId -> what the HTML viewer's layout preview needs beyond the bounds (front
+    # tab, tab strip, popover side; parser/extractors/layouts.py _preview_geometry). Not saved
+    # either: a preview rendered from model.json falls back to the first tab and even tab widths.
+    # It also holds an object's icon / graphic library key (``icon``, ``icon_pos``, ``icon_size``, ``image``).
+    _layout_geometry: dict[str, dict[str, Any]] = PrivateAttr(default_factory=dict)
+    # Library key -> {kind, data, glyph}: the <LibraryCatalog> plus icons stored inline on objects
+    # (parser/extractors/library.py), for the layout preview's icons. Not saved either.
+    _library: dict[str, dict[str, Any]] = PrivateAttr(default_factory=dict)
 
     def local_layout_doc_id(self, name: str, fmp_id: Optional[str] = None) -> str:
         """docId of a layout in this file: by FileMaker id when known, else by name."""

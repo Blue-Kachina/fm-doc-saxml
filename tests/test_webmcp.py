@@ -65,7 +65,8 @@ def _build(tmp_path: Path, *extra: str, xml: Path = FIXTURES / "v2_sample.xml") 
 def test_html_without_webmcp_has_no_tools(tmp_path):
     out = _build(tmp_path, "--html")
     assert not (out / VIEWER_DIR / "webmcp.js").exists()
-    assert not (out / VIEWER_DIR / "data").exists()
+    # Only the layout preview's data (on by default with --html), none of the tools' shards.
+    assert [p.name for p in (out / VIEWER_DIR / "data" / "_").iterdir()] == ["layouts"]
     assert "webmcp.js" not in (out / "index.html").read_text(encoding="utf-8")
     assert "webmcp" not in _manifest(out)
 

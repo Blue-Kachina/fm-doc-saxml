@@ -384,9 +384,13 @@
             const path = FM.ui ? FM.ui.currentPath() : null;
             if (!path) return { path: null };
             if (path.startsWith('results?')) return { path, results: currentResults };
+            const lp = FM.preview && FM.preview.current; // a layout preview on screen (inline or full page)
+            const shownPreview = lp ? { layoutDocId: lp.data.docId, selected: lp.selected } : undefined;
+            if (path.startsWith('layout?')) return { path, title: document.title, preview: shownPreview };
             const page = FM.pages[path];
             const meta = (page && page.meta) || {};
             const out = { path, title: document.title, entityType: meta.entityType || null, docId: meta.docId || null };
+            if (shownPreview) out.preview = shownPreview;
             if (meta.docId) {
                 const f = fileForPath(path);
                 const found = await entity(meta.docId, f ? f.key : undefined);
@@ -1070,6 +1074,263 @@
             return { opened: path, step };
         }, { changesView: true });
 
+    // ---- Layouts: where objects are (the layout preview's data) -------------------
+    // layout-preview.js (written with --html unless --no-layout-preview) loads one data script per
+    // layout: absolute bounds in points from the layout's top left, parts, paint order. These tools
+    // read it through FMDocs.preview, so they exist only when the preview does (llms.txt too:
+    // viewer.py leaves out layoutTool names when there is no preview).
+    const previewOn = () => !!(FM.data && FM.data.layoutPreview && (FM.data.layoutPreview.files || []).length);
+    function layoutTool(name, ...rest) { if (previewOn()) tool(name, ...rest); }
+    const PROBLEM_KINDS = { outside: 'Outside the layout', tiny: 'Tiny (2 pt or less)', duplicate: 'Exact duplicate',
+        covered: 'Covered by an opaque object' };
+    const PROBLEM_CODES = { out: 'outside', tiny: 'tiny', dup: 'duplicate', cov: 'covered' };
+    const HIGHLIGHT_MAX = 200; // ids in a previewUrl's &highlight=
+    function preview() {
+        if (!FM.preview) throw new ToolError('The layout preview is not loaded (the docs were built with --no-layout-preview).');
+        return FM.preview;
+    }
+    // The layouts in scope: [{file, key, docId, n, name, count, page, problems}]; layout narrows to
+    // the ones whose docId or name is that (else whose name contains it).
+    async function previewLayouts(args, one) {
+        const P = preview();
+        const keys = new Set((FM.data.layoutPreview.files || []).map((f) => f.key));
+        const all = [];
+        for (const f of pickFiles(args.file)) {
+            if (!keys.has(f.key)) continue;
+            const idx = await P.index(f.key);
+            for (const [docId, n, name, count, page, problems] of (idx && idx.layouts) || []) {
+                all.push({ file: f, key: f.key, docId, n, name, count, page, problems, fields: idx.fields, xfields: idx.xfields, idx });
+            }
+        }
+        if (!args.layout) {
+            if (one) throw new ToolError('Give layout (its docId or name).');
+            return all;
+        }
+        const want = lower(args.layout).trim();
+        let hit = all.filter((e) => lower(e.docId) === want || lower(e.name) === want || lower(e.docId) === 'layout:' + want);
+        if (!hit.length) hit = all.filter((e) => lower(e.name).includes(want.replace(/^layout:/, '')));
+        if (!hit.length) {
+            throw new ToolError(`No layout '${args.layout}'.`, { layouts: all.slice(0, 100).map((e) => e.name),
+                hint: 'Use search_entities with types ["layout"] to find a layout.' });
+        }
+        if (one && hit.length > 1) {
+            throw new ToolError(`'${args.layout}' matches ${hit.length} layouts; give one docId (or file).`,
+                { matches: hit.slice(0, 50).map((e) => ({ docId: e.docId, file: e.file.label })) });
+        }
+        return hit;
+    }
+    // A field's uses in an entry's file index: [[docId as written, [[n, ids]]]], matched without case, from the
+    // file's own fields and from other files' (xfields, a multi-file build). One lowercase map per index.
+    const fieldMaps = new WeakMap();
+    function fieldUses(e, docIdLower) {
+        if (!e.idx) return [];
+        let m = fieldMaps.get(e.idx);
+        if (!m) {
+            m = new Map();
+            const add = (fields) => {
+                for (const [d, uses] of Object.entries(fields || {})) {
+                    const k = lower(d);
+                    if (!m.has(k)) m.set(k, []);
+                    m.get(k).push([d, uses]);
+                }
+            };
+            add(e.idx.fields);
+            for (const fields of Object.values(e.idx.xfields || {})) add(fields);
+            fieldMaps.set(e.idx, m);
+        }
+        return m.get(docIdLower) || [];
+    }
+    // Each layout's data, a few script loads at a time: fn(entry, data).
+    async function eachLayout(entries, fn) {
+        const P = preview();
+        for (let k = 0; k < entries.length; k += 16) {
+            const batch = entries.slice(k, k + 16);
+            const datas = await Promise.all(batch.map((e) => P.layout(e.key, e.docId)));
+            batch.forEach((e, j) => { if (datas[j]) fn(e, datas[j]); });
+        }
+    }
+    // A layout object as a result item: grouped under its layout in the results view, with its
+    // absolute bounds, part, shownIn, position in words and previewUrl.
+    function objectItem(e, data, i, extra) {
+        const d = preview().describe(e.key, data, i);
+        const base = { file: e.file.label, docId: d.docId, type: 'layoutObject', name: d.name, path: null,
+            detail: [d.objectType, d.field, d.position].filter(Boolean).join(' · '),
+            parent: { docId: data.docId, type: 'layout', name: data.name } };
+        return Object.assign(base, d, extra || {});
+    }
+    function layoutSummary(e, data, idx, extra) {
+        const ids = idx.slice(0, HIGHLIGHT_MAX).map((i) => data.objects[i].id);
+        const hash = preview().urlFor({ layout: data.docId, file: e.key, highlight: ids });
+        return Object.assign({ file: e.file.label, layout: data.name, docId: data.docId, count: idx.length,
+            previewUrl: location.href.split('#')[0] + hash }, extra || {});
+    }
+    const COORD = (description) => ({ type: 'number', description });
+
+    layoutTool('locate_layout_object',
+        'Where is something shown on the layouts? Finds layout objects by field (docId "field:Table::Field", or a name such as '
+        + '"Invoices::Total" or "Total"), by text (label, object name, tooltip, tab label, button action), by the script a '
+        + 'button runs, or by object type, on one layout or on every layout. Each result has layout, part, bounds (absolute: '
+        + 'points from the layout\'s top left, unlike the relative bounds of nested objects in layoutObject records), shownIn '
+        + '(the tab or slide panel or popover it only shows in), visibleAtOpen, z (paint order, 1 = back), a plain-language '
+        + 'position ("Body, top right, inside the \'Devis\' tab") and a previewUrl that opens the layout preview with it selected.',
+        { layout: S.str('Only this layout (docId or name).'), field: S.str('A field docId, or Table::Field (tried as its docId first), '
+            + 'or a TO::field or field name (contains).'),
+            text: S.str('Text in the label, object name, tooltip, tab label, script, button action or type.'),
+            script: S.str('Buttons that run this script (docId or name, contains).'),
+            objectType: S.str('e.g. "Edit Box", "Button", "Portal", "Popover Button".'), file: S.file, limit: S.limit },
+        async (args) => {
+            if (!args.layout && !args.field && !args.text && !args.script && !args.objectType) {
+                throw new ToolError('Give field, text, script or objectType (and optionally layout), or a layout to list its objects.');
+            }
+            const P = preview();
+            let entries = await previewLayouts(args);
+            // A field docId: the index says which layouts (and objects) show it, so only those load.
+            // "Table::Field" (as in a field page's path) is tried as the docId "field:Table::Field" first:
+            // the layout shows the table occurrence's name, which often differs from the base table's.
+            let byField = null;
+            let fieldDocId = null;
+            if (args.field) {
+                const want = lower(args.field.trim());
+                const asId = /^field:/.test(want) ? want : want.includes('::') ? 'field:' + want : null;
+                if (asId) {
+                    byField = new Map();
+                    for (const e of entries) {
+                        for (const [docId, uses] of fieldUses(e, asId)) {
+                            fieldDocId = docId;
+                            for (const [n, ids] of uses) {
+                                if (n !== e.n) continue;
+                                const k = e.key + '|' + e.docId;
+                                byField.set(k, new Set([...(byField.get(k) || []), ...ids]));
+                            }
+                        }
+                    }
+                    if (!fieldDocId && !/^field:/.test(want)) byField = null; // no such field: match the TO::field text
+                    else entries = entries.filter((e) => byField.has(e.key + '|' + e.docId));
+                }
+            }
+            const fieldText = args.field && !byField ? lower(args.field) : null;
+            const script = args.script ? lower(args.script.replace(/^script:/i, '')) : null;
+            const items = [];
+            const layouts = [];
+            await eachLayout(entries, (e, data) => {
+                const hits = [];
+                const ids = byField && byField.get(e.key + '|' + e.docId);
+                data.objects.forEach((o, i) => {
+                    if (ids && !ids.has(o.id)) return;
+                    if (fieldText && !(o.f && lower(o.f).includes(fieldText))) return;
+                    if (script && !(o.s && lower(o.s).includes(script))) return;
+                    if (args.text && !P.matchesText(o, args.text)) return;
+                    if (args.objectType && lower(o.t) !== lower(args.objectType)) return;
+                    hits.push(i);
+                });
+                if (!hits.length) return;
+                layouts.push(layoutSummary(e, data, hits));
+                for (const i of hits) items.push(objectItem(e, data, i));
+            });
+            return page(items, args, Object.assign({ layoutsSearched: entries.length, layouts }, fieldDocId ? { fieldDocId } : {}));
+        }, { query: true });
+
+    layoutTool('objects_at',
+        'Hit test on one layout: the objects at a point (x, y) or in a rectangle (rect {top, left, bottom, right}), front to '
+        + 'back; popover contents come first, as they float above the layout. Coordinates are points from the layout\'s top '
+        + 'left, the same as the bounds the layout tools return. Tab and slide panels themselves are left out. Objects on every '
+        + 'tab panel and in closed popovers are included (see visibleAtOpen on each) unless visibleAtOpen:true is given.',
+        { layout: S.str('The layout (docId or name).'), x: COORD('Points from the layout\'s left edge.'),
+            y: COORD('Points from the layout\'s top.'),
+            rect: { type: 'object', properties: { top: { type: 'number' }, left: { type: 'number' }, bottom: { type: 'number' },
+                right: { type: 'number' } }, description: 'A rectangle instead of a point: objects that overlap it.' },
+            within: S.bool('With rect: only objects entirely inside it.'),
+            visibleAtOpen: S.bool('Only objects shown when the layout opens (default tab or slide panel in front, popovers closed).'),
+            file: S.file, limit: S.limit },
+        async (args) => {
+            const [e] = await previewLayouts(args, true);
+            const data = await preview().layout(e.key, e.docId);
+            if (!data) throw new ToolError(`No preview data for ${e.docId}.`);
+            let where;
+            if (args.rect) {
+                const r = args.rect;
+                if (!['top', 'left', 'bottom', 'right'].every((k) => typeof r[k] === 'number')) {
+                    throw new ToolError('rect needs numbers top, left, bottom and right.', { rect: r });
+                }
+                where = { rect: { top: Math.min(r.top, r.bottom), bottom: Math.max(r.top, r.bottom),
+                    left: Math.min(r.left, r.right), right: Math.max(r.left, r.right) }, within: !!args.within };
+            } else if (typeof args.x === 'number' && typeof args.y === 'number') {
+                where = { x: args.x, y: args.y };
+            } else throw new ToolError('Give x and y (numbers), or rect.');
+            const hits = preview().hitTest(data, where, { visibleAtOpen: !!args.visibleAtOpen });
+            const items = hits.map((i, k) => objectItem(e, data, i, { front: k + 1 }));
+            return page(items, args, { layout: data.name, layoutDocId: data.docId, at: where,
+                layouts: hits.length ? [layoutSummary(e, data, hits)] : [] });
+        }, { query: true, required: ['layout'] });
+
+    layoutTool('layout_problems',
+        'Objects that are hard to see or likely mistakes, as the layout preview\'s badges count them: "outside" the layout '
+        + '(left of or above it, past its width, or below its last part), "tiny" (2 pt or less in either direction; lines '
+        + 'don\'t count) and "duplicate" (exactly the same type, field, position, container, label, script, calculations and '
+        + 'triggers as another object; sameAs lists the others) and "covered" (entirely under an opaque object in front of it '
+        + 'that shows whenever it does; coveredBy is that object; only found when the docs have theme styles, i.e. were built '
+        + 'with raw/). Popover panels aren\'t checked against the edges: they float '
+        + 'over the layout and are often placed away from their button. Leave out layout to check every layout.',
+        { layout: S.str('Only this layout (docId or name).'),
+            kinds: { type: 'array', items: { type: 'string', enum: Object.keys(PROBLEM_KINDS) }, description: 'Only these kinds (default all).' },
+            file: S.file, limit: S.limit },
+        async (args) => {
+            const want = new Set(args.kinds && args.kinds.length ? args.kinds : Object.keys(PROBLEM_KINDS));
+            for (const k of want) if (!PROBLEM_KINDS[k]) throw new ToolError(`Unknown kind '${k}'.`, { validKinds: Object.keys(PROBLEM_KINDS) });
+            const entries = (await previewLayouts(args)).filter((e) => e.problems > 0);
+            const items = [];
+            const layouts = [];
+            const counts = Object.fromEntries(Object.keys(PROBLEM_KINDS).map((k) => [k, 0]));
+            await eachLayout(entries, (e, data) => {
+                const objs = data.objects;
+                // Duplicates side by side: the same type, field, bounds, container, label and name.
+                const dupKey = (o) => JSON.stringify([o.t, o.f || '', o.b, o.pa, o.l || '', o.n || '']);
+                const dups = new Map();
+                objs.forEach((o) => { if (o.x && o.x.includes('dup')) { const k = dupKey(o); if (!dups.has(k)) dups.set(k, []); dups.get(k).push(data.objPrefix + o.id); } });
+                const hits = [];
+                const perLayout = {};
+                objs.forEach((o, i) => {
+                    const kinds = (o.x || []).map((c) => PROBLEM_CODES[c] || c).filter((k) => want.has(k));
+                    if (!kinds.length) return;
+                    hits.push(i);
+                    for (const k of kinds) { counts[k] += 1; perLayout[k] = (perLayout[k] || 0) + 1; }
+                    const extra = { problems: kinds };
+                    if (kinds.includes('duplicate')) extra.sameAs = (dups.get(dupKey(o)) || []).filter((d) => d !== data.objPrefix + o.id);
+                    const it = objectItem(e, data, i, extra);
+                    it.detail = `${kinds.map((k) => PROBLEM_KINDS[k]).join(', ')} · ${it.detail}`;
+                    items.push(it);
+                });
+                if (hits.length) layouts.push(layoutSummary(e, data, hits, perLayout));
+            });
+            return page(items, args, { counts, layouts, layoutsChecked: entries.length });
+        }, { query: true });
+
+    // The page tool on a layout page (see onRoute): highlight matches on the preview on screen.
+    async function showOnLayout(ctx, args) {
+        const P = preview();
+        const f = files().find((x) => x.key === ctx.fileKey) || { key: ctx.fileKey, label: fileLabel(ctx.fileKey) };
+        const e = { file: f, key: ctx.fileKey };
+        const data = await P.layout(ctx.fileKey, ctx.docId);
+        if (!data) throw new ToolError(`No preview data for ${ctx.docId}.`);
+        const docIds = [].concat(args.docIds || []).map(String).filter(Boolean);
+        if (!args.query && !docIds.length && !args.objectType && !args.field) {
+            throw new ToolError('Give query, docIds, objectType or field.');
+        }
+        const ids = docIds.length ? new Set(docIds.map((d) => (d.startsWith(data.objPrefix) ? d : data.objPrefix + d))) : null;
+        const field = args.field ? lower(String(args.field).replace(/^field:/i, '')) : null;
+        const hits = [];
+        data.objects.forEach((o, i) => {
+            if (ids && !ids.has(data.objPrefix + o.id)) return;
+            if (args.query && !P.matchesText(o, args.query)) return;
+            if (args.objectType && lower(o.t) !== lower(args.objectType)) return;
+            if (field && !(o.f && lower(o.f).includes(field))) return;
+            hits.push(i);
+        });
+        const shown = await P.open(ctx.docId, { file: ctx.fileKey, highlight: hits.map((i) => data.objects[i].id) });
+        return page(hits.map((i) => objectItem(e, data, i)), args, { layout: data.name, layoutDocId: data.docId,
+            highlighted: shown.highlighted.length, previewUrl: shown.url });
+    }
+
     // ---- Page tools: registered for the page being shown ------------------------
     // Each is a query_entities call scoped to the page's entity, so its results view
     // (a plain query_entities route) still works after the page tools are gone.
@@ -1091,7 +1352,8 @@
         layout: () => ({
             list_objects_on_this_layout: ['Lists the objects on the layout on screen. hidden: "hideCondition" = objects with a "Hide object when" '
                 + 'calculation; "panel" = objects that only show when a tab panel, slide panel or popover is opened; "any" = either. '
-                + 'Objects placed outside the visible area are not detected.',
+                + (previewOn() ? 'For objects outside the layout, tiny or duplicated, use layout_problems; to see them on the '
+                    + 'layout, show_on_this_layout.' : 'Objects placed outside the visible area are not detected.'),
                 { objectType: S.str('e.g. "Edit Box", "Button", "Portal".'), fieldsOnly: S.bool('Only objects showing a field.'),
                     hidden: { type: 'string', enum: ['hideCondition', 'panel', 'any'] }, limit: S.limit },
                 (args, ctx) => ({ type: 'layoutObject', title: `${args.hidden ? 'Hidden objects' : 'Objects'} on ${ctx.name}`, where: [
@@ -1128,6 +1390,21 @@
                 (args) => call('query_entities', asQuery(args)), { query: true, displayAs: (args) => ['query_entities', asQuery(args)] });
             pageToolNames.push(name);
             register(tools[name]);
+        }
+        // A layout page (or its full-page preview): highlight on the preview on screen instead of a results view.
+        if (meta.entityType === 'layout' && previewOn() && FM.preview) {
+            tool('show_on_this_layout',
+                'Highlights objects on the preview of the layout on screen (opening it if folded) and returns them with their '
+                + 'bounds (absolute, in points from the layout\'s top left), part, shownIn and position. Give query (text in the '
+                + 'label, field, name, script, tooltip, tab label or type), docIds, objectType or field; conditions combine. '
+                + `An empty match clears the highlight. (On this page: ${meta.name || meta.docId}.)`,
+                { query: S.str('Text to find, as the preview\'s search box does.'),
+                    docIds: { type: 'array', items: { type: 'string' }, description: 'These objects: layoutObject docIds, or the ids after "::".' },
+                    objectType: S.str('e.g. "Edit Box", "Button", "Portal".'), field: S.str('A TO::field or field name (contains).'),
+                    limit: S.limit },
+                (args) => showOnLayout(ctx, args), { changesView: true });
+            pageToolNames.push('show_on_this_layout');
+            register(tools.show_on_this_layout);
         }
     }
 
@@ -1342,7 +1619,11 @@
             }
         } catch { /* examples fall back to placeholders */ }
         const t = first.table || 'table:Invoices', sc = first.script || 'script:Invoice Post', l = first.layout || 'layout:Main';
+        const lay = await layoutExamples(l);
         return {
+            locate_layout_object: lay.field ? { field: lay.field } : { layout: lay.layout, objectType: 'Edit Box' },
+            objects_at: [{ layout: lay.layout, x: lay.x, y: lay.y }, { layout: lay.layout, rect: lay.rect, visibleAtOpen: true }],
+            layout_problems: {},
             describe_schema: { type: 'field' },
             get_solution_overview: {},
             search_entities: { query: (first.table || 'table:Invoice').split(':')[1].slice(0, 4) },
@@ -1361,6 +1642,27 @@
             query: { steps: [{ from: 'field' }, { where: [{ field: 'fieldType', op: 'eq', value: 'Calculated' }] }, { groupBy: 'table', agg: 'count' }] },
             show_results: { title: 'Picked by hand', items: [sc, l] },
         };
+    }
+    // A layout with objects, a field shown on it and a point on one of its objects, for the layout tools' examples.
+    async function layoutExamples(fallback) {
+        const out = { layout: fallback, x: 20, y: 20, rect: { top: 0, left: 0, bottom: 100, right: 200 } };
+        if (!previewOn() || !FM.preview) return out;
+        try {
+            const key = FM.data.layoutPreview.files[0].key;
+            const idx = await FM.preview.index(key);
+            const row = idx.layouts.find((r) => r[3] > 0);
+            if (!row) return out;
+            out.layout = row[0];
+            out.field = Object.keys(idx.fields || {}).find((d) => idx.fields[d].some(([n]) => n === row[1]));
+            const data = await FM.preview.layout(key, row[0]);
+            const o = data && data.objects.find((x) => x.b && x.t !== 'Panel' && !x.pa);
+            if (o) {
+                out.x = +((o.b[1] + o.b[3]) / 2).toFixed(2);
+                out.y = +((o.b[0] + o.b[2]) / 2).toFixed(2);
+                out.rect = { top: o.b[0], left: o.b[1], bottom: o.b[0] + 100, right: o.b[1] + 200 };
+            }
+        } catch { /* examples fall back to placeholders */ }
+        return out;
     }
     async function renderAgentsPage(container) {
         document.title = `Tools for AI agents · ${FM.data.title}`;
@@ -1384,6 +1686,16 @@
             to pass to the next call. Results are capped by <code>limit</code> (default ${DEFAULT_LIMIT}, max ${MAX_LIMIT}) and say
             <code>truncated</code> when there are more. In a multi-file solution, <code>file</code> narrows a call to one file.
             Script, table and layout pages add tools scoped to that page (WebMCP and JavaScript only).</p>`;
+        if (previewOn()) {
+            html += `<p>Layouts: <code>locate_layout_object</code>, <code>objects_at</code> and <code>layout_problems</code> read the
+            layout preview's data. Their <code>bounds</code> are absolute (points from the layout's top left; the
+            <code>layoutObject</code> records keep FileMaker's bounds, relative to the container for nested objects). Each object
+            comes with <code>shownIn</code>, <code>visibleAtOpen</code>, a <code>position</code> in words and a <code>previewUrl</code>
+            that opens the preview with it selected. On a layout page, <code>show_on_this_layout</code> highlights objects on its
+            preview. Without WebMCP, a script can do the same with <code>await FMDocs.preview.open(layoutDocId, {highlight: [objectDocId, …]})</code>,
+            <code>FMDocs.preview.highlight([…])</code> and <code>FMDocs.preview.clear()</code>, or open
+            <code>index.html#/layout?doc=&lt;layout docId&gt;&amp;highlight=&lt;docId&gt;,&lt;docId&gt;</code>.</p>`;
+        }
         for (const t of list) {
             html += `<section class="fm-tool"><h3 id="tool-${esc(t.name)}"><code>${esc(t.name)}</code></h3><p>${esc(t.description)}</p>`;
             html += `<details><summary>Arguments (JSON Schema)</summary><pre>${esc(JSON.stringify(t.inputSchema, null, 1))}</pre></details>`;
@@ -1410,6 +1722,11 @@
             if (c && (!Array.isArray(c) || c.length)) html += `<p class="fm-note">${esc([].concat(c).join(' '))}</p>`;
         }
         if (result.cycleBackToStart) html += `<p class="fm-note">Cycle back to the start: ${esc(result.cycleBackToStart.join(' → '))}</p>`;
+        if (Array.isArray(result.layouts) && FM.preview) { // the layout tools: every match on its layout, highlighted
+            const links = result.layouts.filter((l) => l.previewUrl && l.previewUrl.includes('#')).map((l) => `<a class="fm-lp-show" `
+                + `href="${esc(l.previewUrl.slice(l.previewUrl.indexOf('#')))}">${esc(l.layout)}</a> <span class="fm-count">${l.count}</span>`);
+            if (links.length) html += `<p class="fm-lp-links">Show on layout: ${links.join(' · ')}</p>`;
+        }
         if (result.accounts && result.accounts.length) {
             html += '<p><strong>Accounts:</strong> ' + result.accounts.map((a) => `${esc(a.name)}`
                 + (a.external ? ' <span class="fm-tag">group</span>' : '') + (!a.enabled ? ' <span class="fm-tag">disabled</span>' : '')).join(', ') + '</p>';
@@ -1479,6 +1796,11 @@
         if (it.accounts) {
             extra += '<div class="fm-accounts">' + (it.accounts.length ? it.accounts.map((a) => esc(a.name)
                 + (a.external ? ' <span class="fm-tag">group</span>' : '') + (!a.enabled ? ' <span class="fm-tag">disabled</span>' : '')).join(', ') : '<span class="fm-muted">no accounts</span>') + '</div>';
+        }
+        if (it.type === 'layoutObject' && it.parent && FM.preview) { // layout-preview.js (unless --no-layout-preview)
+            const f = files().find((x) => x.label === it.file);
+            const link = f ? FM.preview.objectLink(f.key, it.parent.docId, it.docId) : '';
+            if (link) extra += ` ${link}`;
         }
         const parent = it.parent && !nested ? ` <span class="fm-muted">in ${esc(it.parent.name || it.parent.docId)}</span>` : '';
         return `<li>${linkFor(it)}${parent}${it.detail ? ` <span class="fm-detail">${esc(it.detail)}</span>` : ''}${extra}</li>`;

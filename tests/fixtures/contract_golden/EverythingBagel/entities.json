@@ -2,7 +2,7 @@
   "schemaVersion": "1.1",
   "generator": {
     "name": "fm-saxml-converter",
-    "version": "0.6.15"
+    "version": "0.7.0"
   },
   "source": {
     "fmpFileName": "EverythingBagel.fmp12",
@@ -2038,7 +2038,7 @@
         {
           "role": "hideCondition",
           "text": "Exact ( Get ( WindowMode ) ; 1 )\n// Hide when in find mode",
-          "chunkRefs": []
+          "chunkRefs": null
         },
         {
           "role": "canEntryCalc",

@@ -84,11 +84,13 @@ Run `fm-saxml <command> --help` for every option.
 | `--solution <name>` | `build` | The solution's name in the docs root and `docs.json` (default: the FileMaker file name, or the folder name for a multi-file export) |
 | `--model-out <path>` | `build` | Also write the intermediate `model.json` alongside the Markdown output |
 | `--include-json` / `--no-include-json` | `build`, `render` | Write the JSON contract files (`docs.json`, `entities.json`, `references.json`, `backlinks.json`, `external-references.json`; see [docs/contract.md](docs/contract.md)) into the output dir (default: on) |
-| `--raw-xml` / `--no-raw-xml` | `build` | Write `raw/*.json`: the scrubbed XML of every script, layout, theme and custom menu, for tools that paste back into FileMaker (see [docs/contract.md](docs/contract.md)). Adds about two-thirds of the export's size (default: on) |
+| `--raw-xml` / `--no-raw-xml` | `build` | Write `raw/*.json`: the scrubbed XML of every script, layout, theme and custom menu, for tools that paste back into FileMaker (see [docs/contract.md](docs/contract.md)). Adds about two-thirds of the export's size. The layout preview's theme styles are read from it, so without it the preview is a wireframe (default: on) |
 | `--strict` | `build` | Exit non-zero if any reference is left `unresolved` after resolution |
 | `--force` / `-f`, `--yes` / `-y` | `build`, `render` | Skip the overwrite-confirmation prompt |
 | `--open` | `build` | Open the output folder when finished |
 | `--html` | `build`, `render` | Also write an `index.html` for browsing the docs in a web browser (see [HTML viewer](./docs/html-viewer.md)) |
+| `--no-layout-preview` | `build`, `render` | Leave the layout preview out of the HTML viewer (see [Layout preview](./docs/html-viewer.md#layout-preview)). Default: on whenever `--html` or `--webmcp` is used |
+| `--layout-images` | `build` | Also include pictures (PNG, JPEG, GIF graphics) and SVG graphics in the layout preview, not only SVG button icons. Off by default: the scrubber can't check what a picture shows. Images over 256 KB are skipped and counted. Without it, `raw/layouts.json` also leaves out the pictures stored on layout objects (SVG button icons are kept) |
 | `--webmcp` | `build`, `render` | Make the HTML viewer agent-ready (see [HTML viewer](./docs/html-viewer.md#agent-ready-html---webmcp)). Turns on `--html` |
 | `--serve` / `--port <n>` | `build`, `render` | With `--webmcp`: serve the docs at `http://127.0.0.1:<port>` when done (default 8766). Same as the `serve` command |
 | `--coverage` | `build`, `parse`, `render` | Also check that everything in the export reached the docs, and write `Reports/coverage.md` (see [Coverage report](#coverage-report)) |
@@ -155,9 +157,9 @@ fm-saxml build ./MySolution.xml --coverage
 
 With `--coverage` (or `--fail-on-coverage-gap`), the build writes `Reports/coverage.md`. It's off by default because it reads the whole export a second time. `parse --coverage` keeps the counts in `model.json`, and `render --coverage` turns them into the report.
 
-The report counts about 70 things straight from the export's XML (scripts, step comments, Set Variable names, button actions, relationship options, value list sources, privilege rows, validation rules, and so on), independently of the converter, and sets each against the same thing in the finished docs. Some checks look at the rendered text: a Set Variable name only counts if it appears in the step.
+The report counts about 80 things straight from the export's XML (scripts, step comments, Set Variable names, button actions, relationship options, value list sources, privilege rows, validation rules, layout and script folders, and so on), independently of the converter, and sets each against the same thing in the finished docs. Some checks look at the rendered text: a Set Variable name only counts if it appears in the step.
 
-The report also lists any element or attribute the converter has no rule for ("Unrecognised XML"), so a FileMaker option this version doesn't document can't disappear silently, and what it leaves out on purpose (images, styling, layout geometry). The home page shows a one-line result, and a multi-file build's `Reports/batch-summary.md` has a Coverage column.
+The report also lists any element or attribute the converter has no rule for ("Unrecognised XML"), so a FileMaker option this version doesn't document can't disappear silently, and what it leaves out on purpose (images, CSS, most layout geometry). The home page shows a one-line result, and a multi-file build's `Reports/batch-summary.md` has a Coverage column.
 
 ## Solution profile
 
@@ -206,7 +208,10 @@ saxml2doc/
    ├─ manifest.js
    ├─ pages/
    ├─ webmcp.js        (--webmcp only; llms.txt at the top level too)
-   └─ data/<file>/     (--webmcp only: catalog, one script per entity type, refs, access, indirectionSite)
+   ├─ layout-preview.js (unless --no-layout-preview)
+   └─ data/<file>/     (--webmcp only: catalog, one script per entity type, refs, access, indirectionSite;
+                        layouts/: the layout preview's index.js and one <n>.js per layout, unless --no-layout-preview;
+                        library/: one <key>.js per icon or image the preview draws)
 ```
 
 **Script pages** list every step as FileMaker's Script Workspace shows it: comments, `Set Variable [ $name ; Value: … ]`, `Set Field [ Table::field ; … ]`, Perform Script parameters and step options, with nothing truncated. If/Loop blocks are indented and disabled steps are prefixed with `//`. Step numbers match FileMaker's. A **Variables** table on each script page shows where each variable is set and read. `Variables/index.md` lists every `$$global` (with a page showing where it is set and read across scripts, fields, layouts and custom functions) and each script's `$locals`. Locals that are read but never set are flagged: they are always empty, which usually means a typo.
@@ -275,7 +280,7 @@ Fixture-based and snapshot tests live under `tests/`. New extractors should ship
 A few quirks worth knowing about:
 
 - `SaveAsXML` files are encoded as **UTF-16 LE**. Always open in binary mode and let `lxml` read the encoding declaration.
-- In FileMaker 22+, embedded layout images are duplicated inside every `<LayoutObject>` (rather than shared via `<LibraryCatalog>`), which can dramatically inflate file size. The layout extractor skips `<StreamList>` image data by default.
+- In FileMaker 22, embedded layout images (button icons) are duplicated inside every `<LayoutObject>` (rather than shared via `<LibraryCatalog>`, as FileMaker 26 does), which can dramatically inflate file size. Only the HTML layout preview reads them (`parser/extractors/library.py`): each distinct image once, kept beside the model and never in `model.json` or `entities.json`. The original file name (`FNAM` stream) is never read, and is removed from `raw/layouts.json`; so are pictures stored on layout objects (graphics, PNG icons), unless `--layout-images` is given (`render/json/raw_xml.py`, `_drop_pictures`).
 - Layout objects in modern (v2) `SaveAsXML` files appear as `<LayoutObject>` inside `<Part><ObjectList>`. Older v1 exports use `<Object type="FieldObj">`. Both are parsed.
 - Relationship names and script folder paths are **derived during normalization**, not read directly from the XML.
 - Script steps are shown as **FileMaker prints them** in the Script Workspace, taken from the `StepText` entries in the export's `DDR_INFO` section (scrubbed like any calculation). Steps without one (older exports, older `model.json` files) are rebuilt from their parameters instead.
@@ -284,5 +289,4 @@ A few quirks worth knowing about:
 
 - **A missing "Called By" is not proof that a script is unused.** Buttons, button groups, layout and object triggers, File Options triggers and Perform Script steps are all traced, and so are names written in text that can be resolved (`Perform Script [ By name ]`, see [Names written in text](./docs/indirection.md)). A script can still be run from a custom menu item in another file, by a name that comes from data, or by FileMaker Server schedules, none of which the export links to a script page.
 - **Custom privilege lists for layouts, value lists and scripts** are read generically (each row's object and its access columns), because the sample exports used for testing only have custom *record* privileges. Unusual shapes still come through, but their column names are FileMaker's raw element names.
-- **`UNUSED_FIELD_CANDIDATE` only sees references this tool already extracts** — relationships, layouts, layout objects, script steps, and custom-function calculations. It does **not** yet parse the calculation text of a field's own `Calculation` (e.g. a `FullName` calc field referencing `FirstName`/`LastName`) — fields referenced only from inside another field's formula will currently show up as false-positive unused candidates. Treat it as a lead to investigate, not a guarantee.
 - **`diff`'s script-step comparison is content-based, not line-by-line.** It tells you how many steps were added/removed per script, not exactly which ones or where — open the two `Scripts/<name>.md` pages side by side for that level of detail.

@@ -162,14 +162,18 @@ def _parse_auto_enter(elem: etree._Element | None) -> dict[str, Any] | None:
         ae_type = "calculation"
         calculation = text_of(calc_elem)
 
-    if ae_type == "none" and not value and not calculation:
+    # v2 with no auto-enter option, ``<AutoEnter type="" prohibitModification="True"/>``, still
+    # stops data entry from changing the field
+    no_modify = (attr(elem, "allowEditing", "AllowEditing") == "False"
+                 or attr(elem, "prohibitModification").lower() == "true")
+    if ae_type == "none" and not value and not calculation and not no_modify:
         return None
 
     return {
         "type": ae_type,
         "value": value,
         "calculation": calculation,
-        "no_modify_auto_enter": attr(elem, "allowEditing", "AllowEditing") == "False",
+        "no_modify_auto_enter": no_modify,
     }
 
 

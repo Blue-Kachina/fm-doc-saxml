@@ -27,6 +27,7 @@ from .extractors.accounts import extract_accounts
 from .extractors.extended_privileges import extract_extended_privileges
 from .extractors.custom_menus import extract_custom_menus, extract_custom_menu_sets, default_menu_set
 from .extractors.themes import extract_themes
+from .extractors.library import extract_library
 from .extractors.file_access import extract_file_references
 
 
@@ -59,6 +60,8 @@ class RawModel:
     file_references: list[dict[str, Any]] = field(default_factory=list)
     file_options: dict[str, Any] | None = None
     graph_notes: list[dict[str, Any]] = field(default_factory=list)
+    # <LibraryCatalog>: key -> {kind, data, glyph} (extractors/library.py), for the layout preview
+    library: dict[str, dict[str, Any]] = field(default_factory=dict)
     coverage: dict[str, Any] | None = None  # parser/coverage.py: what the XML contains, for the report
     parse_warnings: list[str] = field(default_factory=list)
 
@@ -200,6 +203,7 @@ def _parse_v2(xml_path: Path, root, raw: RawModel, coverage: bool = False) -> Ra
     raw.custom_menus = extract_custom_menus(container, chunk_lists=chunk_lists)
     raw.custom_menu_sets = extract_custom_menu_sets(container)
     raw.themes = extract_themes(container)
+    raw.library = extract_library(container)
     raw.file_references = extract_file_references(container)
     raw.external_data_sources = extract_external_data_sources(container)
     raw.file_options = extract_file_options(root)

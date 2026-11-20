@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{TITLE}}</title>
+<!-- No favicon file: an empty one stops the browser asking a server for /favicon.ico (a 404 in the console). -->
+<link rel="icon" href="data:,">
 <!-- The bundled renderer (Milkdown Crepe 7.22.1; see _viewer/vendor/THIRD_PARTY_LICENSES.txt). -->
 <link rel="stylesheet" href="_viewer/vendor/crepe.css">
 <link rel="stylesheet" href="_viewer/vendor/nord.css" media="(prefers-color-scheme: light)">
@@ -299,6 +301,7 @@ window.FMDocs = {
 <script src="_viewer/manifest.js"></script>
 <script src="_viewer/vendor/crepe.js" defer></script>
 <!--WEBMCP-->
+<!--LAYOUT_PREVIEW-->
 </head>
 <body>
 <header class="top">
@@ -310,6 +313,7 @@ window.FMDocs = {
 <nav class="side" id="side" aria-label="Pages"></nav>
 <main id="main">
     <div class="page-head" id="page-head"></div>
+    <div class="fm-lp-extra" id="page-extra"></div>
     <div id="content"><div class="message">Loading viewer…</div></div>
 </main>
 <script type="module">
@@ -596,6 +600,7 @@ const decodePath = (p) => p.split('/').map(decodeURIComponent).join('/');
 const hrefFor = (p) => '#/' + encodePath(p);
 
 const isResults = () => /^#\/(results|agents)(\?|$)/.test(location.hash); // --webmcp routes
+const isLayoutRoute = () => /^#\/layout(\?|$)/.test(location.hash); // the layout preview's full page
 
 function currentPath() {
     const h = location.hash.replace(/^#\/?/, '');
@@ -751,6 +756,7 @@ async function show(path, seq) {
 
     if (crepe) { await crepe.destroy(); crepe = null; }
     content.innerHTML = '';
+    $('page-extra').innerHTML = '';
     renderHead(path, page);
     const entry = byPath.get(path);
     document.title = `${entry.t} · ${data.title}`;
@@ -769,17 +775,41 @@ async function show(path, seq) {
     }
     pendingStep = null;
     document.body.dataset.rendered = path; // lets automated checks wait for a page
+    // The layout preview's block (layout pages) or "Show on layout" links, above the Markdown.
+    if (window.FMDocs.preview) window.FMDocs.preview.onPage({ path, meta: page.meta, slot: $('page-extra') });
 }
 
 async function showResults(seq) {
     if (crepe) { await crepe.destroy(); crepe = null; }
     if (seq !== routeSeq) return;
     $('page-head').innerHTML = '';
+    $('page-extra').innerHTML = '';
     window.FMDocs.webmcp.onRoute(null);
     await window.FMDocs.webmcp.renderResultsRoute(content, location.hash);
     if (seq !== routeSeq) return;
     $('main').scrollTop = 0;
     document.body.dataset.rendered = 'results';
+}
+
+async function showLayout(seq) {
+    if (crepe) { await crepe.destroy(); crepe = null; }
+    if (seq !== routeSeq) return;
+    $('page-head').innerHTML = '';
+    $('page-extra').innerHTML = '';
+    if (window.FMDocs.webmcp) window.FMDocs.webmcp.onRoute(null);
+    content.innerHTML = '';
+    const layoutPage = await window.FMDocs.preview.renderRoute(content, location.hash);
+    if (seq !== routeSeq) return;
+    const entry = layoutPage && byPath.get(layoutPage);
+    document.title = `${entry ? entry.t : 'Layout'} · preview · ${data.title}`;
+    if (layoutPage) markActive(layoutPage);
+    // The layout page's tools (show_on_this_layout ...) work on the full-page preview too.
+    const shown = window.FMDocs.preview.current;
+    if (window.FMDocs.webmcp && layoutPage && shown) {
+        window.FMDocs.webmcp.onRoute({ path: layoutPage, meta: { entityType: 'layout', docId: shown.data.docId, name: shown.data.name } });
+    }
+    $('main').scrollTop = 0;
+    document.body.dataset.rendered = 'layout';
 }
 
 // "#some-heading" links: headings get GitHub-style ids (lowercased, punctuation
@@ -799,7 +829,8 @@ function route() {
     const path = currentPath();
     document.body.classList.remove('menu-open');
     delete document.body.dataset.rendered;
-    const render = isResults() && window.FMDocs.webmcp ? () => showResults(seq) : () => show(path, seq);
+    const render = isResults() && window.FMDocs.webmcp ? () => showResults(seq)
+        : isLayoutRoute() && window.FMDocs.preview ? () => showLayout(seq) : () => show(path, seq);
     queue = queue.then(render).catch((err) => {
         console.error(err);
         showMessage(`Failed to render <code>${esc(path)}</code>: ${esc(err.message)}`);
@@ -865,7 +896,7 @@ function navigate(path, opts = {}) {
 function go(hash) {
     if (location.hash === hash) route(); else location.hash = hash;
 }
-window.FMDocs.ui = { hrefFor, currentPath: () => (isResults() ? location.hash.slice(2) : currentPath()), navigate, go };
+window.FMDocs.ui = { hrefFor, currentPath: () => (isResults() || isLayoutRoute() ? location.hash.slice(2) : currentPath()), navigate, go };
 $('menu-btn').addEventListener('click', () => document.body.classList.toggle('menu-open'));
 window.addEventListener('hashchange', route);
 

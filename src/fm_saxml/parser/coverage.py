@@ -91,6 +91,9 @@ MEASURE_XPATHS: dict[str, str] = {
     "filtered_portals": f"{_OBJECTS}/Portal[Calculation]",
     "portals_allow_deletion": f"{_OBJECTS}/Portal[number(Options) mod 8 >= 4]",  # bit 4
     "tooltips": f"{_OBJECTS}/Tooltip[.//Calculation]",
+    "layout_themes": f"{_LAYOUTS}/LayoutThemeReference[@name!='']",
+    "layouts_hidden": f"{_LAYOUTS}/Options[@hidden='True']",
+    "hide_in_find_mode": f"{_OBJECTS}/Conditions/Hide[@findMode='True']",
     # Fields
     "field_comments": f"{_FIELDS}[normalize-space(@comment)!='']",
     "field_annotations": f"{_FIELDS}/Annotation[normalize-space()!='']",
@@ -129,6 +132,7 @@ MEASURE_XPATHS: dict[str, str] = {
     "privilege_rows_scripts": f"{_PRIV_ACCESS}/Scripts/Custom/ObjectList/*[@access]",
     "privilege_field_entries": f"{_PRIV_ACCESS}/Records/Custom/ObjectList/*/Fields/Field[@access]",
     "privilege_limited_calcs": f"{_PRIV_ACCESS}/*/Custom/ObjectList/*/*[.//Calculation]",
+    "privilege_allow_create": f"{_PRIV_ACCESS}/*/Custom[@Create='True']",
     # File
     "file_default_layout": f"{_META}/Defaults/LayoutReference[@name!='']",
 }
@@ -184,7 +188,28 @@ def _step_calcs(root: etree._Element) -> int:
     return total
 
 
+def _in_folders(catalog: str, tag: str) -> Callable[[etree._Element], int]:
+    """Items of a flat catalog that sit inside a folder: after a ``isFolder="True"`` entry and
+    before its ``isFolder="Marker"``. Separators and the folders themselves don't count."""
+    def count(root: etree._Element) -> int:
+        total = 0
+        for cat in root.xpath(f"{AA}/{catalog}"):
+            depth = 0
+            for item in cat.iterchildren(tag):
+                is_folder = (item.get("isFolder") or "").lower()
+                if is_folder == "true":
+                    depth += 1
+                elif is_folder == "marker":
+                    depth = max(depth - 1, 0)
+                elif depth and (item.get("isSeparatorItem") or "").lower() != "true":
+                    total += 1
+        return total
+    return count
+
+
 _FUNCS: dict[str, Callable[[etree._Element], int]] = {
+    "layouts_in_folders": _in_folders("LayoutCatalog", "Layout"),
+    "scripts_in_folders": _in_folders("ScriptCatalog", "Script"),
     "steps_with_filemaker_text": _step_texts,
     "step_calculations": _step_calcs,
     "custom_value_lines": _custom_value_lines,
@@ -213,8 +238,9 @@ CONTEXTS: list[Context] = [
             read="BaseTableCatalog TableOccurrenceCatalog ValueListCatalog FieldsForTables CustomMenuCatalog "
                  "ScriptCatalog ThemeCatalog LayoutCatalog PrivilegeSetsCatalog ExtendedPrivilegesCatalog "
                  "AccountsCatalog StepsForScripts FileAccessCatalog RelationshipCatalog CustomMenuSetCatalog "
-                 "ExternalDataSourceCatalog CustomFunctionsCatalog OptionsForValueLists CalcsForCustomFunctions",
-            skipped="BaseDirectoryCatalog LibraryCatalog PasteIndexList",
+                 "ExternalDataSourceCatalog CustomFunctionsCatalog OptionsForValueLists CalcsForCustomFunctions "
+                 "LibraryCatalog",  # LibraryCatalog: images for the HTML layout preview (icons, graphics)
+            skipped="BaseDirectoryCatalog PasteIndexList",
             read_attrs="membercount"),  # bookkeeping; absent when split catalogs are merged
     Context("File options (Metadata)", _META,
             read="Minimum Login Defaults ScriptTriggers Encryption SavePassword ShowSignInFields "
@@ -242,17 +268,18 @@ CONTEXTS: list[Context] = [
     Context("Relationship side", f"{_REL}/LeftTable | {_REL}/RightTable",
             read="TableOccurrenceReference SortSpecification", read_attrs="cascadeCreate cascadeDelete type"),
     Context("Layout", _LAYOUTS,
-            read="PartsList TableOccurrenceReference LayoutThemeReference ScriptTriggers MenuSet",
-            skipped=f"{_COMMON_SKIPPED} GridStyle ClientType Options TableView LocalCSS FixedMargins "
-                    "LayoutReference ColumnCount LayoutCustomStyle",
-            read_attrs="id name isFolder isSeparatorItem", skipped_attrs="width"),
+            read="PartsList TableOccurrenceReference LayoutThemeReference ScriptTriggers MenuSet GridStyle "
+                 "ClientType Options",
+            skipped=f"{_COMMON_SKIPPED} TableView LocalCSS FixedMargins LayoutReference ColumnCount LayoutCustomStyle",
+            read_attrs="id name isFolder isSeparatorItem width"),
     Context("Layout part", f"{_LAYOUTS}/PartsList/Part", read="Definition ObjectList",
             read_attrs="type kind name"),
     Context("Layout object", _OBJECTS,
             read="Bounds Field Text Button PopoverButton GroupedButton ButtonBar Portal ScriptTriggers ObjectList "
-                 "Tooltip Conditions External TabControl TabPanel SlideControl SlidePanel Title DisplayCalculations",
-            skipped=f"{_COMMON_SKIPPED} Options LocalCSS ExtendedAttributes FieldList Accessibility Line Rectangle "
-                    "RoundedRectangle Oval Graphic TabOrder",
+                 "Tooltip Conditions External TabControl TabPanel SlideControl SlidePanel Title DisplayCalculations "
+                 "Options LocalCSS Graphic",  # LocalCSS: the style's name only, not its CSS text; Graphic: its picture
+            skipped=f"{_COMMON_SKIPPED} ExtendedAttributes FieldList Accessibility Line Rectangle "
+                    "RoundedRectangle Oval TabOrder",
             read_attrs="id type name kind", skipped_attrs="hash position Options Orientation"),
     Context("Portal", f"{_OBJECTS}/Portal",
             read="TableOccurrenceReference Options SortSpecification Calculation ObjectList"),

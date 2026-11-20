@@ -90,7 +90,9 @@ def test_viewer_bundles_its_renderer_and_loads_nothing_remote(tmp_path):
     page = (out / "index.html").read_text(encoding="utf-8")
     assert "import(" not in page and "esm.sh" not in page and "jsdelivr" not in page
     refs = re.findall(r'<(?:script|link)\b[^>]*\b(?:src|href)="([^"]+)"', page)
-    assert len(refs) == 5
+    assert refs[0] == "data:,"  # an empty favicon, so a server isn't asked for /favicon.ico
+    refs = refs[1:]
+    assert len(refs) == 6  # with _viewer/layout-preview.js (the layout preview is on by default)
     for ref in refs:
         assert (out / ref).is_file(), ref  # every script and stylesheet is a file next to the page
     # The bundle fetches nothing itself either (its only URLs are XML namespaces and doc links).

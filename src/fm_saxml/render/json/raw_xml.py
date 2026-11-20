@@ -36,12 +36,13 @@ class RawSource:
     changes: list[tuple[str, str, str]] = field(default_factory=list)  # Scrubber.last_changes after scrub_raw
 
 
-def write_raw_xml(model, out_dir: Path, scrubber=None) -> Optional[int]:
+def write_raw_xml(model, out_dir: Path, scrubber=None, images: bool = False) -> Optional[int]:
     """Write ``out_dir/raw/*.json`` for ``model``. Returns the number of elements, or None
     when the model has no export to read (a model.json render).
 
     Values only this pass finds are added to ``model.scrubbing``, so call it before the
-    redaction report is rendered.
+    redaction report is rendered. Pictures stored in the kept elements are left out unless
+    ``images`` (``--layout-images``): see ``_drop_pictures``.
     """
     source: Optional[RawSource] = getattr(model, "_raw_source", None)
     if source is None:
@@ -49,6 +50,9 @@ def write_raw_xml(model, out_dir: Path, scrubber=None) -> Optional[int]:
     root = _load_root(source)
     picked = _pick(model, root)
     del root  # only the picked elements are kept (they were moved out of the tree)
+    _drop_file_names(picked)
+    if not images:
+        _drop_pictures(picked)
 
     if scrubber is not None:
         _scrub(picked, source, scrubber, model)
@@ -126,6 +130,39 @@ def _pick(model, root: etree._Element) -> dict[str, list[tuple[str, etree._Eleme
     for menu_set in _descendants(menu_sets, "CustomMenuSet"):
         keep("menus", custom_menu_set_doc_id(normalize_name(menu_set.get("name", ""))), menu_set, e.custom_menu_sets)
     return picked
+
+
+def _drop_file_names(picked) -> None:
+    """Remove each image's ``<Stream name="FNAM">``: the file name it was imported from, encoded
+    (XOR 0x5A), so the scrubber can't read it, and sometimes a full path with a user name
+    (layout_preview.md, 7.7). Icons stored inline on layout objects (SaXML 2.2) carry one."""
+    for items in picked.values():
+        for _doc_id, el in items:
+            for stream in [s for s in el.iter() if _local(s) == "Stream" and s.get("name") == "FNAM"]:
+                stream.getparent().remove(stream)
+
+
+def _drop_pictures(picked) -> None:
+    """Remove the picture stream of each image stored in a kept element (a ``<StreamList>``
+    whose ``MAIN`` stream names it), except an SVG button icon's (``<IconData>``): the scrubber
+    can't read the encoded bytes, and a graphic or a PNG/JPEG icon can show a logo or client
+    artwork. ``MAIN`` and ``GLPH`` stay, so the element still says what the image was. The
+    layout preview writes the same SVG icons by default and the rest only with ``--layout-images``,
+    which keeps them here too."""
+    for items in picked.values():
+        for _doc_id, el in items:
+            for stream_list in [s for s in el.iter() if _local(s) == "StreamList"]:
+                streams = _children(stream_list, "Stream")
+                main = next((s for s in streams if s.get("name") == "MAIN"), None)
+                name = (main.text or "") if main is not None else ""  # "SVG " ends in a space
+                if not name.strip():
+                    continue
+                icon = any(_local(a) == "IconData" for a in stream_list.iterancestors())
+                if icon and name.startswith("SVG"):
+                    continue
+                for stream in streams:
+                    if stream.get("name") in (name, name.strip()):
+                        stream_list.remove(stream)
 
 
 def _scrub(picked, source: RawSource, scrubber, model) -> None:

@@ -12,11 +12,13 @@ class ChunkLists(dict):
 
     Also carries ``step_texts``: each script step as FileMaker prints it in the Script
     Workspace, from ``<DDR_INFO><Script>``, keyed like ``step_text_for`` looks them up.
+    ``hashes`` holds each ChunkList's ``hash``, so a reference can tell whether the entry is its own.
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.step_texts: dict[str, str] = {}
+        self.hashes: dict[str, str] = {}
 
 
 def extract_chunk_lists(root: etree._Element) -> ChunkLists:
@@ -47,14 +49,16 @@ def extract_chunk_lists(root: etree._Element) -> ChunkLists:
         chunk_list = find_child(entry, "ChunkList")
         if chunk_list is not None and find_all_children(chunk_list, "Chunk"):
             result[_local(entry.tag)] = _chunk_refs(chunk_list)
+            result.hashes[_local(entry.tag)] = attr(entry, "hash")
     return result
 
 
 def _step_texts(ddr_info: etree._Element) -> dict[str, str]:
     """``<DDR_INFO><Script><ObjectList><_UUID hash="…" datatype="StepText">Set Variable [ $i; Value:1 ]``.
 
-    Keyed by the element name (the step's UUID). Steps without a UUID (a button's
-    single step) share the name ``_``, so those are keyed by ``#<hash>`` instead.
+    Keyed by the element name (the step's UUID) and by ``#<hash>``. Steps without a UUID
+    (a button's single step) share the name ``_``, and steps copied within a script can
+    share a UUID, so the hash is the key that tells them apart.
     """
     section = find_child(ddr_info, "Script")
     obj_list = find_child(section, "ObjectList") if section is not None else None
@@ -63,7 +67,10 @@ def _step_texts(ddr_info: etree._Element) -> dict[str, str]:
         if not isinstance(entry.tag, str) or attr(entry, "datatype") != "StepText":
             continue
         key = _local(entry.tag)
-        texts[key if key != "_" else f"#{attr(entry, 'hash')}"] = entry.text or ""
+        if key != "_":
+            texts[key] = entry.text or ""
+        if attr(entry, "hash"):
+            texts[f"#{attr(entry, 'hash')}"] = entry.text or ""
     return texts
 
 
@@ -73,10 +80,10 @@ def step_text_for(step_elem: etree._Element, chunk_lists: ChunkLists | None) -> 
     ddr = find_child(step_elem, "DDRREF")
     if not texts or ddr is None or attr(ddr, "kind") != "StepText":
         return None
+    if attr(ddr, "hash") and f"#{attr(ddr, 'hash')}" in texts:
+        return texts[f"#{attr(ddr, 'hash')}"]
     key = text_of(ddr)
-    if key and key != "_":
-        return texts.get(key)
-    return texts.get(f"#{attr(ddr, 'hash')}")
+    return texts.get(key) if key and key != "_" else None
 
 
 def _chunk_refs(chunk_list: etree._Element) -> list[dict[str, Any]]:
@@ -104,12 +111,18 @@ def _chunk_refs(chunk_list: etree._Element) -> list[dict[str, Any]]:
 def chunk_refs_for(holder: etree._Element, chunk_lists: ChunkLists | None) -> list[dict] | None:
     """References from the ChunkList a calc's ``<DDRREF kind="ChunkList">`` points at.
 
-    None when there is no ChunkList for it (v1 export, untokenizable calc).
+    None when there is no ChunkList for it (v1 export, untokenizable calc). Copied steps and
+    objects can share a key: FileMaker then writes one ChunkList, and the other reference has
+    an empty ``hash``. That ChunkList belongs to another calc, so it isn't used here.
     """
     ddr = find_child(holder, "DDRREF")
     if chunk_lists is None or ddr is None or attr(ddr, "kind") != "ChunkList":
         return None
-    return chunk_lists.get(text_of(ddr))
+    key = text_of(ddr)
+    stored = getattr(chunk_lists, "hashes", {}).get(key)
+    if stored and attr(ddr, "hash") != stored:
+        return None
+    return chunk_lists.get(key)
 
 
 def calc_entry(holder: etree._Element, role: str, chunk_lists: ChunkLists | None) -> dict[str, Any] | None:

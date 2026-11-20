@@ -184,6 +184,8 @@ MEASURES: list[Measure] = [
             lambda m: sum(1 for s in m.entities.scripts.values() if s.run_with_full_access)),
     Measure("scripts_hidden", "Scripts", "Scripts left out of the Scripts menu",
             lambda m: sum(1 for s in m.entities.scripts.values() if s.show_in_menu is False)),
+    Measure("scripts_in_folders", "Scripts", "Scripts in folders",
+            lambda m: sum(1 for s in m.entities.scripts.values() if s.folder_path)),
     Measure("file_script_triggers", "Scripts", "File Options script triggers",
             lambda m: len(m.file_options.script_triggers) if m.file_options else 0),
     Measure("layout_script_triggers", "Scripts", "Layout script triggers",
@@ -214,6 +216,14 @@ MEASURES: list[Measure] = [
             lambda m: sum(1 for o in _objects(m) if o.portal is not None and o.portal.allow_deletion)),
     Measure("tooltips", "Layouts", "Tooltips",
             lambda m: sum(1 for o in _objects(m) if any(c.role == "tooltip" for c in o.calculations))),
+    Measure("layout_themes", "Layouts", "Layout themes",
+            lambda m: sum(1 for lay in m.entities.layouts.values() if lay.theme)),
+    Measure("layouts_hidden", "Layouts", "Layouts left out of the Layouts menu",
+            lambda m: sum(1 for lay in m.entities.layouts.values() if lay.hidden)),
+    Measure("hide_in_find_mode", "Layouts", "Hide conditions that also apply in Find mode",
+            lambda m: sum(1 for o in _objects(m) if o.hide_in_find_mode)),
+    Measure("layouts_in_folders", "Layouts", "Layouts in folders",
+            lambda m: sum(1 for lay in m.entities.layouts.values() if lay.folder_path)),
     # Fields
     Measure("field_comments", "Fields", "Field comments", lambda m: sum(1 for f in _fields(m) if f.comment)),
     Measure("field_annotations", "Fields", "Field annotations", lambda m: sum(1 for f in _fields(m) if f.annotation)),
@@ -282,6 +292,10 @@ MEASURES: list[Measure] = [
             lambda m: sum(len(item.calculations) for ps in m.entities.privilege_sets.values()
                           for cat in (ps.records, ps.layouts, ps.value_lists, ps.scripts)
                           if cat is not None for item in cat.custom or [])),
+    Measure("privilege_allow_create", "Privileges", "Custom lists allowing creation of new items",
+            lambda m: sum(1 for ps in m.entities.privilege_sets.values()
+                          for cat in (ps.records, ps.layouts, ps.value_lists, ps.scripts)
+                          if cat is not None and cat.allow_create)),
     # File
     Measure("file_default_layout", "File", "Default layout on open",
             lambda m: 1 if m.file_options and m.file_options.default_layout else 0),

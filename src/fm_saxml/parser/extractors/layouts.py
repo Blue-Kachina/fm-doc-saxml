@@ -9,6 +9,7 @@ from ._helpers import (
     attr, find_child, find_all_children, find_all_descendants, xml_path, modification_info, text_of, uuid_of,
 )
 from .chunk_lists import ChunkLists, collect_calcs
+from .library import object_image
 from .scripts import _parse_step, _sibling_data_source
 from .relationships import parse_sort_spec
 
@@ -136,6 +137,15 @@ def _int(value: str | None) -> int | None:
         return int(value.strip()) if value and value.strip() else None
     except ValueError:
         return None
+
+
+def _num_attr(value: str | None) -> int | float | None:
+    """A number attribute as written (``12``, ``10.5``), or None."""
+    try:
+        v = float(value) if value and value.strip() else None
+    except ValueError:
+        return None
+    return None if v is None else int(v) if v.is_integer() else v
 
 
 def _layout_setup(layout_elem: etree._Element) -> dict[str, Any]:
@@ -441,9 +451,65 @@ def _parse_layout_object(
         **_button_face(lo),
         "script_triggers": _parse_script_triggers(lo),
         "calculations": collect_calcs(lo, chunk_lists, _object_calc_role, stop_at=("LayoutObject",)),
+        "geometry": _preview_geometry(lo),
         "fallback_index": fallback_index,
         "source_xml_path": xml_path(lo),
     }
+
+
+def _preview_geometry(lo: etree._Element) -> dict[str, Any] | None:
+    """What the HTML viewer's layout preview needs beyond the bounds (layout_preview.md, P0 findings).
+
+    ``<TabControl default height>``: the 0-based front tab and the tab strip's height;
+    ``<TabPanel size absolute>``: a tab's label width and x offset in the strip;
+    ``<LayoutObject type="PopoverPanel" position>``: the side it opens on (0 right, 1 below,
+    2 left, 3 above). Kept off the contract model: the normalizer keeps it beside the model.
+
+    Images (P5): ``<Button|PopoverButton><IconData type size><BinaryData>``: the icon's library
+    key, ``icon_pos`` (IconData@type: 1 icon only, 2 above the label, 3 below, 4 left, 5 right)
+    and ``icon_size`` (points); ``<Graphic><BinaryData>``: a graphic's picture, ``image``. An
+    image stored inline (SaXML 2.2) also comes back under ``library`` (key → entry).
+    """
+    out: dict[str, Any] = {}
+    library: dict[str, dict[str, Any]] = {}
+    for child in lo:
+        if isinstance(child.tag, str) and _local(child.tag) in ("Button", "PopoverButton"):
+            icon = find_child(child, "IconData")
+            if icon is not None and (_int(attr(icon, "type")) or 0) > 0:
+                key, entry = object_image(find_child(icon, "BinaryData"))
+                if key:
+                    out.update(icon=key, icon_pos=_int(attr(icon, "type")))
+                    size = _num_attr(attr(icon, "size"))
+                    if size:
+                        out["icon_size"] = size
+                    if entry is not None:
+                        library[key] = entry
+            break
+    graphic = find_child(lo, "Graphic")
+    if graphic is not None:
+        key, entry = object_image(find_child(graphic, "BinaryData"))
+        if key:
+            out["image"] = key
+            if entry is not None:
+                library[key] = entry
+    if library:
+        out["library"] = library
+    position = _int(attr(lo, "position")) if attr(lo, "type") == "PopoverPanel" else None
+    if position is not None:
+        out["popover_position"] = position
+    tab = find_child(lo, "TabControl")
+    if tab is not None:
+        for key, name in (("tab_default", "default"), ("tab_height", "height")):
+            value = _int(attr(tab, name))
+            if value is not None:
+                out[key] = value
+    panel = find_child(lo, "TabPanel")
+    if panel is not None:
+        for key, name in (("tab_width", "size"), ("tab_left", "absolute")):
+            value = _int(attr(panel, name))
+            if value is not None:
+                out[key] = value
+    return out or None
 
 
 def _local_style(elem: etree._Element) -> dict[str, str | None] | None:
@@ -472,7 +538,8 @@ def _button_face(lo: etree._Element) -> dict[str, Any]:
     """A button's fixed label text and icon type.
 
     ``<Button|PopoverButton><Label><Text><StyledText>``: a label calc is kept with the object's
-    calculations instead. ``<IconData type>``: the icon's type only; the image stays in the export.
+    calculations instead. ``<IconData type>``: the icon's type only (the image itself is for the
+    HTML layout preview, ``_preview_geometry``).
     """
     for child in lo:
         if not isinstance(child.tag, str) or _local(child.tag) not in _BUTTON_KINDS:

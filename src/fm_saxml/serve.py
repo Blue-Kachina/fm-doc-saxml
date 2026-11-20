@@ -55,6 +55,10 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
 
 
 class _Server(http.server.ThreadingHTTPServer):
+    # The layout tools load up to 16 layout scripts at once; with the default backlog of 5,
+    # Windows refuses the connections over it (ERR_CONNECTION_REFUSED, a failed tool call).
+    request_queue_size = 64
+
     # On Windows SO_REUSEADDR lets a second socket bind a port another server is
     # listening on, so a taken port never raises and make_server's fallback never
     # runs. Ask for the port exclusively there instead; POSIX keeps SO_REUSEADDR so

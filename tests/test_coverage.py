@@ -225,3 +225,49 @@ def test_a_literal_redacted_in_only_one_copy_still_matches():
     assert "also" not in step_text(step)  # and the other way round
     step["fm_text"] = 'Set Field [ T::F; <Function Missing>( T::B ; "[REDACTED:secret#5]" ; "Auto" ) ]'
     assert "also" in step_text(step)  # code outside the literals still has to match
+
+
+def test_copied_steps_sharing_a_uuid_get_their_own_text_and_chunk_lists():
+    from fm_saxml.parser.extractors.chunk_lists import chunk_refs_for, extract_chunk_lists, step_text_for
+
+    root = etree.fromstring("""<FMSaveAsXML><DDR_INFO>
+      <Script><ObjectList>
+        <_AAAA hash="H1" datatype="StepText">Set Variable [ $courseID; Value:1 ]</_AAAA>
+        <_AAAA hash="H2" datatype="StepText">Set Variable [ $contractID; Value:2 ]</_AAAA>
+      </ObjectList></Script>
+      <Calculation><ObjectList>
+        <_AAAA_1 hash="C2" datatype="ChunkList"><ChunkList><Chunk type="FieldRef">
+          <FieldReference id="1" name="F"><TableOccurrenceReference id="1" name="T"/></FieldReference>
+        </Chunk></ChunkList></_AAAA_1>
+      </ObjectList></Calculation>
+    </DDR_INFO></FMSaveAsXML>""")
+    chunks = extract_chunk_lists(root)
+    first = etree.fromstring('<Step><DDRREF kind="StepText" hash="H1">_AAAA</DDRREF></Step>')
+    second = etree.fromstring('<Step><DDRREF kind="StepText" hash="H2">_AAAA</DDRREF></Step>')
+    assert "$courseID" in step_text_for(first, chunks)
+    assert "$contractID" in step_text_for(second, chunks)
+    # FileMaker writes one ChunkList for the shared key; the other copy's reference has no hash
+    assert chunk_refs_for(etree.fromstring('<C><DDRREF kind="ChunkList" hash="">_AAAA_1</DDRREF></C>'), chunks) is None
+    assert chunk_refs_for(etree.fromstring('<C><DDRREF kind="ChunkList" hash="C2">_AAAA_1</DDRREF></C>'), chunks)
+
+
+def test_prohibit_modification_without_an_auto_enter_option_is_kept():
+    field = _parse_field(etree.fromstring("""
+    <Field id="1" name="locked" fieldtype="Normal" datatype="Text">
+      <AutoEnter type="" prohibitModification="True"/>
+    </Field>"""), "1", "T")
+    assert field["auto_enter"]["no_modify_auto_enter"] is True
+
+
+def test_items_in_folders_are_counted_from_the_flat_catalog():
+    root = etree.fromstring("""<FMSaveAsXML><Structure><AddAction><ScriptCatalog>
+      <Script id="1" name="Top"/>
+      <Script id="2" name="F" isFolder="True"/>
+        <Script id="3" name="In"/>
+        <Script id="4" name="-" isSeparatorItem="True"/>
+        <Script id="5" name="G" isFolder="True"/><Script id="6" name="Deeper"/>
+        <Script id="7" name="G" isFolder="Marker"/>
+      <Script id="8" name="F" isFolder="Marker"/>
+      <Script id="9" name="Last"/>
+    </ScriptCatalog></AddAction></Structure></FMSaveAsXML>""")
+    assert _FUNCS["scripts_in_folders"](root) == 2

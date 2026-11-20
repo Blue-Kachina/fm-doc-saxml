@@ -2,7 +2,7 @@
   "schemaVersion": "1.1",
   "generator": {
     "name": "fm-saxml-converter",
-    "version": "0.6.15"
+    "version": "0.7.0"
   },
   "kind": "single",
   "solution": "EverythingBagel",

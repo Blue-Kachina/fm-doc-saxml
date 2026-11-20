@@ -106,6 +106,7 @@ def normalize(
     solution = SolutionInfo(name=raw.solution_name or source_file or "Unknown Solution")
     entities = EntityMaps()
     model = DocumentModel(source=source, solution=solution, entities=entities)
+    model._library.update(getattr(raw, "library", None) or {})  # images for the layout preview (not in the contract)
 
     model.external_data_sources = [
         ExternalDataSource(
@@ -865,6 +866,11 @@ def _normalize_layout_objects(raw: RawModel, model: DocumentModel) -> None:
             )
             model.entities.layout_objects[doc_id] = entity
             object_doc_ids.append(doc_id)
+            if obj.get("geometry"):
+                geometry = dict(obj["geometry"])
+                for key, image in geometry.pop("library", {}).items():  # icons stored inline (SaXML 2.2)
+                    model._library.setdefault(key, image)
+                model._layout_geometry[doc_id] = geometry
 
             if field_did and field_did not in seen_fields:
                 seen_fields.add(field_did)
