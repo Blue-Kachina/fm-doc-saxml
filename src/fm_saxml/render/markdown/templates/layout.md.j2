@@ -90,9 +90,6 @@ name: {{ entity.name }}
 {% endfor %}
 {% endif %}
 
-{% include "_by_name.md.j2" %}
-{% include "_by_name_sites.md.j2" %}
-
 {% set bl = backlinks(entity.doc_id) %}
 {% if bl %}
 ## Referenced By
@@ -103,3 +100,6 @@ name: {{ entity.name }}
 | {{ where(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.relationshipType }} |
 {% endfor %}
 {% endif %}
+
+{% include "_by_name_sites.md.j2" %}
+{% include "_by_name.md.j2" %}

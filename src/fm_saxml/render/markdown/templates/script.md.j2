@@ -76,8 +76,6 @@ _No steps._
 {% endfor %}
 
 {% endif %}
-{% include "_by_name.md.j2" %}
-{% include "_by_name_sites.md.j2" %}
 
 {% set pa = privilege_access("script", entity.doc_id) %}
 {% if pa %}
@@ -104,3 +102,6 @@ _No steps._
 
 No callers found in this export. That doesn't make the script unused: it can also be run from another file, a server schedule, an `fmp://` URL, Perform Script by name (a calculated script name), or the Scripts menu.
 {% endif %}
+
+{% include "_by_name_sites.md.j2" %}
+{% include "_by_name.md.j2" %}

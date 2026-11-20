@@ -460,7 +460,23 @@ def test_field_page_lists_what_breaks_and_what_is_safe(docs):
     assert "### Name Captured Safely" in note and "OnObjectModify trigger" in note
     # The by-name uses are not repeated in the direct "Used By" tables
     used_by = email.split("## Used By", 1)[1] if "## Used By" in email else ""
+    used_by = used_by.split("## Names Used in Text", 1)[0].split("## Referenced by Name", 1)[0]
     assert "Set Field By Name" not in used_by
+
+
+def test_by_name_sections_come_last(docs):
+    # "Names Used in Text" then "Referenced by Name", after every other section of the page.
+    pages = [docs / "Fields" / "Contact" / "email.md", next((docs / "Scripts").rglob("Hardcoded.md"))]
+    pages += [p for d in ("Layouts", "TableOccurrences", "ValueLists", "CustomFunctions") if (docs / d).is_dir()
+              for p in (docs / d).rglob("*.md") if p.name != "index.md"]
+    checked = 0
+    for page in pages:
+        heads = [line for line in page.read_text(encoding="utf-8").splitlines() if line.startswith("## ")]
+        tail = [h for h in heads if h in ("## Names Used in Text", "## Referenced by Name")]
+        if tail:
+            assert heads[-len(tail):] == tail, (page.name, heads)
+            checked += 1
+    assert checked >= 2
 
 
 def test_script_page_lists_its_names_in_text(docs):

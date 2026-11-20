@@ -27,8 +27,6 @@ name: {{ entity.name }}
 _None._
 {% endif %}
 
-{% include "_by_name_sites.md.j2" %}
-
 {% set bl = backlinks(entity.doc_id) %}
 {% if bl %}
 ## Called By
@@ -39,3 +37,5 @@ _None._
 | {{ where(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.role or '' }} |
 {% endfor %}
 {% endif %}
+
+{% include "_by_name_sites.md.j2" %}
