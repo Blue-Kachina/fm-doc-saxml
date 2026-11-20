@@ -50,6 +50,6 @@ fmpId: "{{ entity.fmp_id }}"
 | Source | Type | Relationship |
 |---|---|---|
 {% for b in bl %}
-| {{ link(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.relationshipType }} |
+| {{ where(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.relationshipType }} |
 {% endfor %}
 {% endif %}

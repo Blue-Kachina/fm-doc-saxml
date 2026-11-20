@@ -141,7 +141,7 @@ _None._
 | Script Step | Relationship | Role |
 |---|---|---|
 {% for b in script_bl %}
-| {{ link(b.sourceDocId) }} | {{ b.relationshipType }} | {{ b.role or '' }} |
+| {{ where(b.sourceDocId) }} | {{ b.relationshipType }} | {{ b.role or '' }} |
 {% endfor %}
 {% endif %}
 
@@ -151,7 +151,7 @@ _None._
 | Layout | Relationship | Role |
 |---|---|---|
 {% for b in layout_bl %}
-| {{ link(b.sourceDocId) }} | {{ b.relationshipType }} | {{ b.role or '' }} |
+| {{ where(b.sourceDocId) }} | {{ b.relationshipType }} | {{ b.role or '' }} |
 {% endfor %}
 {% endif %}
 
@@ -161,7 +161,7 @@ _None._
 | Relationship | Role |
 |---|---|
 {% for b in rel_bl %}
-| {{ link(b.sourceDocId) }} | {{ b.role or b.relationshipType }} |
+| {{ where(b.sourceDocId) }} | {{ b.role or b.relationshipType }} |
 {% endfor %}
 {% endif %}
 
@@ -172,7 +172,7 @@ _None._
 | Source | Type | Relationship |
 |---|---|---|
 {% for b in other_bl %}
-| {{ link(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.role or b.relationshipType }} |
+| {{ where(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.role or b.relationshipType }} |
 {% endfor %}
 {% endif %}
 {% endif %}

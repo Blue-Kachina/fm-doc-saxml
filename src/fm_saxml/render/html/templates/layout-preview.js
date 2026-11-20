@@ -1066,7 +1066,8 @@ img.fm-lp-ic { object-fit: contain; opacity: .45; filter: grayscale(1); }
     // The preview on screen, if it still is (other routes replace the page without telling us).
     const live = () => (current && current.root.isConnected ? current : null);
 
-    // Inline block, field and object links, above a page's Markdown (index.html calls this per page).
+    // Inline block (after a layout page's Metadata), field and object links (above a page's Markdown).
+    // index.html calls this per page with the slot to fill.
     async function onPage(info) {
         setCurrent(null);
         inline = null;

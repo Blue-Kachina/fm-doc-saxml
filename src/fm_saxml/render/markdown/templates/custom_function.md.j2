@@ -36,6 +36,6 @@ _None._
 | Source | Type | Role |
 |---|---|---|
 {% for b in bl %}
-| {{ link(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.role or '' }} |
+| {{ where(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.role or '' }} |
 {% endfor %}
 {% endif %}

@@ -22,6 +22,16 @@ name: {{ entity.name }}
 {% endif %}{% if entity.siri_shortcut %}| Available as Siri shortcut | Yes |
 {% endif %}| Step Count | {{ entity.steps | length }} |
 
+## Steps
+
+{% if steps_block %}
+{{ steps_fence }}fmscript
+{{ steps_block }}
+{{ steps_fence }}
+{% else %}
+_No steps._
+{% endif %}
+
 {% if entity.referenced_fields or entity.referenced_layouts or entity.referenced_scripts %}
 ## Referenced Entities
 
@@ -68,15 +78,6 @@ name: {{ entity.name }}
 {% endif %}
 {% include "_by_name.md.j2" %}
 {% include "_by_name_sites.md.j2" %}
-## Steps
-
-{% if steps_block %}
-{{ steps_fence }}fmscript
-{{ steps_block }}
-{{ steps_fence }}
-{% else %}
-_No steps._
-{% endif %}
 
 {% set pa = privilege_access("script", entity.doc_id) %}
 {% if pa %}
@@ -96,7 +97,7 @@ _No steps._
 | Source | Type | Role |
 |---|---|---|
 {% for b in bl %}
-| {{ link(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.role or '' }} |
+| {{ where(b.sourceDocId) }} | {{ b.sourceEntityType }} | {{ b.role or '' }} |
 {% endfor %}
 {% else %}
 ## Called By

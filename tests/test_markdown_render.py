@@ -105,6 +105,13 @@ def test_script_page_content(rendered):
     assert "# Script: Create Customer" in content
     assert "Go to Layout" in content
     assert "Set Field" in content
+    # Steps come straight after Metadata, before the other sections.
+    assert content.index("## Metadata") < content.index("## Steps") < content.index("## Called By")
+
+
+def test_field_used_by_links_script_steps_to_their_script(rendered):
+    content = (rendered / "Fields" / "Customer" / "Status.md").read_text(encoding="utf-8")
+    assert "| [Create Customer · step 3](../../Scripts/Customer%20Scripts/Create%20Customer.md) |" in content
 
 
 def test_relationships_created(rendered):

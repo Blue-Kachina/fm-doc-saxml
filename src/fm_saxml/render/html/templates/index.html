@@ -141,6 +141,9 @@ main {
 /* ---- Crepe overrides: compact type scale, tinted table headers, zebra rows ---- */
 .milkdown .ProseMirror { padding: 16px 40px 32px; }
 @media (max-width: 800px) { .milkdown .ProseMirror { padding: 12px 16px 24px; } }
+/* A layout page is drawn in two parts with the layout preview between them (see show()). */
+.fm-md-head .milkdown .ProseMirror { padding-bottom: 0; }
+.fm-md-rest .milkdown .ProseMirror { padding-top: 0; }
 .milkdown .milkdown-block-handle { display: none; }
 /* Viewer-only: wide tables scroll inside the page instead of widening it. */
 .milkdown .milkdown-table-block { overflow-x: auto; }
@@ -735,7 +738,22 @@ function renderHead(path, page) {
     $('page-head').innerHTML = `<span class="crumbs">${crumbs}</span>${type}<a class="src" href="${esc(encodePath(path))}">${esc(path)}</a>`;
 }
 
-let crepe = null;
+// Layout pages: [up to and including the Metadata section, the rest], so the layout preview
+// can sit between them. null when the page has no Metadata section.
+function splitAfterMetadata(md) {
+    const m = /^## Metadata[ \t]*\r?$/m.exec(md);
+    if (!m) return null;
+    const next = md.slice(m.index + m[0].length).search(/^## /m);
+    if (next < 0) return [md, ''];
+    const cut = m.index + m[0].length + next;
+    return [md.slice(0, cut), md.slice(cut)];
+}
+
+let crepes = []; // one editor per page, two on a layout page (around its preview)
+async function destroyEditors() {
+    for (const c of crepes) await c.destroy();
+    crepes = [];
+}
 let queue = Promise.resolve();
 let routeSeq = 0;
 
@@ -745,7 +763,7 @@ async function show(path, seq) {
         page = await loadPage(path);
     } catch (err) {
         if (seq !== routeSeq) return;
-        if (crepe) { await crepe.destroy(); crepe = null; }
+        await destroyEditors();
         $('page-head').innerHTML = '';
         showMessage(err.message === 'not-found'
             ? `No page at <code>${esc(path)}</code>.`
@@ -754,7 +772,7 @@ async function show(path, seq) {
     }
     if (seq !== routeSeq) return; // a newer navigation superseded this one
 
-    if (crepe) { await crepe.destroy(); crepe = null; }
+    await destroyEditors();
     content.innerHTML = '';
     $('page-extra').innerHTML = '';
     renderHead(path, page);
@@ -762,10 +780,21 @@ async function show(path, seq) {
     document.title = `${entry.t} · ${data.title}`;
 
     scriptRefs = pageRefs(page.md, page.fields); // read when a ```fmscript block's view is created
-    const editor = new Crepe({ root: content, defaultValue: page.md, features, featureConfigs });
-    editor.setReadonly(true);
-    await editor.create();
-    crepe = editor;
+    // A layout page's preview goes after its Metadata: the Markdown is drawn in two editors around
+    // the slot. Other pages keep one editor and the slot above the Markdown.
+    const split = window.FMDocs.preview && page.meta.entityType === 'layout' ? splitAfterMetadata(page.md) : null;
+    let slot = $('page-extra');
+    for (const [i, md] of (split || [page.md]).entries()) {
+        let root = content;
+        if (split) {
+            if (i > 0) slot = content.appendChild(Object.assign(document.createElement('div'), { className: 'fm-lp-extra' }));
+            root = content.appendChild(Object.assign(document.createElement('div'), { className: i ? 'fm-md-rest' : 'fm-md-head' }));
+        }
+        const editor = new Crepe({ root, defaultValue: md, features, featureConfigs });
+        editor.setReadonly(true);
+        await editor.create();
+        crepes.push(editor);
+    }
     $('main').scrollTop = 0;
     markActive(path);
     if (pendingAnchor) { scrollToAnchor(pendingAnchor); pendingAnchor = null; }
@@ -775,12 +804,12 @@ async function show(path, seq) {
     }
     pendingStep = null;
     document.body.dataset.rendered = path; // lets automated checks wait for a page
-    // The layout preview's block (layout pages) or "Show on layout" links, above the Markdown.
-    if (window.FMDocs.preview) window.FMDocs.preview.onPage({ path, meta: page.meta, slot: $('page-extra') });
+    // The layout preview's block (layout pages, after Metadata) or "Show on layout" links (above the Markdown).
+    if (window.FMDocs.preview) window.FMDocs.preview.onPage({ path, meta: page.meta, slot });
 }
 
 async function showResults(seq) {
-    if (crepe) { await crepe.destroy(); crepe = null; }
+    await destroyEditors();
     if (seq !== routeSeq) return;
     $('page-head').innerHTML = '';
     $('page-extra').innerHTML = '';
@@ -792,7 +821,7 @@ async function showResults(seq) {
 }
 
 async function showLayout(seq) {
-    if (crepe) { await crepe.destroy(); crepe = null; }
+    await destroyEditors();
     if (seq !== routeSeq) return;
     $('page-head').innerHTML = '';
     $('page-extra').innerHTML = '';

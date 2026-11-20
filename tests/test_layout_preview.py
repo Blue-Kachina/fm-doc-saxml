@@ -486,10 +486,16 @@ def _route(**params) -> str:
     return "#/layout?" + urlencode(params)
 
 
-def test_layout_page_shows_the_preview_above_the_markdown(viewer):
+def test_layout_page_shows_the_preview_after_the_metadata(viewer):
     page, _, errors = viewer
     _open(page, "#/Layouts/ContactDetail.md")
-    assert page.evaluate("document.querySelector('#page-extra details.fm-lp-block').open") is True
+    assert page.evaluate("document.querySelector('#content .fm-lp-extra details.fm-lp-block').open") is True
+    # Title and Metadata, then the preview, then everything else.
+    parts = page.evaluate("[...document.querySelectorAll('#content > *')].map(e => e.className)")
+    assert parts == ["fm-md-head", "fm-lp-extra", "fm-md-rest"]
+    head = page.evaluate("[...document.querySelectorAll('.fm-md-head h2')].map(h => h.textContent)")
+    assert head == ["Metadata"]
+    assert page.evaluate("document.querySelector('.fm-md-rest h2').textContent") == "Parts"
     assert len(_ids(page, ".fm-lp-o")) == 20
     # Default: tab "Second" (TabControl default=1) in front, popovers closed.
     visible = set(_ids(page, ".fm-lp-o:not(.off)"))
@@ -594,10 +600,10 @@ def test_zoom_and_phone_width(viewer):
     assert page.evaluate("FMDocs.preview.current.zoom") == 2
     page.set_viewport_size({"width": 390, "height": 800})
     try:
-        _open(page, "#/Layouts/ContactDetail.md", wait="#page-extra details.fm-lp-block")
+        _open(page, "#/Layouts/ContactDetail.md", wait="#content .fm-lp-extra details.fm-lp-block")
         # Folded on a phone; opening it draws the preview inside its own scroll box.
-        assert page.evaluate("document.querySelector('#page-extra details').open") is False
-        page.click("#page-extra details > summary")
+        assert page.evaluate("document.querySelector('#content .fm-lp-extra details').open") is False
+        page.click("#content .fm-lp-extra details > summary")
         page.wait_for_selector(".fm-lp[data-ready]", state="attached")
         assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
         assert page.evaluate("document.querySelector('main').scrollWidth <= document.querySelector('main').clientWidth")
@@ -757,7 +763,7 @@ def test_show_on_this_layout_highlights_on_the_page(viewer):
     body = _run(page, "show_on_this_layout", {"query": "status"})
     assert body["total"] == 3 and body["highlighted"] == 3 and body["items"][0]["bounds"]
     assert page.evaluate("document.body.dataset.rendered") == "Layouts/ContactDetail.md"  # stays on the page
-    assert sorted(_ids(page, "#page-extra .fm-lp-o.hit")) == ["13", "17", "8"]
+    assert sorted(_ids(page, "#content .fm-lp-extra .fm-lp-o.hit")) == ["13", "17", "8"]
     one = _run(page, "show_on_this_layout", {"docIds": ["14"], "objectType": "Rectangle"})
     assert [i["objectId"] for i in one["items"]] == ["14"] and _ids(page, ".fm-lp-o.hit") == ["14"]
     none = _run(page, "show_on_this_layout", {"field": "Nope"})
@@ -776,10 +782,10 @@ def test_show_on_this_layout_opens_a_folded_preview(viewer):
     page, _, _ = viewer
     page.set_viewport_size({"width": 390, "height": 800})
     try:
-        _open(page, "#/Layouts/ContactDetail.md", wait="#page-extra details.fm-lp-block")
-        assert page.evaluate("document.querySelector('#page-extra details').open") is False
+        _open(page, "#/Layouts/ContactDetail.md", wait="#content .fm-lp-extra details.fm-lp-block")
+        assert page.evaluate("document.querySelector('#content .fm-lp-extra details').open") is False
         _run(page, "show_on_this_layout", {"docIds": [_OBJ + "2"]})
-        assert page.evaluate("document.querySelector('#page-extra details').open") is True
+        assert page.evaluate("document.querySelector('#content .fm-lp-extra details').open") is True
         assert _ids(page, ".fm-lp-o.hit") == ["2"]
     finally:
         page.set_viewport_size({"width": 1400, "height": 1000})

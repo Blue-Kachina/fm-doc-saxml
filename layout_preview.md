@@ -80,7 +80,7 @@ CSS step in Python, and icons need the `LibraryCatalog` parsed.
 - [x] `render/html/layout_preview.py`: model → per-layout data file: `{width, parts:[{type, top,
       height}], objects:[{id, type, bounds, part, parentId, label, field, z, flags}]}`. Use short
       keys and compact JSON.
-- [x] Show it on the layout page: a **Preview** block above the Markdown (folded by default on
+- [x] Show it on the layout page: a **Preview** block after the Metadata table (moved there 2026-11-20; folded by default on
       small screens), plus a full-page route `#/layout?doc=<docId>&file=<key>`.
 - [x] Draw parts as labelled bands. Give each object type a neutral outline and fill (field, text,
       button, portal, panel and so on), with the label or `<<field>>` text clipped inside.
