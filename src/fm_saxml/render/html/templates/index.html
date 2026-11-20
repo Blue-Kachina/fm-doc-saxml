@@ -169,8 +169,9 @@ main {
 .milkdown .milkdown-code-block .cm-activeLine,
 .milkdown .milkdown-code-block .cm-activeLineGutter { background: transparent; }
 .milkdown .milkdown-code-block .cm-content { color: var(--crepe-color-on-background); }
-/* A script's steps carry their own step numbers; CodeMirror's line numbers would drift from them. */
-.milkdown .milkdown-code-block:has(.cm-content[data-language="fmscript"]) .cm-gutters { display: none; }
+/* A script's steps carry their own step numbers (shown in the viewer's step gutter below);
+   CodeMirror's line numbers would drift from them. */
+.milkdown .milkdown-code-block:has(.cm-content[data-language="fmscript"]) .cm-lineNumbers { display: none !important; }
 /* Crepe's language button shows the fence's raw label; spell out the steps' one. */
 .milkdown .milkdown-code-block:has(.cm-content[data-language="fmscript"]) .tools .language-button { font-size: 0; gap: 0; }
 .milkdown .milkdown-code-block:has(.cm-content[data-language="fmscript"]) .tools .language-button::before {
@@ -178,6 +179,60 @@ main {
 }
 /* Viewer-only: links are navigation here, so make them look clickable. */
 .milkdown .ProseMirror a { cursor: pointer; }
+
+/* ---- Script steps (```fmscript): Script Workspace look, viewer-only; the Markdown stays plain text ---- */
+:root {
+    --fm-ctl: #a0249d;          /* control steps' names (If, Loop, Perform Script, ...) */
+    --fm-field: #2b7a8c;
+    --fm-label: #56606d;        /* "Value:", "Account Name:" */
+    --fm-string: #8a5a00;
+    --fm-comment: #6f7a86;
+    --fm-disabled: #a2a9b2;
+    --fm-gutter-bg: #eef0f3;
+    --fm-gutter-border: #d5d9e0;
+    --fm-gutter-text: #7b8592;
+    --fm-fold: #7b8592;
+    --fm-warn: #c0392b;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --fm-ctl: #d68ad4;
+        --fm-field: #6cc3d5;
+        --fm-label: #a7b1bd;
+        --fm-string: #d9b26a;
+        --fm-comment: #8f99a6;
+        --fm-disabled: #646d79;
+        --fm-gutter-bg: #222731;
+        --fm-gutter-border: #343b47;
+        --fm-gutter-text: #8b95a3;
+        --fm-fold: #8b95a3;
+        --fm-warn: #e57373;
+    }
+}
+.milkdown .cm-gutter.fm-steps {
+    order: -1; background: var(--fm-gutter-bg); border-right: 1px solid var(--fm-gutter-border);
+    color: var(--fm-gutter-text); font-family: var(--crepe-font-code, monospace);
+}
+.milkdown .cm-gutter.fm-steps .cm-gutterElement { text-align: right; padding: 0 6px 0 8px; }
+.milkdown .milkdown-code-block:has(.cm-content[data-language="fmscript"]) .cm-foldGutter { color: var(--fm-fold); padding: 0 2px; }
+/* The step number stays in the line's text (copying and the WebMCP step lookup read it), just unseen. */
+.milkdown .fm-num { display: inline-block; width: 0; overflow: hidden; white-space: pre; vertical-align: top; }
+.milkdown .cm-line .fm-ctl { color: var(--fm-ctl); }
+.milkdown .cm-line .fm-field { color: var(--fm-field); text-decoration: none; }
+.milkdown .cm-line a.fm-field:hover, .milkdown .cm-line a.fm-named:hover { text-decoration: underline; }
+.milkdown .cm-line a.fm-named { color: inherit; text-decoration: underline dotted; }
+.milkdown .cm-line .fm-label { color: var(--fm-label); }
+.milkdown .cm-line .fm-str { color: var(--fm-string); }
+.milkdown .cm-line .fm-pw { color: var(--fm-label); letter-spacing: 1px; }
+.milkdown .cm-line.fm-comment { color: var(--fm-comment); }
+.milkdown .cm-line.fm-disabled, .milkdown .cm-line.fm-disabled * { color: var(--fm-disabled); }
+/* An If / Loop / Open Transaction with no closing step: it can't fold. */
+.milkdown .cm-line.fm-unclosed { box-shadow: inset 3px 0 var(--fm-warn); }
+.milkdown .cm-line.fm-unclosed .fm-ctl { text-decoration: wavy underline var(--fm-warn); text-underline-offset: 3px; }
+.milkdown .cm-content[data-language="fmscript"] .cm-foldPlaceholder {
+    background: var(--fm-gutter-bg); border: 1px solid var(--fm-gutter-border); color: var(--fm-gutter-text);
+    border-radius: 4px; padding: 0 6px; margin-left: 6px;
+}
 
 /* ---- WebMCP status badge (--webmcp) ---- */
 #webmcp-status {
@@ -238,7 +293,7 @@ window.FMDocs = {
     data: null,
     pages: {},
     manifest(m) { this.data = m; },
-    page(path, meta, md) { this.pages[path] = { meta, md }; },
+    page(path, meta, md, extra) { this.pages[path] = { meta, md, ...extra }; },
 };
 </script>
 <script src="_viewer/manifest.js"></script>
@@ -285,12 +340,244 @@ if (!vendor) {
 const { Crepe } = vendor;
 
 // ```filemaker fences (calculations) highlight via fmscriptui's CodeMirror language.
-// ```fmscript fences (a script's steps) stay plain text; naming the language tags the
-// block data-language="fmscript", which hides CodeMirror's line numbers (see the CSS).
+// ```fmscript fences (a script's steps) get the Script Workspace look below. Their extensions
+// load with the language, so they apply to those blocks only (each code block is its own
+// CodeMirror view); naming the language tags the block data-language="fmscript" for the CSS.
+const { Decoration, EditorView, WidgetType, GutterMarker, RangeSetBuilder, StateField } = vendor;
 const fmscriptLanguage = vendor.StreamLanguage.define({
     name: 'fmscript',
     token(stream) { stream.skipToEnd(); return null; },
 });
+
+// ---- Script steps (```fmscript) -------------------------------------------
+// Each line is "<number right-aligned>  <4 spaces per depth>[// ]<FileMaker step text>"
+// (render_script_block); a multi-line step's continuation lines have no number. Step names
+// by role come from the manifest (stepKinds); without them steps still render, unfolded.
+const stepKinds = data.stepKinds || {};
+const kindSet = (key) => new Set(stepKinds[key] || []);
+const OPENS = kindSet('opens'), CONTINUES = kindSet('continues'), CLOSES = kindSet('closes'), COLOURED = kindSet('coloured');
+const KNOWN_STEPS = [...new Set([...OPENS, ...CONTINUES, ...CLOSES, ...COLOURED])].sort((a, b) => b.length - a.length);
+const PASSWORD_LABELS = new Set(['Password', 'Old Password', 'New Password']);
+const STRING_RE = /"(?:[^"\\]|\\.)*"|“[^”]*”/g;
+const LABEL_RE = /(?<=(?:^|[\[;,\n])[ \t]*)[A-Za-z][A-Za-z0-9 /]*?:(?!:)/g;
+// TO::field for fields the page doesn't link: names may hold spaces, but not a calc's word operators.
+const NAME_PART = String.raw`(?!(?:and|or|not|xor)\b)[\p{L}\p{N}_.]+`;
+const FIELD_RE = new RegExp(String.raw`(?<![\p{L}\p{N}_.$])(?=[\p{L}_])${NAME_PART}(?: ${NAME_PART})*::${NAME_PART}(?: ${NAME_PART})*`, 'giu');
+
+// The current page's links for its steps, as hrefs relative to the page (so the content click
+// handler below routes them like any link): "TO::field" from the page script's `fields` (steps
+// name fields by table occurrence, the Referenced Entities table by base table), script and
+// layout names from its "Referenced Entities" tables.
+let scriptRefs = pageRefs('');
+function pageRefs(md, fields) {
+    const refs = { field: new Map(Object.entries(fields || {})), script: new Map(), layout: new Map() };
+    const tables = { 'Scripts Called': 'script', 'Layouts': 'layout' };
+    let inRefs = false, kind = null;
+    for (const line of md.split('\n')) {
+        const h = /^(#{2,3}) (.*)/.exec(line);
+        if (h) {
+            if (h[1] === '##') inRefs = h[2].trim() === 'Referenced Entities';
+            kind = inRefs && h[1] === '###' ? tables[h[2].trim()] || null : null;
+            continue;
+        }
+        if (!kind || !line.startsWith('|')) continue;
+        for (const m of line.matchAll(/\[((?:\\.|[^\]\\])*)\]\(([^)\s]+)\)/g)) refs[kind].set(m[1].replace(/\\(.)/g, '$1'), m[2]);
+    }
+    // Longest first, so "A::Name ID" wins over "A::Name".
+    for (const k of Object.keys(refs)) refs[k] = [...refs[k]].sort((a, b) => b[0].length - a[0].length);
+    return refs;
+}
+
+class StepNumber extends GutterMarker {
+    constructor(n) { super(); this.n = n; }
+    eq(other) { return other.n === this.n; }
+    toDOM() { return document.createTextNode(String(this.n)); }
+}
+// Hidden text that stays in the line's DOM text (see .fm-num in the CSS).
+class HiddenText extends WidgetType {
+    constructor(text) { super(); this.text = text; }
+    eq(other) { return other.text === this.text; }
+    toDOM() { const s = document.createElement('span'); s.className = 'fm-num'; s.textContent = this.text; return s; }
+}
+// A password value shows as dots; its (normally already-scrubbed) text is the tooltip.
+class Masked extends WidgetType {
+    constructor(text) { super(); this.text = text; }
+    eq(other) { return other.text === this.text; }
+    toDOM() { const s = document.createElement('span'); s.className = 'fm-pw'; s.textContent = '••••••••'; s.title = this.text; return s; }
+}
+const markCache = new Map();
+const mark = (cls) => markCache.get(cls) || markCache.set(cls, Decoration.mark({ class: cls })).get(cls);
+const linkMark = (cls, href, title) => Decoration.mark({ tagName: 'a', class: cls, attributes: { href, title } });
+const overlaps = (ranges, a, b) => ranges.some(([x, y]) => a < y && b > x);
+
+// Parse the steps once per document: line decorations, step-number markers and folds.
+function buildSteps(doc) {
+    const first = /^ *\d+/.exec(doc.line(1).text);
+    const width = first ? first[0].length : 0;
+    const steps = [], decos = [], numbers = new RangeSetBuilder(), folds = new Map();
+    let step = null;
+    for (let i = 1; width && i <= doc.lines; i++) {
+        const line = doc.line(i), t = line.text;
+        const m = /^( *(\d+))(?:  |$)/.exec(t);
+        let hide;
+        if (m && m[1].length === width) {
+            hide = m[0].length;
+            let p = hide + /^ */.exec(t.slice(hide))[0].length;
+            const disabled = /^\/\/(?: |$)/.test(t.slice(p));
+            if (disabled) p = Math.min(p + 3, t.length);
+            const text = t.slice(p);
+            const name = KNOWN_STEPS.find((n) => text.startsWith(n) && /^(?: |$)/.test(text.slice(n.length)))
+                || text.split(' [')[0].trim();
+            const kind = text === '' || text.startsWith('#') ? 'comment' : COLOURED.has(name) ? 'ctl' : '';
+            step = { n: Number(m[2]), line: i, last: i, from: line.from, textFrom: line.from + p, disabled, name, kind };
+            steps.push(step);
+            numbers.add(line.from, line.from, new StepNumber(step.n));
+        } else {
+            hide = Math.min(width + 2, /^ */.exec(t)[0].length); // the number column's padding
+            if (step) step.last = i;
+        }
+        if (hide) decos.push(Decoration.replace({ widget: new HiddenText(t.slice(0, hide)) }).range(line.from, line.from + hide));
+        const cls = step ? [step.kind === 'comment' && 'fm-comment', step.disabled && 'fm-disabled'].filter(Boolean).join(' ') : '';
+        if (cls) decos.push(Decoration.line({ class: cls }).range(line.from));
+    }
+
+    // Blocks, as step_text.script_lines indents them: an opener or Else (If) folds up to the
+    // line before the next Else / Else If / closing step; an opener left open is flagged.
+    const stack = [];
+    for (const s of steps) {
+        if (CONTINUES.has(s.name) || CLOSES.has(s.name)) {
+            const open = stack.pop();
+            if (open) {
+                // From the opener's first line, where the fold gutter looks for it (a multi-line
+                // condition folds away with the block).
+                const from = doc.line(open.line).to, to = doc.line(s.line - 1).to;
+                if (to > from) folds.set(open.from, { from, to });
+            }
+        }
+        if (OPENS.has(s.name) || CONTINUES.has(s.name)) stack.push(s);
+    }
+    for (const s of stack) {
+        decos.push(Decoration.line({ class: 'fm-unclosed', attributes: { title: `${s.name} has no closing step` } }).range(s.from));
+    }
+
+    for (const s of steps) {
+        if (s.kind === 'comment') continue;
+        if (s.kind === 'ctl' && !s.disabled) decos.push(mark('fm-ctl').range(s.textFrom, s.textFrom + s.name.length));
+        markStepText(doc.sliceString(s.textFrom, doc.line(s.last).to), s.textFrom, s, decos);
+    }
+    return {
+        steps, folds, width,
+        numbers: numbers.finish(),
+        decos: Decoration.set(decos, true),
+        widest: steps.reduce((w, s) => Math.max(w, s.n), 0),
+    };
+}
+
+// Where an option's value starting at `v` ends: its string, or the next ';' or ']' (or line
+// break) outside brackets, parentheses and strings, trailing spaces left out.
+function optionEnd(text, v, strings) {
+    const str = strings.find(([x]) => x === v);
+    if (str) return str[1];
+    let depth = 0, end = v;
+    for (let i = v; i < text.length; i++) {
+        const s = strings.find(([x]) => x === i);
+        if (s) { i = s[1] - 1; end = s[1]; continue; }
+        const c = text[i];
+        if (c === '(' || c === '[') depth++;
+        else if (depth && (c === ')' || c === ']')) depth--;
+        else if (!depth && (c === ';' || c === ']' || c === '\n')) break;
+        if (!/\s/.test(c)) end = i + 1;
+    }
+    return end;
+}
+
+// Marks within one step's text (all its lines): option labels, strings, fields and the
+// script / layout a step names; password values are masked even on disabled steps.
+function markStepText(text, base, step, out) {
+    const strings = [...text.matchAll(STRING_RE)].map((m) => [m.index, m.index + m[0].length]);
+    const masked = [];
+    for (const m of text.matchAll(LABEL_RE)) {
+        const a = m.index, b = a + m[0].length;
+        if (overlaps(strings, a, b)) continue;
+        if (!step.disabled) out.push(mark('fm-label').range(base + a, base + b));
+        if (!PASSWORD_LABELS.has(m[0].slice(0, -1).trim())) continue;
+        let v = b;
+        while (text[v] === ' ') v++;
+        const end = optionEnd(text, v, strings);
+        if (end <= v) continue;
+        masked.push([v, end]);
+        // One widget for the whole value; a value on several lines hides each line's part.
+        let at = v;
+        for (const line of text.slice(v, end).split('\n')) {
+            const from = at === v ? at : at + /^\s*/.exec(line)[0].length, to = at + line.length;
+            if (to > from) out.push(Decoration.replace(from === v ? { widget: new Masked(text.slice(v, end)) } : {}).range(base + from, base + to));
+            at = to + 1;
+        }
+    }
+    if (step.disabled) return;
+    for (const [a, b] of strings) if (!overlaps(masked, a, b)) out.push(mark('fm-str').range(base + a, base + b));
+
+    // Fields: the page's linked ones first, then any other TO::field (a repetition like [147] stays outside).
+    const taken = strings.concat(masked);
+    for (const [key, href] of scriptRefs.field) {
+        for (let i = text.indexOf(key); i >= 0; i = text.indexOf(key, i + 1)) {
+            const j = i + key.length;
+            if (/[\p{L}\p{N}_.$]/u.test(text[i - 1] || '') || /[\p{L}\p{N}_]/u.test(text[j] || '') || overlaps(taken, i, j)) continue;
+            taken.push([i, j]);
+            out.push(linkMark('fm-field', href, key).range(base + i, base + j));
+        }
+    }
+    for (const m of text.matchAll(FIELD_RE)) {
+        const a = m.index, b = a + m[0].length;
+        if (!overlaps(taken, a, b)) out.push(mark('fm-field').range(base + a, base + b));
+    }
+
+    // Perform Script's script and Go to Layout's layout, quoted (“Name”) or bare ([ Name ]).
+    const named = step.name.startsWith('Perform Script') ? scriptRefs.script
+        : step.name.startsWith('Go to Layout') ? scriptRefs.layout : [];
+    const linked = [];
+    for (const [name, href] of named) {
+        for (let i = text.indexOf(name); i >= 0; i = text.indexOf(name, i + 1)) {
+            const j = i + name.length;
+            const before = /[“"]$|\[ $/.test(text.slice(Math.max(0, i - 2), i));
+            if (!before || !/^(?:[”"]| \]|;|$)/.test(text.slice(j)) || overlaps(masked.concat(linked), i, j)) continue;
+            linked.push([i, j]);
+            out.push(linkMark('fm-named', href, name).range(base + i, base + j));
+        }
+    }
+}
+
+const stepsField = StateField.define({
+    create: (state) => buildSteps(state.doc),
+    update: (value, tr) => (tr.docChanged ? buildSteps(tr.state.doc) : value),
+    provide: (f) => EditorView.decorations.from(f, (v) => v.decos),
+});
+const fmscriptExtensions = [
+    stepsField,
+    // The step-number gutter; CSS orders it before the fold gutter that Crepe's basicSetup adds.
+    vendor.gutter({
+        class: 'fm-steps',
+        markers: (view) => view.state.field(stepsField).numbers,
+        initialSpacer: (view) => new StepNumber('9'.repeat(String(view.state.field(stepsField).widest).length)),
+    }),
+    // Folds are view state (effects, not document changes), so they work while read-only.
+    vendor.foldService.of((state, lineStart) => state.field(stepsField, false)?.folds.get(lineStart) || null),
+    vendor.codeFolding({
+        preparePlaceholder: (state, range) => {
+            const n = state.field(stepsField).steps.filter((s) => s.from > range.from && s.from <= range.to).length;
+            return `… ${n} step${n === 1 ? '' : 's'}`;
+        },
+        placeholderDOM: (view, onclick, prepared) => {
+            const s = document.createElement('span');
+            s.className = 'cm-foldPlaceholder';
+            s.textContent = prepared;
+            s.title = 'Unfold';
+            s.onclick = onclick;
+            return s;
+        },
+    }),
+];
+
 const codeLanguages = [vendor.LanguageDescription.of({
     name: 'FileMaker',
     alias: ['filemaker', 'fmfn'],
@@ -298,7 +585,8 @@ const codeLanguages = [vendor.LanguageDescription.of({
 }), vendor.LanguageDescription.of({
     name: 'FileMaker Script',
     alias: ['fmscript'],
-    load: async () => fmscriptLanguage,
+    // The code block only installs what load() returns as an extension, so the language can carry extras.
+    load: async () => [fmscriptLanguage, fmscriptExtensions],
 })];
 
 // ---- Paths & routing -------------------------------------------------------
@@ -467,6 +755,7 @@ async function show(path, seq) {
     const entry = byPath.get(path);
     document.title = `${entry.t} · ${data.title}`;
 
+    scriptRefs = pageRefs(page.md, page.fields); // read when a ```fmscript block's view is created
     const editor = new Crepe({ root: content, defaultValue: page.md, features, featureConfigs });
     editor.setReadonly(true);
     await editor.create();

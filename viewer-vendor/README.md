@@ -20,9 +20,12 @@ Notes:
 
 - `crepe.js` is a classic script (IIFE) that sets `window.FMVendor`, because browsers
   don't load local ES modules on `file://` pages.
-- It's one bundle so Crepe and the FileMaker grammar share one `@codemirror/language`
-  instance, which CodeMirror's Language facet requires. Check `npm ls @codemirror/language`
-  shows a single version after an upgrade.
+- It's one bundle so Crepe, the FileMaker grammar and the viewer's script-step
+  decorations and folding share one `@codemirror/language`, `view` and `state` instance,
+  which CodeMirror's facets, state fields and effects require. `view` and `state` are
+  pinned to the versions Crepe resolves; check
+  `npm ls @codemirror/view @codemirror/state @codemirror/language` shows a single version
+  of each after an upgrade.
 - `codemirror` is pinned to 6.0.2: npm's 6.65.7 is a mis-published v5 build.
 - `@codemirror/language-data` is stubbed out (it would inline every grammar). The docs
   only have ```` ```filemaker ```` fences; to highlight another language, import its

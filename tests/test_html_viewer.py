@@ -52,11 +52,34 @@ def test_build_with_html_covers_every_markdown_page(tmp_path):
 
     for page in manifest["pages"]:
         js = (out / VIEWER_DIR / "pages" / page["f"]).read_text(encoding="utf-8")
-        path, meta, body = _call_args(js, "page")
+        path, meta, body, *extra = _call_args(js, "page")
         assert path == page["p"]
         source = (out / path).read_text(encoding="utf-8")
         assert source.endswith(body)
         assert not body.startswith("---")  # frontmatter is passed separately, not rendered
+
+
+def test_script_pages_carry_their_steps_field_links(tmp_path):
+    # Steps name fields by table occurrence; the page script maps each TO::field to the field's page.
+    out = _build(tmp_path, "--html")
+    by_path = {}
+    for page in _manifest(out)["pages"]:
+        path, _meta, _body, *extra = _call_args((out / VIEWER_DIR / "pages" / page["f"]).read_text(encoding="utf-8"), "page")
+        if extra:
+            by_path[path] = extra[0]["fields"]
+    script = "Scripts/Customer Scripts/Create Customer.md"
+    assert by_path == {script: {"Customer::Status": "../../Fields/Customer/Status.md"}}
+    assert (out / script).parent.joinpath("../../Fields/Customer/Status.md").resolve().exists()
+
+
+def test_manifest_lists_step_kinds_for_script_blocks(tmp_path):
+    from fm_saxml.model.step_kinds import CLOSES, COLOURED, CONTINUES, OPENS
+
+    (tmp_path / "index.md").write_text("# Docs\n", encoding="utf-8")
+    render_html_viewer(tmp_path)
+    kinds = _manifest(tmp_path)["stepKinds"]
+    assert kinds == {"opens": sorted(OPENS), "continues": sorted(CONTINUES),
+                     "closes": sorted(CLOSES), "coloured": sorted(COLOURED)}
 
 
 def test_viewer_bundles_its_renderer_and_loads_nothing_remote(tmp_path):

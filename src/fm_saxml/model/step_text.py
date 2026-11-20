@@ -19,12 +19,9 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any
 
-COMMENT_STEP = "# (comment)"
+from .step_kinds import CLOSES, CONTINUES, OPENS
 
-# Block structure, for indentation: steps that open, continue or close a block.
-_OPENS = {"If", "Loop", "Open Transaction"}
-_CONTINUES = {"Else", "Else If"}
-_CLOSES = {"End If", "End Loop", "Commit Transaction"}
+COMMENT_STEP = "# (comment)"
 
 _NEWLINES = re.compile(r"\r\n|\r|\n")
 
@@ -148,10 +145,70 @@ def step_text(step: Any) -> str:
         text = _NEWLINES.sub("\n", fm_text)
         if not _get(step, "enabled", True):
             text = _DISABLED_PREFIX.sub("", text)
+        if _get(step, "name") != COMMENT_STEP and not text.lstrip().startswith("#"):
+            text = _tidy_brackets(text)
         text = _with_missing_switch(step, text)
         omitted = _omitted_params(step, text)
         return f"{text} {{ also: {'; '.join(omitted)} }}" if omitted else text
     return built_step_text(step)
+
+
+def _bracket_groups(text: str) -> tuple[list[tuple[int, int]], bool]:
+    """The ``[ … ]`` groups at the top level of ``text`` (step options, not brackets inside a
+    calc or a quoted string) as (start, end) spans, and whether ``text`` ends outside any
+    bracket or string. An unbalanced quote leaves the rest of the text as one string."""
+    groups: list[tuple[int, int]] = []
+    depth, start, quote, escaped = 0, 0, "", False
+    for i, ch in enumerate(text):
+        if quote:
+            if escaped:
+                escaped = False
+            elif ch == "\\" and quote == '"':
+                escaped = True
+            elif ch == quote:
+                quote = ""
+        elif ch == '"':
+            quote = '"'
+        elif ch == "“":
+            quote = "”"
+        elif ch == "[":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch == "]" and depth:
+            depth -= 1
+            if depth == 0:
+                groups.append((start, i + 1))
+    return groups, depth == 0 and not quote
+
+
+_EMPTY_GROUP_RE = re.compile(r"\[\s*\]")
+
+
+def _tidy_brackets(text: str) -> str:
+    """FileMaker's text as the Script Workspace shows it on one line.
+
+        Adjust Window\\n[ Resize to Fit ]          -> Adjust Window [ Resize to Fit ]
+        Check Selection [  ]\\n[ Select ]          -> Check Selection [ Select ]
+        Else [  ]                                  -> Else
+
+    A line that is only an options group joins the line before it, unless that line ends
+    inside a calc; empty groups are dropped. Spacing inside groups is left as it is.
+    """
+    lines = text.split("\n")
+    out = [lines[0]]
+    for line in lines[1:]:
+        group = line.strip()
+        if group.startswith("[") and _bracket_groups(group)[0] == [(0, len(group))] \
+                and _bracket_groups("\n".join(out))[1]:
+            out[-1] = f"{out[-1].rstrip()} {group}"
+        else:
+            out.append(line)
+    text = "\n".join(out)
+    for start, end in reversed(_bracket_groups(text)[0]):
+        if _EMPTY_GROUP_RE.fullmatch(text, start, end):
+            text = text[:start].rstrip(" \t") + text[end:]
+    return text
 
 
 def _with_missing_switch(step: Any, text: str) -> str:
@@ -207,7 +264,7 @@ def script_lines(steps: Iterable[Any]) -> list[StepLine]:
     depth = 0
     for step in steps:
         name = _get(step, "name") or ""
-        if name in _CLOSES or name in _CONTINUES:
+        if name in CLOSES or name in CONTINUES:
             depth = max(depth - 1, 0)
         text = step_text(step)
         out.append(StepLine(
@@ -216,7 +273,7 @@ def script_lines(steps: Iterable[Any]) -> list[StepLine]:
             enabled=bool(_get(step, "enabled", True)),
             lines=_NEWLINES.split(text) if text else [""],
         ))
-        if name in _OPENS or name in _CONTINUES:
+        if name in OPENS or name in CONTINUES:
             depth += 1
     return out
 

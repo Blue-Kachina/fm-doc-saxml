@@ -129,6 +129,70 @@ def test_code_fence_outgrows_backticks_in_the_content():
     assert code_fence("a ```` b") == "`````"
 
 
+def _fm(name: str, fm_text: str, **extra) -> dict:
+    return {"name": name, "params": [], "fm_text": fm_text, **extra}
+
+
+def test_an_options_line_joins_its_step():
+    assert step_text(_fm("Adjust Window", "Adjust Window\r[ Resize to Fit ]")) == "Adjust Window [ Resize to Fit ]"
+    assert step_text(_fm("Commit Records/Requests",
+                         "Commit Records/Requests\n[ Skip data entry validation; No dialog; Force Commit ]")) \
+        == "Commit Records/Requests [ Skip data entry validation; No dialog; Force Commit ]"
+    assert step_text(_fm("Check Selection", "Check Selection [  ]\n[ Select ]")) == "Check Selection [ Select ]"
+
+
+def test_empty_option_groups_are_dropped():
+    assert step_text(_fm("Else", "Else [  ]")) == "Else"
+    assert step_text(_fm("End If", "End If []")) == "End If"
+    assert step_text(_fm("Check Selection", "Check Selection [  ] [ Select ]")) == "Check Selection [ Select ]"
+    # FileMaker's spacing inside a group is kept.
+    assert step_text(_fm("Go to Field", "Go to Field [ Select/perform ; x ]")) == "Go to Field [ Select/perform ; x ]"
+
+
+def test_brackets_inside_calcs_and_strings_are_left_alone():
+    text = 'Set Variable [ $arr; Value:"[]" & " [ ] " ]'
+    assert step_text(_fm("Set Variable", text)) == text
+    assert step_text(_fm("Perform Script", "Perform Script [ “Client [ ] Close” ]")) == "Perform Script [ “Client [ ] Close” ]"
+    # A calc line that is only a bracket group stays on its own line.
+    calc = "Set Variable [ $x; Value:Let ( [\n[ a = 1 ]\n] ; a ) ]"
+    assert step_text(_fm("Set Variable", calc)) == calc
+    multi = 'Set Variable [ $x; Value:List (\n"a" ;\n"b" ) ]'
+    assert step_text(_fm("Set Variable", multi)) == multi
+
+
+def test_comments_are_not_tidied():
+    assert step_text(_fm("# (comment)", "#PURPOSE: [  ]\n[ x ]")) == "#PURPOSE: [  ]\n[ x ]"
+
+
+def test_a_switch_is_still_added_after_tidying():
+    step = _fm("Allow User Abort", "Allow User Abort [  ]")
+    step["params"] = [{"kind": "option", "label": None, "value": "Off"}]
+    assert step_text(step) == "Allow User Abort [ Off ]"
+    assert step_text(_fm("Allow User Abort", "Allow User Abort\n[ On ]")) == "Allow User Abort [ On ]"
+
+
+def test_tidied_steps_render_on_one_line_in_the_block():
+    steps = [_fm("If", "If [ $x ]", index=0), _fm("Adjust Window", "Adjust Window\n[ Resize to Fit ]", index=1),
+             _fm("Else", "Else [  ]", index=2), _fm("End If", "End If", index=3)]
+    assert render_script_block(steps).splitlines() == [
+        "1  If [ $x ]",
+        "2      Adjust Window [ Resize to Fit ]",
+        "3  Else",
+        "4  End If",
+    ]
+
+
+def test_step_kinds():
+    from fm_saxml.model.step_kinds import CLOSES, COLOURED, CONTINUES, OPENS
+
+    assert OPENS == {"If", "Loop", "Open Transaction"}
+    assert CONTINUES == {"Else", "Else If"}
+    assert CLOSES == {"End If", "End Loop", "Commit Transaction"}
+    assert OPENS | CONTINUES | CLOSES <= COLOURED
+    assert {"Perform Script", "Exit Script", "Set Error Capture", "Pause/Resume Script"} <= COLOURED
+    assert all(isinstance(s, frozenset) for s in (OPENS, CONTINUES, CLOSES, COLOURED))
+
+
 # ---------------------------------------------------------------------------
 # Variables in calculations
 # ---------------------------------------------------------------------------
